@@ -1,10 +1,18 @@
 // Modelos de página. Cada função devolve { path, title, description, body, graph, ... }.
-import { esc, txt, plain, md, photo, photoBg } from './util.mjs';
+import { esc, txt, plain, md, photo, photoBg, photoSwap } from './util.mjs';
 import { AR, pb, waBtn, waUrl } from './layout.mjs';
 import { breadcrumbNode, faqNode, pageNode, abs } from './seo.mjs';
 
-const faq = (list, open = true) =>
-  list.map(([q, a], i) => `<details class="faq"${open && i === 0 ? ' open' : ''}><summary>${txt(q)}</summary><p>${txt(a)}</p></details>`).join('\n');
+const faq = (list, open = false) => {
+  const item = ([q, a], i) => `<details class="faq"${open && i === 0 ? ' open' : ''}><summary>${txt(q)}</summary><p>${txt(a)}</p></details>`;
+  const half = Math.ceil(list.length / 2);
+  // Duas colunas fixas (não reorganizam ao abrir uma pergunta).
+  return `<div class="faq-cols"><div>${list.slice(0, half).map(item).join('\n')}</div><div>${list.slice(half).map((x, i) => item(x, i + half)).join('\n')}</div></div>`;
+};
+// 5) Números (home e /sobre/).
+const stats = (ctx) => `<div class="sc"><div class="sq"><b>+${ctx.site.clients}</b><span>clientes<br>no Brasil</span></div><div class="sq"><b>+${ctx.site.tonsPerYear}&nbsp;t</b><span>de produtos<br>vendidas por ano</span></div><div class="sq"><b>${ctx.families.length}</b><span>famílias<br>de produto</span></div><div class="sq"><b>2</b><span>continentes<br>de parceiros</span></div><div class="sq"><b>${ctx.site.foundingYear}</b><span>início das<br>atividades</span></div></div>`;
+// 6) Lista de itens em grade (características, aplicações).
+const prGrid = (items) => `<div class="prgrid${items.length === 4 ? ' n4' : ''}">${items.map((x) => `<div class="pr"><i>${AR}</i><div>${txt(x)}</div></div>`).join('')}</div>`;
 const crumbs = (items) =>
   `<nav class="crumbs" aria-label="Você está em">${items.map((it, i) => (i === items.length - 1 ? `<b>${esc(it.name)}</b>` : `<a href="${it.path}">${esc(it.name)}</a><span>/</span>`)).join('')}</nav>`;
 const updated = (site) => {
@@ -40,13 +48,12 @@ export function home(ctx) {
   const hero = photoBg('home-hero', 'linear-gradient(90deg,#0a0a3cb3 0%,#0a0a3c80 40%,#0a0a3c1f 100%)');
   const card = (slot, big, small, extra = '') => { const b = photoBg(slot); return `<div class="mc"${b.style}>${b.tag}<div><b>${big}</b>${small ? `<span>${small}</span>` : ''}</div>${extra}</div>`; };
   const famRows = families.map((f) => `<a class="fr" href="/produtos/${f.id}/"><span class="dash"></span><b>${esc(f.n)}</b><span>${txt(f.short)}</span></a>`).join('');
-  const segRows = segments.map((s, i) => `<a class="row${i === 0 ? ' on' : ''}" href="/segmentos/${s.id}/"><span class="ic">${ICON[s.id]}</span><span><b>${esc(s.n)}</b><span>${txt(s.short)}</span></span></a>`).join('');
+  const segRows = segments.map((s) => `<a class="row" data-seg="${s.id}" href="/segmentos/${s.id}/"><span class="ic">${ICON[s.id]}</span><span><b>${esc(s.n)}</b><span>${txt(s.short)}</span></span></a>`).join('');
   const steps = [['01', 'Primer ou tinta', 'A tinta dá a cor. O primer entra apenas em alguns substratos, não em todos. O teste na peça define.'], ['02', 'Verniz UV Base', 'Ancora e nivela a superfície antes da metalização.'], ['03', 'Metalização', 'Feita a vácuo, na sua fábrica ou em terceiro.'], ['04', 'Verniz UV Top Coat', 'Protege a metalização e fecha o acabamento, em brilho ou fosco.']];
   const latest = ctx.articles.slice(0, 3);
   const body = `
 <section class="hero"${hero.style}>${hero.tag ? '<div class="tube t2"></div><div class="tube"></div><div class="tube t3"></div>' : ''}${hero.tag}
   <div class="wrap" style="width:100%"><div class="inner">
-    <div class="chip2"><b>Sob medida</b> Formulação desenvolvida para cada cliente</div>
     <h1>Vernizes UV, lacas e tintas para plásticos e metais</h1>
     <p class="lead">A Corquímica fabrica verniz UV Base e Top Coat, lacas, tintas para ABS e PS, tintas para piso, corantes UV e solventes, em Estância Velha, RS. Desenvolvidos para a sua peça, com apoio técnico dentro da sua fábrica.</p>
     <div class="btnrow">${waBtn(ctx, 'Falar sobre o meu projeto', 'Olá! Quero falar sobre o meu projeto com a Corquímica.')}<a class="pb out" href="/produtos/" style="color:#fff">Ver produtos <i>${AR}</i></a></div>
@@ -59,7 +66,7 @@ export function home(ctx) {
   <p class="lead" style="margin-top:22px">Buscamos inovação o tempo todo. Participamos de feiras internacionais e temos parcerias estratégicas na Europa e na Ásia, para trazer novas tecnologias ao seu processo.</p>
   <div style="margin-top:26px">${pb('Conheça a Corquímica', '/sobre/', 'sand')}</div></div></div></div></section>
 
-<section class="band" id="segmentos"><div class="wrap"><div class="float2"><div>${photo('home-segmentos')}</div><div><h2>Segmentos que atendemos</h2><div class="rows">${segRows}</div></div></div></div></section>
+<section class="sec" id="segmentos"><div class="wrap"><div class="float2"><div>${photoSwap('home-segmentos', segments.map((s) => ['segmento-' + s.id, s.id]))}</div><div><h2>Segmentos que atendemos</h2><div class="rows">${segRows}</div></div></div></div></section>
 
 <section class="sec"><div class="wrap center"><span class="label">A diferença que fazemos</span><h2>Líder em acabamentos UV para a indústria de plásticos</h2>
 <div class="mos">
@@ -71,9 +78,9 @@ export function home(ctx) {
 </div></div></section>
 
 <section class="sec dark on-dark"><div class="wrap"><div class="stats2"><div><span class="label">Resultados em números</span><h2>Nossa força em excelência</h2><p>Experiência na indústria, uma linha completa de produtos e uma equipe técnica dedicada a entregar acabamento de alta performance.</p></div>
-<div class="sc"><div class="sq"><b>+${site.clients}</b><span>clientes<br>no Brasil</span></div><div class="sq"><b>${families.length}</b><span>famílias<br>de produto</span></div><div class="sq"><b>2</b><span>continentes<br>de parceiros</span></div><div class="sq"><b>${site.foundingYear}</b><span>início das<br>atividades</span></div></div></div></div></section>
+${stats(ctx)}</div></div></section>
 
-<section class="sec" id="produtos"><div class="wrap"><div class="sol"><div class="glass"><span class="label">Nossas famílias de produto</span><h2>Soluções para o seu acabamento</h2><hr class="rule" style="margin:20px 0 4px">${famRows}</div></div></div></section>
+<section class="sec" id="produtos"><div class="wrap"><div class="sol"><div class="glass"><span class="label">Nossas famílias de produto</span><h2>Soluções para o seu acabamento</h2><div class="frgrid">${famRows}</div></div></div></div></section>
 
 <section class="sec dark on-dark" id="processo"><div class="wrap"><span class="label">O sistema em 4 etapas</span><h2 style="margin-top:18px;max-width:680px">Base Coat + Top Coat, do primer ao brilho final</h2>
 <div class="steps">${steps.map((s) => `<div class="step"><div><b>${s[0]}.</b><h3>${s[1]}</h3></div><p>${s[2]}</p></div>`).join('')}</div>
@@ -106,7 +113,7 @@ export function sobre(ctx) {
 <p class="def">A Corquímica é fabricante de vernizes UV, lacas, tintas e corantes, sediada em Estância Velha, RS. Atua desde ${site.foundingYear} e atende mais de ${site.clients} clientes em todo o país.</p>
 <p class="def" style="margin-top:14px">Participamos de feiras internacionais e temos parcerias estratégicas na Europa e na Ásia. Cada cliente recebe uma formulação desenvolvida para a sua necessidade, e a equipe técnica acompanha a aplicação dentro da fábrica.</p>
 <div style="margin-top:28px">${waBtn(ctx, 'Falar sobre o meu projeto', 'Olá! Gostaria de conhecer a Corquímica e conversar sobre o meu projeto.')}</div>${updated(site)}</div>${photo('sobre-fabrica')}</div></div>
-<section class="sec dark on-dark"><div class="wrap"><div class="stats2"><div><span class="label">Em números</span><h2>Nossa força em excelência</h2></div><div class="sc"><div class="sq"><b>+${site.clients}</b><span>clientes<br>no Brasil</span></div><div class="sq"><b>${ctx.families.length}</b><span>famílias<br>de produto</span></div><div class="sq"><b>2</b><span>continentes<br>de parceiros</span></div><div class="sq"><b>${site.foundingYear}</b><span>início das<br>atividades</span></div></div></div></div></section>
+<section class="sec dark on-dark"><div class="wrap"><div class="stats2"><div><span class="label">Em números</span><h2>Nossa força em excelência</h2></div>${stats(ctx)}</div></div></section>
 <section class="sec"><div class="wrap"><div class="two"><div><span class="label">O que nos move</span><h2>Três compromissos com o cliente</h2></div><div>
 <div class="pr"><i>${AR}</i><div><b>Inovação constante.</b> Feiras internacionais e parceiros na Europa e na Ásia.</div></div>
 <div class="pr"><i>${AR}</i><div><b>Formulação personalizada.</b> Fórmula ajustada à peça e ao processo.</div></div>
@@ -177,7 +184,7 @@ export function familia(ctx, f) {
 <div class="ph2"><div><span class="label">${esc(f.n)}</span><h1>${txt(f.h1)}</h1><p class="def">${txt(f.def)}</p>
 <div class="how"><b>Na prática</b>${txt(f.prac)}</div>${solv}
 ${waBtn(ctx, 'Falar sobre o meu projeto', `Olá! Quero falar sobre o meu projeto com o produto: ${f.n}.`)}${updated(site)}</div>${photo('familia-' + f.id)}</div></div>
-<section class="sec" style="padding-top:0"><div class="wrap"><div class="two"><div><span class="label">Características</span><h2>O que ${esc(f.n)} entrega</h2></div><div>${f.feat.map((x) => `<div class="pr"><i>${AR}</i><div>${txt(x)}</div></div>`).join('')}</div></div></div></section>
+<section class="sec" style="padding-top:0"><div class="wrap"><span class="label">Características</span><h2 class="sub">O que ${esc(f.n)} entrega</h2>${prGrid(f.feat)}</div></section>
 <section class="sec dark on-dark"><div class="wrap"><span class="label">Benefícios</span><h2 style="margin-top:18px">Para a sua produção</h2><div class="cards3">${f.ben.map((x, i) => `<div class="step"><div><b>0${i + 1}.</b></div><h3>${txt(x)}</h3></div>`).join('')}</div></div></section>
 <section class="sec"><div class="wrap"><span class="label">Versões</span><h2 style="margin-top:18px">${esc(f.n)}: qual usar</h2><div class="tbl"><table><thead><tr><th scope="col">Produto</th><th scope="col">Substrato ou uso</th><th scope="col">Indicado para</th></tr></thead><tbody>${rows}</tbody></table></div>
 <div style="margin-top:44px"><span class="label">Onde é usado</span><div class="tags">${segs.map((s) => `<a href="/segmentos/${s.id}/">${esc(s.n)}</a>`).join('')}</div></div></div></section>
@@ -201,7 +208,7 @@ export function segmento(ctx, s) {
   const body = `<div class="wrap">${crumbs(bc)}
 <div class="ph2"><div><span class="label">Segmento · ${esc(s.n)}</span><h1>${txt(s.h1)}</h1><p class="def">${txt(s.intro)}</p>
 <div class="how"><b>Como funciona</b>${txt(s.how)}</div>${waBtn(ctx, 'Falar sobre o meu projeto', `Olá! Tenho um projeto no segmento ${s.n} e gostaria de falar com o comercial.`)}${updated(site)}</div>${photo('segmento-' + s.id)}</div></div>
-<section class="sec" style="padding-top:0"><div class="wrap"><div class="two"><div><span class="label">Aplicações</span><h2>O que atendemos em ${esc(s.n)}</h2></div><div>${s.apps.map((x) => `<div class="pr"><i>${AR}</i><div>${txt(x)}</div></div>`).join('')}</div></div></div></section>
+<section class="sec" style="padding-top:0"><div class="wrap"><span class="label">Aplicações</span><h2 class="sub">O que atendemos em ${esc(s.n)}</h2>${prGrid(s.apps)}</div></section>
 ${chars}
 <section class="sec dark on-dark"><div class="wrap"><span class="label">Produtos indicados</span><h2 style="margin-top:18px">Famílias recomendadas para ${esc(s.n)}</h2><div class="tags">${prods.map((p) => `<a href="/produtos/${p.id}/">${esc(p.n)}</a>`).join('')}</div></div></section>
 <section class="sec"><div class="wrap faq-wrap"><div><span class="label">Perguntas frequentes</span><h2>${esc(s.n)}: dúvidas comuns</h2></div><div>${faq(s.faq)}</div></div></section>

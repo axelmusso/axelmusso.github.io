@@ -77,6 +77,12 @@ export function photo(slot, { eager = false } = {}) {
   }
   return `<div class="ph ${cls}" role="img" aria-label="${esc(meta.alt)}"></div>`;
 }
+// Foto que troca ao passar o mouse: base + [slot, chave] (CSS usa data-seg).
+export function photoSwap(base, alts) {
+  const extra = alts.filter(([slot]) => photoFiles.get(slot))
+    .map(([slot, key]) => `<img class="swap" data-seg="${esc(key)}" src="/img/${esc(photoFiles.get(slot))}" alt="${esc((photoMeta[slot] || {}).alt || '')}" loading="lazy" decoding="async">`).join('');
+  return extra ? photo(base).replace('</figure>', `${extra}</figure>`).replace('class="phimg ', 'class="phimg swapper ') : photo(base);
+}
 // Foto como fundo de bloco (hero, cartões do mosaico).
 // overlay: gradiente sobre a foto (o padrão, para cartões, é mais escuro no topo, onde fica o texto).
 export function photoBg(slot, overlay = 'linear-gradient(180deg,#0a0a3cd9 0%,#0a0a3cb3 45%,#0a0a3c80 100%)') {
