@@ -77,8 +77,6 @@ export function home(ctx) {
   ${card('home-laboratorio', 'Laboratório próprio', 'Desenvolvimento de cores, efeitos e sistemas completos de acabamento.')}
 </div></div></section>
 
-<section class="sec dark on-dark"><div class="wrap"><div class="stats2"><div><span class="label">Resultados em números</span><h2>Nossa força em excelência</h2><p>Experiência na indústria, uma linha completa de produtos e uma equipe técnica dedicada a entregar acabamento de alta performance.</p></div>
-${stats(ctx)}</div></div></section>
 
 <section class="sec" id="produtos"><div class="wrap"><div class="sol"><div class="glass"><span class="label">Nossas famílias de produto</span><h2>Soluções para o seu acabamento</h2><div class="frgrid">${famRows}</div></div></div></div></section>
 

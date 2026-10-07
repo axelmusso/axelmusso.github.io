@@ -3,7 +3,8 @@ import { esc, state } from './util.mjs';
 import { head, abs } from './seo.mjs';
 
 export const AR = '<svg class="arr" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
-export const LOGO = '<svg viewBox="0 0 64 30" aria-hidden="true"><path d="M26 6a11 11 0 1 0 0 18" fill="none" stroke="#5B9BF0" stroke-width="6" stroke-linecap="round"/><path d="M50 4a11 11 0 1 0 6 20l5 4" fill="none" stroke="#E5413B" stroke-width="6" stroke-linecap="round"/></svg>';
+// Logo oficial (ƆQ com barra), redesenhado em vetor a partir do arquivo da marca.
+export const LOGO = '<svg viewBox="121 32 683 408" aria-hidden="true"><path fill="#3570AF" d="M131.3 134A157 157 0 1 1 131.3 246H198.8A97 97 0 1 0 198.8 134Z"/><circle cx="647" cy="189" r="127" fill="none" stroke="#E92D2B" stroke-width="60"/><path fill="#E92D2B" d="M697 227L796 301L766 341L667 267Z"/><rect x="121" y="378" width="683" height="62" fill="#3570AF"/></svg>';
 
 export const waUrl = (site, msg) =>
   `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(msg || 'Olá! Vim pelo site da Corquímica e gostaria de falar com o comercial.')}`;
@@ -25,7 +26,7 @@ export function layout(ctx, page) {
 ${head(site, { ...page, noindex })}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="/assets/main.css?v=${ctx.cssHash}">
 ${page.withForm ? `<meta name="cq-wa" content="${site.whatsapp}">${sb.url ? `<meta name="cq-supabase-url" content="${esc(sb.url)}"><meta name="cq-supabase-key" content="${esc(sb.key)}">` : ''}
 <script src="/assets/lead.js?v=${ctx.jsHash}" defer></script>` : ''}
