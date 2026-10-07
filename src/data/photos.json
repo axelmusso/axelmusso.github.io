@@ -1,96 +1,96 @@
 {
  "home-hero": {
-  "alt": "Peças plásticas metalizadas e frascos de verniz UV sob luz azul",
+  "alt": "Peças plásticas cromadas penduradas em gancheira na linha de produção, sob luz azul",
   "shot": "Foto larga (16:9) de peças metalizadas e vernizes sobre bancada, luz azul, espaço livre à esquerda para o título",
   "ratio": "hero"
  },
  "home-sobre": {
-  "alt": "Equipe e laboratório da Corquímica em Estância Velha",
+  "alt": "Mão com luva azul segurando peça plástica cromada na fábrica",
   "shot": "Equipe no laboratório ou na fábrica, em grupo, olhando para a câmera",
-  "ratio": "r43"
+  "ratio": "r45"
  },
  "home-segmentos": {
-  "alt": "Salto metalizado e acessórios plásticos acabados com verniz UV",
+  "alt": "Salto de calçado, fivelas e acessórios plásticos com acabamento cromado",
   "shot": "Salto de calçado metalizado ao lado de acessórios, fundo neutro",
   "ratio": "r45"
  },
  "home-apoio-tecnico": {
-  "alt": "Técnico da Corquímica regulando a aplicação na linha do cliente",
+  "alt": "Aplicação de verniz com pistola sobre peça automotiva preta em cabine",
   "shot": "Técnico da Corquímica na fábrica do cliente, com a pistola ou a cabine de cura UV",
-  "ratio": "card"
+  "ratio": "r169"
  },
  "home-feira-internacional": {
-  "alt": "Equipe da Corquímica em feira internacional",
+  "alt": "Estande em feira com peças plásticas expostas em prateleiras e balcão",
   "shot": "Foto do estande ou da equipe em feira internacional",
-  "ratio": "card"
+  "ratio": "r169"
  },
  "home-laboratorio": {
-  "alt": "Laboratório de desenvolvimento de cores e vernizes da Corquímica",
+  "alt": "Bancada de laboratório com potes de pigmento, placas coloridas e balança",
   "shot": "Bancada do laboratório com amostras de cor",
-  "ratio": "card"
+  "ratio": "r169"
  },
  "sobre-fabrica": {
-  "alt": "Fachada e fábrica da Corquímica em Estância Velha, RS",
+  "alt": "Fachada da Corquímica, prédio escuro com o logotipo CQ, atrás de grade",
   "shot": "Fachada da Corquímica e área de produção",
   "ratio": "r45"
  },
  "familia-verniz-uv-base": {
-  "alt": "Peça acabada com Verniz UV Base, Corquímica",
+  "alt": "Peças plásticas penduradas em gancheira entrando em túnel de cura com luz azul",
   "shot": "Peça real acabada com Verniz UV Base, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
  "familia-verniz-uv-top-coat": {
-  "alt": "Peça acabada com Verniz UV Top Coat, Corquímica",
+  "alt": "Mão com luva azul segurando peça cromada, ao lado de outra peça em bandeja de inox",
   "shot": "Peça real acabada com Verniz UV Top Coat, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
  "familia-lacas": {
-  "alt": "Peça acabada com Lacas, Corquímica",
+  "alt": "Puxadores em cobre, champanhe, preto e branco pendurados em cabine de pintura",
   "shot": "Peça real acabada com Lacas, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
  "familia-tintas-abs-ps": {
-  "alt": "Peça acabada com Tintas para ABS e PS, Corquímica",
+  "alt": "Dois saltos de calçado em plástico, um cinza sem pintura e outro pintado em vinho brilhante",
   "shot": "Peça real acabada com Tintas para ABS e PS, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
  "familia-tintas-piso": {
-  "alt": "Peça acabada com Tintas para piso, Corquímica",
+  "alt": "Piso industrial cinza brilhante com faixa de demarcação amarela",
   "shot": "Peça real acabada com Tintas para piso, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
  "familia-corantes-uv": {
-  "alt": "Peça acabada com Corantes UV, Corquímica",
+  "alt": "Mão com luva branca organizando fivelas em dourado, prata e rosé em bandeja de inox",
   "shot": "Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
  "familia-solventes": {
-  "alt": "Peça acabada com Solventes e Desengraxantes, Corquímica",
+  "alt": "Operador com luvas azuis despejando solvente de galão metálico em balde",
   "shot": "Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
  "segmento-moda": {
-  "alt": "Peças do segmento moda com acabamento Corquímica",
+  "alt": "Fivelas e correntes douradas e prateadas em bandeja de inox",
   "shot": "Peças reais do segmento Moda (com autorização do cliente), fundo neutro",
   "ratio": "r45"
  },
  "segmento-moveleiro": {
-  "alt": "Peças do segmento moveleiro com acabamento Corquímica",
+  "alt": "Puxador cromado em porta de armário de cozinha",
   "shot": "Peças reais do segmento Moveleiro (com autorização do cliente), fundo neutro",
   "ratio": "r45"
  },
  "segmento-automotivo": {
-  "alt": "Peças do segmento automotivo com acabamento Corquímica",
+  "alt": "Moldura de grade automotiva cromada sobre suporte na fábrica",
   "shot": "Peças reais do segmento Automotivo (com autorização do cliente), fundo neutro",
   "ratio": "r45"
  },
  "segmento-cosmeticos": {
-  "alt": "Peças do segmento cosméticos com acabamento Corquímica",
+  "alt": "Mão com luva branca segurando pote de cosmético com tampa dourada",
   "shot": "Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro",
   "ratio": "r45"
  },
  "segmento-plasticos": {
-  "alt": "Peças do segmento plástico em geral com acabamento Corquímica",
+  "alt": "Caixa com peças plásticas injetadas em várias cores e acabamentos, diante de injetora",
   "shot": "Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro",
   "ratio": "r45"
  }

@@ -37,7 +37,7 @@ const ICON = {
 /* ---------------- HOME ---------------- */
 export function home(ctx) {
   const { site, families, segments } = ctx;
-  const hero = photoBg('home-hero');
+  const hero = photoBg('home-hero', 'linear-gradient(90deg,#0a0a3cb3 0%,#0a0a3c80 40%,#0a0a3c1f 100%)');
   const card = (slot, big, small, extra = '') => { const b = photoBg(slot); return `<div class="mc"${b.style}>${b.tag}<div><b>${big}</b>${small ? `<span>${small}</span>` : ''}</div>${extra}</div>`; };
   const famRows = families.map((f) => `<a class="fr" href="/produtos/${f.id}/"><span class="dash"></span><b>${esc(f.n)}</b><span>${txt(f.short)}</span></a>`).join('');
   const segRows = segments.map((s, i) => `<a class="row${i === 0 ? ' on' : ''}" href="/segmentos/${s.id}/"><span class="ic">${ICON[s.id]}</span><span><b>${esc(s.n)}</b><span>${txt(s.short)}</span></span></a>`).join('');
@@ -53,11 +53,11 @@ export function home(ctx) {
   </div></div>
 </section>
 
-<section class="sec" id="sobre"><div class="wrap"><div class="core"><span class="label">Nossa essência</span><div>
+<section class="sec" id="sobre"><div class="wrap"><div class="core essence"><div class="essence-side"><span class="label">Nossa essência</span>${photo('home-sobre')}</div><div>
   <p class="big">A Corquímica é fabricante de vernizes UV, lacas, tintas e corantes em Estância Velha, RS. <b>Atua desde ${site.foundingYear} e atende mais de ${site.clients} clientes em todo o país</b>, com formulações pensadas para a necessidade de cada um.</p>
   <hr class="rule">
   <p class="lead" style="margin-top:22px">Buscamos inovação o tempo todo. Participamos de feiras internacionais e temos parcerias estratégicas na Europa e na Ásia, para trazer novas tecnologias ao seu processo.</p>
-  <div style="margin-top:26px">${pb('Conheça a Corquímica', '/sobre/', 'sand')}</div></div></div><div class="wide-photo">${photo('home-sobre')}</div></div></section>
+  <div style="margin-top:26px">${pb('Conheça a Corquímica', '/sobre/', 'sand')}</div></div></div></div></section>
 
 <section class="band" id="segmentos"><div class="wrap"><div class="float2"><div>${photo('home-segmentos')}</div><div><h2>Segmentos que atendemos</h2><div class="rows">${segRows}</div></div></div></div></section>
 

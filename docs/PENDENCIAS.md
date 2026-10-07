@@ -56,17 +56,5 @@ Modo atual do build: **staging**.
 - `/politica-de-privacidade/`: 
 - `/politica-de-privacidade/`: 
 
-## Fotos que faltam (13)
-- `sobre-fabrica`
-- `familia-verniz-uv-base`
-- `familia-verniz-uv-top-coat`
-- `familia-lacas`
-- `familia-tintas-abs-ps`
-- `familia-tintas-piso`
-- `familia-corantes-uv`
-- `familia-solventes`
-- `segmento-moda`
-- `segmento-moveleiro`
-- `segmento-automotivo`
-- `segmento-cosmeticos`
-- `segmento-plasticos`
+## Fotos que faltam (0)
+- nenhuma

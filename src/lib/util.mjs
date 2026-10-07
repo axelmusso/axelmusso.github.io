@@ -63,7 +63,7 @@ export function scanPhotos(dir) {
 export let photoMeta = {};
 export const setPhotoMeta = (m) => { photoMeta = m; };
 
-const RATIO = { r43: 'r43', r45: 'r45', hero: 'r169', card: 'r43' };
+const RATIO = { r43: 'r43', r45: 'r45', r169: 'r169', hero: 'r169', card: 'r43' };
 export function photo(slot, { eager = false } = {}) {
   const meta = photoMeta[slot] || { alt: slot, shot: slot, ratio: 'r43' };
   const file = photoFiles.get(slot);
@@ -78,10 +78,11 @@ export function photo(slot, { eager = false } = {}) {
   return `<div class="ph ${cls}" role="img" aria-label="${esc(meta.alt)}"></div>`;
 }
 // Foto como fundo de bloco (hero, cartões do mosaico).
-export function photoBg(slot) {
+// overlay: gradiente sobre a foto (o padrão, para cartões, é mais escuro no topo, onde fica o texto).
+export function photoBg(slot, overlay = 'linear-gradient(180deg,#0a0a3cd9 0%,#0a0a3cb3 45%,#0a0a3c80 100%)') {
   const meta = photoMeta[slot] || { alt: slot, shot: slot };
   const file = photoFiles.get(slot);
-  if (file) return { style: ` style="background-image:linear-gradient(180deg,#0a0a3c99,#0a0a3ccc),url('/img/${esc(file)}');background-size:cover;background-position:center"`, tag: '' };
+  if (file) return { style: ` style="background-image:${overlay},url('/img/${esc(file)}');background-size:cover;background-position:center"`, tag: '' };
   state.pendingPhotos.add(slot);
   return { style: '', tag: state.mode === 'staging' ? `<span class="ph-tag">FOTO REAL: ${esc(meta.shot)}</span>` : '' };
 }

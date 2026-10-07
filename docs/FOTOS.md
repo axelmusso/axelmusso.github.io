@@ -3,40 +3,40 @@
 Salve cada foto com o nome do "slot" em `src/assets/photos/`. Use fotos reais da fábrica, de peças e de aplicação. Até 200 KB cada, largura mínima de 1600 px.
 
 - [x] `home-hero` (hero): Foto larga (16:9) de peças metalizadas e vernizes sobre bancada, luz azul, espaço livre à esquerda para o título
-  - arquivo: `src/assets/photos/home-hero.webp` (ou .jpg) · alt: Peças plásticas metalizadas e frascos de verniz UV sob luz azul
-- [x] `home-sobre` (r43): Equipe no laboratório ou na fábrica, em grupo, olhando para a câmera
-  - arquivo: `src/assets/photos/home-sobre.webp` (ou .jpg) · alt: Equipe e laboratório da Corquímica em Estância Velha
+  - arquivo: `src/assets/photos/home-hero.webp` (ou .jpg) · alt: Peças plásticas cromadas penduradas em gancheira na linha de produção, sob luz azul
+- [x] `home-sobre` (r45): Equipe no laboratório ou na fábrica, em grupo, olhando para a câmera
+  - arquivo: `src/assets/photos/home-sobre.webp` (ou .jpg) · alt: Mão com luva azul segurando peça plástica cromada na fábrica
 - [x] `home-segmentos` (r45): Salto de calçado metalizado ao lado de acessórios, fundo neutro
-  - arquivo: `src/assets/photos/home-segmentos.webp` (ou .jpg) · alt: Salto metalizado e acessórios plásticos acabados com verniz UV
-- [x] `home-apoio-tecnico` (card): Técnico da Corquímica na fábrica do cliente, com a pistola ou a cabine de cura UV
-  - arquivo: `src/assets/photos/home-apoio-tecnico.webp` (ou .jpg) · alt: Técnico da Corquímica regulando a aplicação na linha do cliente
-- [x] `home-feira-internacional` (card): Foto do estande ou da equipe em feira internacional
-  - arquivo: `src/assets/photos/home-feira-internacional.webp` (ou .jpg) · alt: Equipe da Corquímica em feira internacional
-- [x] `home-laboratorio` (card): Bancada do laboratório com amostras de cor
-  - arquivo: `src/assets/photos/home-laboratorio.webp` (ou .jpg) · alt: Laboratório de desenvolvimento de cores e vernizes da Corquímica
-- [ ] `sobre-fabrica` (r45): Fachada da Corquímica e área de produção
-  - arquivo: `src/assets/photos/sobre-fabrica.webp` (ou .jpg) · alt: Fachada e fábrica da Corquímica em Estância Velha, RS
-- [ ] `familia-verniz-uv-base` (r45): Peça real acabada com Verniz UV Base, de preferência metade em acabamento e metade bruta, fundo escuro
-  - arquivo: `src/assets/photos/familia-verniz-uv-base.webp` (ou .jpg) · alt: Peça acabada com Verniz UV Base, Corquímica
-- [ ] `familia-verniz-uv-top-coat` (r45): Peça real acabada com Verniz UV Top Coat, de preferência metade em acabamento e metade bruta, fundo escuro
-  - arquivo: `src/assets/photos/familia-verniz-uv-top-coat.webp` (ou .jpg) · alt: Peça acabada com Verniz UV Top Coat, Corquímica
-- [ ] `familia-lacas` (r45): Peça real acabada com Lacas, de preferência metade em acabamento e metade bruta, fundo escuro
-  - arquivo: `src/assets/photos/familia-lacas.webp` (ou .jpg) · alt: Peça acabada com Lacas, Corquímica
-- [ ] `familia-tintas-abs-ps` (r45): Peça real acabada com Tintas para ABS e PS, de preferência metade em acabamento e metade bruta, fundo escuro
-  - arquivo: `src/assets/photos/familia-tintas-abs-ps.webp` (ou .jpg) · alt: Peça acabada com Tintas para ABS e PS, Corquímica
-- [ ] `familia-tintas-piso` (r45): Peça real acabada com Tintas para piso, de preferência metade em acabamento e metade bruta, fundo escuro
-  - arquivo: `src/assets/photos/familia-tintas-piso.webp` (ou .jpg) · alt: Peça acabada com Tintas para piso, Corquímica
-- [ ] `familia-corantes-uv` (r45): Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro
-  - arquivo: `src/assets/photos/familia-corantes-uv.webp` (ou .jpg) · alt: Peça acabada com Corantes UV, Corquímica
-- [ ] `familia-solventes` (r45): Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro
-  - arquivo: `src/assets/photos/familia-solventes.webp` (ou .jpg) · alt: Peça acabada com Solventes e Desengraxantes, Corquímica
-- [ ] `segmento-moda` (r45): Peças reais do segmento Moda (com autorização do cliente), fundo neutro
-  - arquivo: `src/assets/photos/segmento-moda.webp` (ou .jpg) · alt: Peças do segmento moda com acabamento Corquímica
-- [ ] `segmento-moveleiro` (r45): Peças reais do segmento Moveleiro (com autorização do cliente), fundo neutro
-  - arquivo: `src/assets/photos/segmento-moveleiro.webp` (ou .jpg) · alt: Peças do segmento moveleiro com acabamento Corquímica
-- [ ] `segmento-automotivo` (r45): Peças reais do segmento Automotivo (com autorização do cliente), fundo neutro
-  - arquivo: `src/assets/photos/segmento-automotivo.webp` (ou .jpg) · alt: Peças do segmento automotivo com acabamento Corquímica
-- [ ] `segmento-cosmeticos` (r45): Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro
-  - arquivo: `src/assets/photos/segmento-cosmeticos.webp` (ou .jpg) · alt: Peças do segmento cosméticos com acabamento Corquímica
-- [ ] `segmento-plasticos` (r45): Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro
-  - arquivo: `src/assets/photos/segmento-plasticos.webp` (ou .jpg) · alt: Peças do segmento plástico em geral com acabamento Corquímica
+  - arquivo: `src/assets/photos/home-segmentos.webp` (ou .jpg) · alt: Salto de calçado, fivelas e acessórios plásticos com acabamento cromado
+- [x] `home-apoio-tecnico` (r169): Técnico da Corquímica na fábrica do cliente, com a pistola ou a cabine de cura UV
+  - arquivo: `src/assets/photos/home-apoio-tecnico.webp` (ou .jpg) · alt: Aplicação de verniz com pistola sobre peça automotiva preta em cabine
+- [x] `home-feira-internacional` (r169): Foto do estande ou da equipe em feira internacional
+  - arquivo: `src/assets/photos/home-feira-internacional.webp` (ou .jpg) · alt: Estande em feira com peças plásticas expostas em prateleiras e balcão
+- [x] `home-laboratorio` (r169): Bancada do laboratório com amostras de cor
+  - arquivo: `src/assets/photos/home-laboratorio.webp` (ou .jpg) · alt: Bancada de laboratório com potes de pigmento, placas coloridas e balança
+- [x] `sobre-fabrica` (r45): Fachada da Corquímica e área de produção
+  - arquivo: `src/assets/photos/sobre-fabrica.webp` (ou .jpg) · alt: Fachada da Corquímica, prédio escuro com o logotipo CQ, atrás de grade
+- [x] `familia-verniz-uv-base` (r45): Peça real acabada com Verniz UV Base, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-verniz-uv-base.webp` (ou .jpg) · alt: Peças plásticas penduradas em gancheira entrando em túnel de cura com luz azul
+- [x] `familia-verniz-uv-top-coat` (r45): Peça real acabada com Verniz UV Top Coat, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-verniz-uv-top-coat.webp` (ou .jpg) · alt: Mão com luva azul segurando peça cromada, ao lado de outra peça em bandeja de inox
+- [x] `familia-lacas` (r45): Peça real acabada com Lacas, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-lacas.webp` (ou .jpg) · alt: Puxadores em cobre, champanhe, preto e branco pendurados em cabine de pintura
+- [x] `familia-tintas-abs-ps` (r45): Peça real acabada com Tintas para ABS e PS, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-tintas-abs-ps.webp` (ou .jpg) · alt: Dois saltos de calçado em plástico, um cinza sem pintura e outro pintado em vinho brilhante
+- [x] `familia-tintas-piso` (r45): Peça real acabada com Tintas para piso, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-tintas-piso.webp` (ou .jpg) · alt: Piso industrial cinza brilhante com faixa de demarcação amarela
+- [x] `familia-corantes-uv` (r45): Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-corantes-uv.webp` (ou .jpg) · alt: Mão com luva branca organizando fivelas em dourado, prata e rosé em bandeja de inox
+- [x] `familia-solventes` (r45): Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-solventes.webp` (ou .jpg) · alt: Operador com luvas azuis despejando solvente de galão metálico em balde
+- [x] `segmento-moda` (r45): Peças reais do segmento Moda (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-moda.webp` (ou .jpg) · alt: Fivelas e correntes douradas e prateadas em bandeja de inox
+- [x] `segmento-moveleiro` (r45): Peças reais do segmento Moveleiro (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-moveleiro.webp` (ou .jpg) · alt: Puxador cromado em porta de armário de cozinha
+- [x] `segmento-automotivo` (r45): Peças reais do segmento Automotivo (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-automotivo.webp` (ou .jpg) · alt: Moldura de grade automotiva cromada sobre suporte na fábrica
+- [x] `segmento-cosmeticos` (r45): Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-cosmeticos.webp` (ou .jpg) · alt: Mão com luva branca segurando pote de cosmético com tampa dourada
+- [x] `segmento-plasticos` (r45): Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-plasticos.webp` (ou .jpg) · alt: Caixa com peças plásticas injetadas em várias cores e acabamentos, diante de injetora
