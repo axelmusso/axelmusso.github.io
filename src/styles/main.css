@@ -300,3 +300,15 @@ footer.site a:hover{text-decoration:underline}
 .mc>div{position:relative;z-index:1}
 @media (max-width:980px){footer.site .fg{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){footer.site .fg{grid-template-columns:1fr}}
+
+/* ajustes fotos */
+.wide-photo{margin-top:56px}
+.wide-photo figure.phimg{aspect-ratio:21/9}
+.mc:not(.sand){color:#fff;text-align:left}
+.mc:not(.sand) b,.mc:not(.sand) span{color:#fff}
+.mc:not(.sand) span{opacity:.92}
+.mc.sand{text-align:left}
+.fr b{grid-column:2;grid-row:1}
+.fr span:not(.dash){grid-column:2;grid-row:2}
+.fr .dash{grid-column:1;grid-row:1/span 2}
+.mos .mc:last-child:nth-child(5){grid-column:span 2}

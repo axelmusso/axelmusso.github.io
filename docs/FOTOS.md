@@ -2,17 +2,17 @@
 
 Salve cada foto com o nome do "slot" em `src/assets/photos/`. Use fotos reais da fábrica, de peças e de aplicação. Até 200 KB cada, largura mínima de 1600 px.
 
-- [ ] `home-hero` (hero): Foto larga (16:9) de peças metalizadas e vernizes sobre bancada, luz azul, espaço livre à esquerda para o título
+- [x] `home-hero` (hero): Foto larga (16:9) de peças metalizadas e vernizes sobre bancada, luz azul, espaço livre à esquerda para o título
   - arquivo: `src/assets/photos/home-hero.webp` (ou .jpg) · alt: Peças plásticas metalizadas e frascos de verniz UV sob luz azul
-- [ ] `home-sobre` (r43): Equipe no laboratório ou na fábrica, em grupo, olhando para a câmera
+- [x] `home-sobre` (r43): Equipe no laboratório ou na fábrica, em grupo, olhando para a câmera
   - arquivo: `src/assets/photos/home-sobre.webp` (ou .jpg) · alt: Equipe e laboratório da Corquímica em Estância Velha
-- [ ] `home-segmentos` (r45): Salto de calçado metalizado ao lado de acessórios, fundo neutro
+- [x] `home-segmentos` (r45): Salto de calçado metalizado ao lado de acessórios, fundo neutro
   - arquivo: `src/assets/photos/home-segmentos.webp` (ou .jpg) · alt: Salto metalizado e acessórios plásticos acabados com verniz UV
-- [ ] `home-apoio-tecnico` (card): Técnico da Corquímica na fábrica do cliente, com a pistola ou a cabine de cura UV
+- [x] `home-apoio-tecnico` (card): Técnico da Corquímica na fábrica do cliente, com a pistola ou a cabine de cura UV
   - arquivo: `src/assets/photos/home-apoio-tecnico.webp` (ou .jpg) · alt: Técnico da Corquímica regulando a aplicação na linha do cliente
-- [ ] `home-feira-internacional` (card): Foto do estande ou da equipe em feira internacional
+- [x] `home-feira-internacional` (card): Foto do estande ou da equipe em feira internacional
   - arquivo: `src/assets/photos/home-feira-internacional.webp` (ou .jpg) · alt: Equipe da Corquímica em feira internacional
-- [ ] `home-laboratorio` (card): Bancada do laboratório com amostras de cor
+- [x] `home-laboratorio` (card): Bancada do laboratório com amostras de cor
   - arquivo: `src/assets/photos/home-laboratorio.webp` (ou .jpg) · alt: Laboratório de desenvolvimento de cores e vernizes da Corquímica
 - [ ] `sobre-fabrica` (r45): Fachada da Corquímica e área de produção
   - arquivo: `src/assets/photos/sobre-fabrica.webp` (ou .jpg) · alt: Fachada e fábrica da Corquímica em Estância Velha, RS

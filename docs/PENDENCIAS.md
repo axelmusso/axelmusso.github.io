@@ -56,12 +56,7 @@ Modo atual do build: **staging**.
 - `/politica-de-privacidade/`: 
 - `/politica-de-privacidade/`: 
 
-## Fotos que faltam (18)
-- `home-hero`
-- `home-segmentos`
-- `home-apoio-tecnico`
-- `home-feira-internacional`
-- `home-laboratorio`
+## Fotos que faltam (13)
 - `sobre-fabrica`
 - `familia-verniz-uv-base`
 - `familia-verniz-uv-top-coat`

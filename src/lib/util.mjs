@@ -81,7 +81,7 @@ export function photo(slot, { eager = false } = {}) {
 export function photoBg(slot) {
   const meta = photoMeta[slot] || { alt: slot, shot: slot };
   const file = photoFiles.get(slot);
-  if (file) return { style: ` style="background-image:linear-gradient(180deg,#0a0a3c33,#0a0a3ccc),url('/img/${esc(file)}');background-size:cover;background-position:center"`, tag: '' };
+  if (file) return { style: ` style="background-image:linear-gradient(180deg,#0a0a3c99,#0a0a3ccc),url('/img/${esc(file)}');background-size:cover;background-position:center"`, tag: '' };
   state.pendingPhotos.add(slot);
   return { style: '', tag: state.mode === 'staging' ? `<span class="ph-tag">FOTO REAL: ${esc(meta.shot)}</span>` : '' };
 }

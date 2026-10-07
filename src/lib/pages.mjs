@@ -44,7 +44,7 @@ export function home(ctx) {
   const steps = [['01', 'Primer ou tinta', 'A tinta dá a cor. O primer entra apenas em alguns substratos, não em todos. O teste na peça define.'], ['02', 'Verniz UV Base', 'Ancora e nivela a superfície antes da metalização.'], ['03', 'Metalização', 'Feita a vácuo, na sua fábrica ou em terceiro.'], ['04', 'Verniz UV Top Coat', 'Protege a metalização e fecha o acabamento, em brilho ou fosco.']];
   const latest = ctx.articles.slice(0, 3);
   const body = `
-<section class="hero"${hero.style}><div class="tube t2"></div><div class="tube"></div><div class="tube t3"></div>${hero.tag}
+<section class="hero"${hero.style}>${hero.tag ? '<div class="tube t2"></div><div class="tube"></div><div class="tube t3"></div>' : ''}${hero.tag}
   <div class="wrap" style="width:100%"><div class="inner">
     <div class="chip2"><b>Sob medida</b> Formulação desenvolvida para cada cliente</div>
     <h1>Vernizes UV, lacas e tintas para plásticos e metais</h1>
@@ -57,7 +57,7 @@ export function home(ctx) {
   <p class="big">A Corquímica é fabricante de vernizes UV, lacas, tintas e corantes em Estância Velha, RS. <b>Atua desde ${site.foundingYear} e atende mais de ${site.clients} clientes em todo o país</b>, com formulações pensadas para a necessidade de cada um.</p>
   <hr class="rule">
   <p class="lead" style="margin-top:22px">Buscamos inovação o tempo todo. Participamos de feiras internacionais e temos parcerias estratégicas na Europa e na Ásia, para trazer novas tecnologias ao seu processo.</p>
-  <div style="margin-top:26px">${pb('Conheça a Corquímica', '/sobre/', 'sand')}</div></div></div></div></section>
+  <div style="margin-top:26px">${pb('Conheça a Corquímica', '/sobre/', 'sand')}</div></div></div><div class="wide-photo">${photo('home-sobre')}</div></div></section>
 
 <section class="band" id="segmentos"><div class="wrap"><div class="float2"><div>${photo('home-segmentos')}</div><div><h2>Segmentos que atendemos</h2><div class="rows">${segRows}</div></div></div></div></section>
 
