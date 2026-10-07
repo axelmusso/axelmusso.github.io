@@ -1,0 +1,14 @@
+{
+  "name": "site-corquimica",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Site estático multi-página da Corquímica, com leads e artigos no Supabase.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node tests/check.mjs",
+    "start": "node serve.mjs",
+    "seed-sql": "node scripts/seed-sql.mjs"
+  }
+}

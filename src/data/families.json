@@ -1,0 +1,603 @@
+[
+ {
+  "id": "verniz-uv-base",
+  "n": "Verniz UV Base",
+  "short": "Ancoragem e nivelamento antes da metalização a vácuo.",
+  "h1": "Verniz UV Base para metalização a vácuo em ABS, PP, PS e Zamac",
+  "title": "Verniz UV Base para metalização a vácuo | Corquímica",
+  "meta": "Verniz UV Base para ABS, PP, PS, Zamac e TPU. Ótima aderência, nivelamento e cura em segundos. Peça amostra e ficha técnica.",
+  "kw": [
+   "verniz uv base",
+   "verniz base para metalização",
+   "verniz uv para abs",
+   "base coat uv plástico",
+   "verniz base metalização a vácuo"
+  ],
+  "def": "O Verniz UV Base é a primeira camada aplicada na peça antes da metalização a vácuo. Ele ancora a metalização, nivela a superfície e dá o brilho de espelho que o Top Coat vai proteger depois. Para peças flexíveis em TPU, a Corquímica tem o Verniz UV Base Flex.",
+  "prac": "Na prática, a peça de plástico ou Zamac recebe o Base por pistola, passa pela cura com luz ultravioleta em segundos e segue para a câmara de metalização. Sem a base, o alumínio depositado perde brilho e pode soltar.",
+  "feat": [
+   "Ótima aderência, sem descascamento",
+   "Nivelamento perfeito da superfície",
+   "Cura por radiação ultravioleta, em segundos",
+   "Versões para ABS, PP, PS, Zamac e TPU (Base Flex, o verniz flexível)",
+   "Verniz flexível para TPU: acompanha a flexão da peça sem trincar o filme [VALIDAR]",
+   "Menor flash-off e maior cobertura por demão",
+   "Indicado sempre com solvente de formulação própria da Corquímica"
+  ],
+  "ben": [
+   "Metalização com brilho de espelho",
+   "Menos retrabalho e refugo",
+   "Linha mais rápida que sistemas de estufa",
+   "Sistema completo com o Top Coat da mesma fabricante"
+  ],
+  "table": [
+   [
+    "Verniz UV Base ABS",
+    "ABS",
+    "Base para metalização a vácuo em peças de ABS"
+   ],
+   [
+    "Verniz UV Base PP",
+    "Polipropileno",
+    "Base para metalização em peças de PP"
+   ],
+   [
+    "Verniz UV Base PS",
+    "Poliestireno",
+    "Base para metalização em peças de PS"
+   ],
+   [
+    "Verniz UV Base Zamac",
+    "Zamac",
+    "Base para acessórios e enfeites de Zamac"
+   ],
+   [
+    "Verniz UV Base Flex",
+    "TPU e flexíveis (verniz flexível)",
+    "Base para peças flexíveis em TPU [VALIDAR]"
+   ]
+  ],
+  "seg": [
+   "moda",
+   "moveleiro",
+   "automotivo",
+   "cosmeticos",
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "O que é verniz UV base?",
+    "É o verniz aplicado antes da metalização a vácuo. Ele dá aderência e nivelamento à peça e prepara a superfície para receber a metalização e, depois, o Top Coat."
+   ],
+   [
+    "Qual a diferença entre verniz base e verniz top?",
+    "O base fica sob a metalização e serve de ancoragem. O top fica sobre a metalização e a protege contra risco, desgaste e ataque químico."
+   ],
+   [
+    "Qual solvente usar com o Verniz UV Base?",
+    "A Corquímica indica sempre uma formulação de solvente desenvolvida por ela para o Verniz UV Base, para melhor atender o resultado esperado pelo cliente. Informe o seu processo e a equipe indica o solvente."
+   ],
+   [
+    "Qual verniz UV base usar em ABS, PP ou PS?",
+    "Cada plástico tem uma base específica. A Corquímica tem bases para ABS, PP, PS, Zamac e TPU. Envie uma peça para teste e a equipe técnica indica a versão."
+   ],
+   [
+    "Preciso de primer antes do verniz base?",
+    "Depende do material. Em plásticos de baixa energia superficial, como o PP, um primer pode ser necessário. A indicação sai após o teste na peça."
+   ],
+   [
+    "Quanto tempo leva a cura UV do verniz base?",
+    "A cura por ultravioleta acontece em segundos, contra dezenas de minutos de sistemas térmicos em estufa. O tempo exato depende da lâmpada e da espessura. [VALIDAR com a área técnica]"
+   ],
+   [
+    "Existe verniz UV base para TPU?",
+    "Sim. O Verniz UV Base Flex é o nosso verniz flexível para TPU. Ele acompanha a flexão da peça. A compatibilidade com cada TPU é confirmada em teste. [VALIDAR]"
+   ],
+   [
+    "A Corquímica faz verniz base sob medida?",
+    "Sim. O laboratório ajusta a formulação conforme a peça, o substrato e o equipamento do cliente, com apoio técnico in loco."
+   ]
+  ],
+  "solvente": true
+ },
+ {
+  "id": "verniz-uv-top-coat",
+  "n": "Verniz UV Top Coat",
+  "short": "Proteção e brilho sobre a metalização.",
+  "h1": "Verniz UV Top Coat: proteção e brilho para peças metalizadas",
+  "title": "Verniz UV Top Coat para peças metalizadas | Corquímica",
+  "meta": "Top Coat UV com resistência a riscos e acabamento espelhado para peças metalizadas. Fabricante em Estância Velha, RS. Peça amostra.",
+  "kw": [
+   "verniz uv top coat",
+   "verniz top metalização",
+   "verniz anti risco uv",
+   "verniz de proteção para metalizado",
+   "top coat uv plástico"
+  ],
+  "def": "O Verniz UV Top Coat é a camada final aplicada sobre a peça metalizada. Ele protege a metalização, uma película finíssima, contra riscos, desgaste e agentes químicos, e entrega o acabamento espelhado. Há também versão flexível para peças em TPU.",
+  "prac": "Depois da câmara de metalização, o Top Coat é aplicado por pistola e curado com luz UV em segundos. A peça sai pronta para montagem, com brilho estável e resistência ao manuseio.",
+  "feat": [
+   "Alta resistência a riscos e abrasão",
+   "Acabamento espelhado ou fosco",
+   "Proteção da metalização contra desgaste e química do dia a dia",
+   "Cura UV rápida",
+   "Opções para metalização e para peças tingidas",
+   "Versão flexível para TPU, que acompanha a movimentação da peça [VALIDAR]",
+   "Indicado sempre com solvente de formulação própria da Corquímica"
+  ],
+  "ben": [
+   "Peça final mais durável",
+   "Menos reclamação de descascamento e manchas",
+   "Aparência premium e uniforme",
+   "Compatível com as bases UV Corquímica"
+  ],
+  "table": [
+   [
+    "Verniz UV Top Coat",
+    "Peças metalizadas",
+    "Proteção e brilho sobre a metalização"
+   ],
+   [
+    "Verniz UV Top Coat Dupla Cura",
+    "Peças metalizadas",
+    "Diferença da dupla cura a descrever [VALIDAR]"
+   ],
+   [
+    "Verniz UV Top Pintura",
+    "Peças pintadas",
+    "Proteção e brilho sobre peças pintadas [VALIDAR]"
+   ],
+   [
+    "Verniz UV Top Flex",
+    "TPU e flexíveis (verniz flexível)",
+    "Proteção de peças flexíveis [VALIDAR]"
+   ]
+  ],
+  "seg": [
+   "moda",
+   "moveleiro",
+   "automotivo",
+   "cosmeticos",
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "Para que serve o verniz UV Top Coat?",
+    "Serve para proteger a metalização a vácuo e dar acabamento brilhante ou fosco, com resistência a riscos."
+   ],
+   [
+    "Posso metalizar sem Top Coat?",
+    "Não é recomendado. A metalização é uma película muito fina e se danifica no manuseio. O Top Coat evita riscos, manchas e perda de brilho."
+   ],
+   [
+    "Qual solvente usar com o Verniz UV Top Coat?",
+    "A Corquímica indica sempre uma formulação de solvente desenvolvida por ela para o Top Coat, para melhor atender o resultado esperado pelo cliente. Informe o seu processo e a equipe indica o solvente."
+   ],
+   [
+    "O Top Coat pode ser colorido?",
+    "Sim. Com corantes UV é possível tingir o top e obter dourado, bronze, azul, entre outras cores, sobre a base metalizada."
+   ],
+   [
+    "O Top Coat serve para peças automotivas?",
+    "Serve para acabamento e proteção estética de peças e acessórios. O desempenho em uso externo depende de testes de cada projeto."
+   ],
+   [
+    "Qual a diferença entre Top Coat UV e verniz PU?",
+    "O UV cura em segundos por radiação ultravioleta, sem estufa longa. O PU cura por reação química ou térmica e costuma levar mais tempo. A escolha depende da peça e da linha."
+   ],
+   [
+    "Existe Top Coat para TPU?",
+    "Sim. Para peças flexíveis em TPU, a Corquímica indica o sistema flexível, formado pelo Base Flex e por um Top compatível. O conjunto é validado em teste na peça. [VALIDAR]"
+   ],
+   [
+    "Como falar com o comercial sobre o Top Coat?",
+    "Chame o comercial pelo WhatsApp informando o material da peça e o efeito desejado. A equipe retorna com a indicação e envia amostra."
+   ]
+  ],
+  "solvente": true
+ },
+ {
+  "id": "lacas",
+  "n": "Lacas",
+  "short": "Cores lisas e efeitos metalizados com secagem rápida.",
+  "h1": "Lacas acrílicas para plásticos, metais e móveis: cor lisa e efeitos metalizados",
+  "title": "Lacas acrílicas para plástico e móveis | Corquímica",
+  "meta": "Lacas acrílicas Corquímica: cores lisas e metalizadas, aderência, resistência a álcool e secagem rápida. Fabricante no RS.",
+  "kw": [
+   "laca acrílica",
+   "laca para plástico",
+   "laca para metalização",
+   "laca para móveis",
+   "laca metálica"
+  ],
+  "def": "A laca acrílica é uma tinta de secagem rápida que forma um filme liso, com cor e brilho. A Corquímica fabrica lacas em cores lisas e com efeitos metalizados para plásticos, metais e peças do mobiliário.",
+  "prac": "A laca é aplicada por pistola, seca ao ar ou em estufa curta e já deixa a peça com a cor final. Pode ser usada sozinha ou como fundo para outros acabamentos.",
+  "feat": [
+   "Boa aderência em diversos substratos",
+   "Resistência a álcool",
+   "Secagem rápida",
+   "Cores lisas, metalizadas e personalizadas",
+   "Acabamento brilhante, acetinado ou fosco [VALIDAR]",
+   "Indicado sempre com solvente de formulação própria da Corquímica"
+  ],
+  "ben": [
+   "Cor exata, igualada à amostra do cliente",
+   "Produtividade na linha",
+   "Menos retrabalho",
+   "Compatível com vernizes de proteção"
+  ],
+  "table": [
+   [
+    "Laca lisa",
+    "Plásticos, metais, madeira",
+    "Cor sólida, brilho a definir [VALIDAR]"
+   ],
+   [
+    "Laca metálica",
+    "Plásticos e metais",
+    "Efeito metalizado sem câmara a vácuo [VALIDAR]"
+   ],
+   [
+    "Laca personalizada",
+    "Sob projeto",
+    "Cor desenvolvida em laboratório"
+   ],
+   [
+    "Verniz laca imersão alto brilho",
+    "Processo de imersão",
+    "Alto brilho em linhas de imersão [VALIDAR]"
+   ]
+  ],
+  "seg": [
+   "moda",
+   "moveleiro",
+   "automotivo",
+   "cosmeticos",
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "O que é laca acrílica?",
+    "É uma tinta de secagem rápida, de filme liso, usada para dar cor e brilho a plásticos, metais e madeira."
+   ],
+   [
+    "Laca ou verniz UV: qual escolher?",
+    "A laca dá cor e seca rápido sem luz UV. O verniz UV cura em segundos sob lâmpada e dá mais dureza e brilho. Muitas linhas combinam os dois."
+   ],
+   [
+    "Qual solvente usar com a laca?",
+    "A Corquímica indica sempre uma formulação de solvente desenvolvida por ela para cada laca, para melhor atender o resultado esperado pelo cliente. Informe o seu processo e a equipe indica o solvente."
+   ],
+   [
+    "A laca aguenta álcool?",
+    "As lacas Corquímica têm resistência a álcool. O nível exato depende da linha e da cura. [VALIDAR com a área técnica]"
+   ],
+   [
+    "Dá para igualar a cor de uma amostra?",
+    "Sim. O laboratório desenvolve a cor a partir da amostra enviada pelo cliente."
+   ],
+   [
+    "A laca serve para móveis?",
+    "Sim, para acessórios moveleiros, painéis e peças plásticas. Para revestimento plástico com alta proteção, o verniz UV pode ser indicado por cima."
+   ],
+   [
+    "A laca serve para embalagens de cosméticos?",
+    "Sim, em cor lisa ou metalizada, com teste de resistência a álcool e à fragrância do produto. [VALIDAR]"
+   ]
+  ],
+  "solvente": true
+ },
+ {
+  "id": "tintas-abs-ps",
+  "n": "Tintas para ABS e PS",
+  "short": "Tintas para pintura de saltos e peças de moda e plásticos em geral.",
+  "h1": "Tintas para ABS e PS: pintura de saltos e peças plásticas de moda",
+  "title": "Tinta para saltos em ABS e PS | Corquímica",
+  "meta": "Tintas para pintura de saltos e peças em ABS e PS, para moda e plásticos em geral. Parceria com os coloristas do cliente e agilidade nos ajustes de cor.",
+  "kw": [
+   "tinta para saltos",
+   "tinta para abs",
+   "tinta para poliestireno",
+   "pintura de saltos",
+   "tinta para plástico abs"
+  ],
+  "def": "As tintas para ABS e PS da Corquímica são usadas na pintura de saltos e de outras peças plásticas, e atendem apenas os segmentos de moda e de plásticos em geral. São formuladas para aderir a esses plásticos sem atacar a peça.",
+  "prac": "Trabalhamos em parceria com os químicos e coloristas do cliente, apoiando a formulação, a aplicação e a validação das cores. Sabemos que esse trabalho exige velocidade e precisão, por isso desenvolvemos novos tons e ajustamos tons existentes com agilidade, sempre que necessário.",
+  "feat": [
+   "Foco na pintura de saltos em ABS e PS",
+   "Parceria com os químicos e coloristas do cliente",
+   "Apoio na formulação, na aplicação e na validação das cores",
+   "Agilidade para criar novos tons e ajustar tons existentes",
+   "Não ataca o plástico, evita trincas por solvente [VALIDAR]",
+   "Acabamento brilhante, fosco ou soft touch"
+  ],
+  "ben": [
+   "Cor da coleção aprovada com rapidez",
+   "Menos retrabalho no ajuste de tom",
+   "Cor uniforme entre lotes",
+   "Suporte técnico na linha de pintura"
+  ],
+  "table": [
+   [
+    "Tinta ABS",
+    "ABS",
+    "Pintura de saltos e peças de moda e plásticos em geral [VALIDAR]"
+   ],
+   [
+    "Tinta PS",
+    "Poliestireno",
+    "Pintura de saltos e peças de moda e plásticos em geral [VALIDAR]"
+   ]
+  ],
+  "seg": [
+   "moda",
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "Qual tinta usar para pintar saltos de ABS e PS?",
+    "Use uma tinta formulada para esses plásticos, que adira sem atacar o salto. A Corquímica indica o sistema depois de testar a sua peça."
+   ],
+   [
+    "Para quais segmentos servem as tintas para ABS e PS?",
+    "Elas são usadas apenas em moda, principalmente na pintura de saltos, e em plásticos em geral."
+   ],
+   [
+    "A Corquímica ajuda na formulação das cores?",
+    "Sim. Trabalhamos em parceria com os químicos e coloristas do cliente, apoiando a formulação, a aplicação e a validação das cores."
+   ],
+   [
+    "Quanto tempo leva para ajustar um tom?",
+    "Trabalhamos com agilidade, porque cor de moda exige velocidade e precisão. O prazo depende do tom e da amostra. [VALIDAR prazo]"
+   ],
+   [
+    "Preciso de primer em ABS e PS?",
+    "Em muitos casos a aderência é direta. Em peças com desmoldante ou acabamento difícil, um primer ajuda. O teste na peça define."
+   ],
+   [
+    "Dá para pintar e depois metalizar?",
+    "Dá. O verniz UV Base prepara a peça e a metalização vem em seguida, protegida pelo Top Coat."
+   ]
+  ]
+ },
+ {
+  "id": "tintas-piso",
+  "n": "Tintas para piso",
+  "short": "Pintura e proteção para pisos, com formulação por aplicação.",
+  "h1": "Tintas para piso: proteção e acabamento para ambientes industriais e comerciais",
+  "title": "Tintas para piso industrial | Corquímica",
+  "meta": "Tintas para piso com resistência ao tráfego e à limpeza. Formulação por aplicação e suporte técnico. Fale com a Corquímica.",
+  "kw": [
+   "tinta para piso",
+   "tinta para piso industrial",
+   "tinta para piso de concreto",
+   "pintura de piso",
+   "tinta para piso resistente"
+  ],
+  "def": "A tinta para piso protege e dá acabamento a superfícies de concreto e similares sujeitas a tráfego, limpeza e agentes químicos. [VALIDAR: tipo de resina da linha, por exemplo PU, epóxi ou acrílica]",
+  "prac": "O piso é preparado, recebe a tinta por rolo ou pistola e fica liberado após a cura indicada. Escolhe-se o sistema conforme o tráfego de pessoas, empilhadeiras e produtos químicos do local.",
+  "feat": [
+   "Resistência ao tráfego e à abrasão [VALIDAR]",
+   "Fácil limpeza",
+   "Cores sob medida e demarcação",
+   "Aderência em concreto e cimento queimado [VALIDAR]",
+   "Opção de acabamento brilhante, acetinado ou antiderrapante [VALIDAR]"
+  ],
+  "ben": [
+   "Piso mais durável",
+   "Ambiente mais limpo e seguro",
+   "Menos paradas para manutenção",
+   "Formulação ajustada ao uso"
+  ],
+  "table": [
+   [
+    "Tinta para piso",
+    "Concreto, cimento",
+    "Tráfego industrial e comercial [VALIDAR]"
+   ],
+   [
+    "Tinta demarcação",
+    "Concreto, asfalto",
+    "Faixas e sinalização [VALIDAR]"
+   ]
+  ],
+  "seg": [
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "Qual tinta usar em piso industrial?",
+    "Use uma tinta de alta resistência ao tráfego e à abrasão, escolhida conforme o uso do local. A Corquímica indica o sistema depois de entender a aplicação."
+   ],
+   [
+    "Quanto tempo leva para liberar o piso?",
+    "Depende da resina e da temperatura. A ficha técnica informa o tempo de cura e liberação. [VALIDAR]"
+   ],
+   [
+    "Preciso preparar o piso antes de pintar?",
+    "Sim. O piso deve estar limpo, seco e sem partes soltas. O preparo correto é o que mais influencia a durabilidade."
+   ],
+   [
+    "A tinta pode ser antiderrapante?",
+    "É possível adicionar acabamento antiderrapante conforme o sistema. [VALIDAR com a área técnica]"
+   ],
+   [
+    "Dá para demarcar corredores e vagas?",
+    "Sim, com cores de demarcação sob medida."
+   ],
+   [
+    "Qual a diferença entre tinta para piso e tinta comum?",
+    "A tinta para piso tem resina e carga para suportar abrasão, tráfego e limpeza. A tinta comum de parede descasca rápido nessas condições."
+   ]
+  ]
+ },
+ {
+  "id": "corantes-uv",
+  "n": "Corantes UV",
+  "short": "Cor intensa e personalizada para vernizes e tintas UV.",
+  "h1": "Corantes UV para vernizes e tintas: cor intensa e personalizada",
+  "title": "Corantes UV para verniz e tinta | Corquímica",
+  "meta": "Corantes UV de coloração intensa e personalizada para vernizes, lacas e tintas. Cartela sob medida. Fale com a Corquímica.",
+  "kw": [
+   "corante uv",
+   "corante para verniz uv",
+   "corante líquido para verniz",
+   "pigmento para verniz",
+   "verniz uv colorido"
+  ],
+  "def": "O corante UV é o concentrado de cor que se mistura ao verniz ou à tinta de cura ultravioleta. Ele tinge o acabamento sem perder transparência ou cura, e permite criar cores sob medida.",
+  "prac": "O corante é adicionado ao verniz na proporção indicada, homogeneizado e aplicado. É assim que um Top Coat transparente vira dourado, bronze, azul ou vermelho sobre a peça metalizada.",
+  "feat": [
+   "Coloração intensa",
+   "Cores personalizadas sob amostra",
+   "Compatível com vernizes UV Corquímica",
+   "Boa estabilidade entre lotes [VALIDAR]",
+   "Opções transparentes e opacas [VALIDAR]"
+  ],
+  "ben": [
+   "Efeito colorido sem trocar de sistema",
+   "Igualação de cor para a coleção do cliente",
+   "Menos estoque, já que a cor é feita sob demanda"
+  ],
+  "table": [
+   [
+    "Mixing, corante para Top Coat",
+    "Verniz UV Top Coat",
+    "Cor translúcida sobre a metalização [VALIDAR]"
+   ],
+   [
+    "Pigmentos",
+    "Tintas e lacas",
+    "Cores sólidas [VALIDAR]"
+   ],
+   [
+    "Cor sob medida",
+    "Sob projeto",
+    "Igualada à amostra do cliente"
+   ]
+  ],
+  "seg": [
+   "moda",
+   "moveleiro",
+   "automotivo",
+   "cosmeticos",
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "O que é corante UV?",
+    "É um concentrado de cor para vernizes e tintas de cura UV. Ele tinge o filme sem comprometer a cura."
+   ],
+   [
+    "Qual a diferença entre corante e pigmento?",
+    "O corante dissolve no verniz e dá cor translúcida. O pigmento fica em suspensão e dá cor opaca e cobertura. [VALIDAR com a área técnica]"
+   ],
+   [
+    "Posso tingir o Top Coat?",
+    "Sim. Adicionar corante UV ao Top Coat dá acabamentos coloridos sobre a metalização."
+   ],
+   [
+    "Qual a proporção de corante no verniz?",
+    "Varia por produto e intensidade desejada. A ficha técnica traz a faixa indicada. [VALIDAR]"
+   ],
+   [
+    "A Corquímica faz cor sob medida?",
+    "Sim. Envie uma amostra e o laboratório iguala a cor, com amostras para aprovação."
+   ],
+   [
+    "O corante altera a cura UV?",
+    "Cores muito intensas podem exigir ajuste de lâmpada ou espessura. O teste na peça define o ajuste."
+   ]
+  ]
+ },
+ {
+  "id": "solventes",
+  "n": "Solventes e Desengraxantes",
+  "short": "Solventes para linha UV e laca, e desengraxantes de limpeza.",
+  "h1": "Solventes para verniz UV e laca, e desengraxantes de limpeza",
+  "title": "Solventes e desengraxantes para linha UV | Corquímica",
+  "meta": "Solventes desenvolvidos pela Corquímica para vernizes UV e lacas, e desengraxantes para limpeza de peças e equipamentos. Fale com o comercial.",
+  "kw": [
+   "solvente para verniz uv",
+   "diluente para laca",
+   "desengraxante industrial",
+   "desengraxante para plástico",
+   "solvente para pistola de pintura"
+  ],
+  "def": "Os solventes da Corquímica são formulados para a linha UV e para as lacas, e ajustam a viscosidade e o escoamento do produto na aplicação. Os desengraxantes removem óleos, desmoldantes e sujeira das peças e dos equipamentos.",
+  "prac": "Cada verniz UV e cada laca é indicado com uma formulação de solvente desenvolvida pela Corquímica, para entregar o resultado esperado pelo cliente. O desengraxante entra na limpeza das peças antes da pintura e na limpeza de pistolas e equipamentos.",
+  "feat": [
+   "Formulação de solvente desenvolvida pela Corquímica para cada verniz UV e laca",
+   "Ajuste de viscosidade e escoamento na pistola",
+   "Evaporação adequada à linha, sem defeitos de superfície [VALIDAR]",
+   "Desengraxantes para limpeza de peças e de equipamentos",
+   "Compatibilidade com plásticos sensíveis, como o PS [VALIDAR]"
+  ],
+  "ben": [
+   "Resultado mais consistente na aplicação",
+   "Menos defeitos de superfície [VALIDAR]",
+   "Peça limpa e pronta para receber a pintura",
+   "Um só fornecedor para o sistema completo"
+  ],
+  "table": [
+   [
+    "Diluente para Base",
+    "Verniz UV Base",
+    "Diluição e escoamento do Base [VALIDAR]"
+   ],
+   [
+    "Diluente para Base OS",
+    "Verniz UV Base OS",
+    "Diluição e escoamento do Base OS [VALIDAR]"
+   ],
+   [
+    "Diluente para Top Coat",
+    "Verniz UV Top Coat",
+    "Diluição e escoamento do Top Coat [VALIDAR]"
+   ],
+   [
+    "Solvente para laca",
+    "Lacas acrílicas",
+    "Diluição e secagem da laca [VALIDAR]"
+   ],
+   [
+    "Desengraxante de limpeza",
+    "Peças e equipamentos",
+    "Remoção de óleos, desmoldantes e resíduos [VALIDAR]"
+   ]
+  ],
+  "seg": [
+   "moda",
+   "moveleiro",
+   "automotivo",
+   "cosmeticos",
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "Para que serve o solvente na linha UV?",
+    "Ele ajusta a viscosidade e o escoamento do verniz para a aplicação por pistola, e influencia o acabamento final da peça."
+   ],
+   [
+    "Posso usar qualquer solvente com o verniz UV?",
+    "Não é recomendado. Cada verniz UV e cada laca é indicado com uma formulação de solvente desenvolvida pela Corquímica, para entregar o resultado esperado."
+   ],
+   [
+    "O que é desengraxante de limpeza?",
+    "É um produto que remove óleo, desmoldante e sujeira das peças antes da pintura, e também limpa pistolas e equipamentos."
+   ],
+   [
+    "Preciso desengraxar a peça antes de pintar?",
+    "Na maioria dos casos, sim. Resíduos de desmoldante e gordura causam descascamento e defeitos. O teste na peça define o processo."
+   ],
+   [
+    "O solvente serve para plásticos sensíveis, como o PS?",
+    "Depende da formulação. O PS é sensível a solventes fortes, e a Corquímica indica a opção compatível. [VALIDAR]"
+   ],
+   [
+    "Como peço a indicação de solvente?",
+    "Chame o comercial pelo WhatsApp, informe o verniz ou a laca que você usa e o material da peça."
+   ]
+  ]
+ }
+]

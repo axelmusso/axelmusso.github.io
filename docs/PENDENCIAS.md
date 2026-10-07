@@ -1,0 +1,77 @@
+# Pendências para publicar com indexação
+
+Modo atual do build: **staging**.
+
+## Textos a validar (52)
+- `/produtos/verniz-uv-base/`: Base para peças flexíveis em TPU
+- `/produtos/verniz-uv-base/`: Verniz flexível para TPU: acompanha a flexão da peça sem trincar o filme
+- `/produtos/verniz-uv-base/`: A cura por ultravioleta acontece em segundos, contra dezenas de minutos de sistemas térmic
+- `/produtos/verniz-uv-base/`: Sim. O Verniz UV Base Flex é o nosso verniz flexível para TPU. Ele acompanha a flexão da p
+- `/produtos/verniz-uv-top-coat/`: Diferença da dupla cura a descrever
+- `/produtos/verniz-uv-top-coat/`: Proteção e brilho sobre peças pintadas
+- `/produtos/verniz-uv-top-coat/`: Proteção de peças flexíveis
+- `/produtos/verniz-uv-top-coat/`: Versão flexível para TPU, que acompanha a movimentação da peça
+- `/produtos/verniz-uv-top-coat/`: Sim. Para peças flexíveis em TPU, a Corquímica indica o sistema flexível, formado pelo Bas
+- `/produtos/lacas/`: Cor sólida, brilho a definir
+- `/produtos/lacas/`: Efeito metalizado sem câmara a vácuo
+- `/produtos/lacas/`: Alto brilho em linhas de imersão
+- `/produtos/lacas/`: Acabamento brilhante, acetinado ou fosco
+- `/produtos/lacas/`: As lacas Corquímica têm resistência a álcool. O nível exato depende da linha e da cura.
+- `/produtos/lacas/`: Sim, em cor lisa ou metalizada, com teste de resistência a álcool e à fragrância do produt
+- `/produtos/tintas-abs-ps/`: Pintura de saltos e peças de moda e plásticos em geral
+- `/produtos/tintas-abs-ps/`: Pintura de saltos e peças de moda e plásticos em geral
+- `/produtos/tintas-abs-ps/`: Não ataca o plástico, evita trincas por solvente
+- `/produtos/tintas-abs-ps/`: Trabalhamos com agilidade, porque cor de moda exige velocidade e precisão. O prazo depende
+- `/produtos/tintas-piso/`: Tráfego industrial e comercial
+- `/produtos/tintas-piso/`: Faixas e sinalização
+- `/produtos/tintas-piso/`: A tinta para piso protege e dá acabamento a superfícies de concreto e similares sujeitas a
+- `/produtos/tintas-piso/`: Resistência ao tráfego e à abrasão
+- `/produtos/tintas-piso/`: Aderência em concreto e cimento queimado
+- `/produtos/tintas-piso/`: Opção de acabamento brilhante, acetinado ou antiderrapante
+- `/produtos/tintas-piso/`: Depende da resina e da temperatura. A ficha técnica informa o tempo de cura e liberação.
+- `/produtos/tintas-piso/`: É possível adicionar acabamento antiderrapante conforme o sistema.
+- `/produtos/corantes-uv/`: Cor translúcida sobre a metalização
+- `/produtos/corantes-uv/`: Cores sólidas
+- `/produtos/corantes-uv/`: Boa estabilidade entre lotes
+- `/produtos/corantes-uv/`: Opções transparentes e opacas
+- `/produtos/corantes-uv/`: O corante dissolve no verniz e dá cor translúcida. O pigmento fica em suspensão e dá cor o
+- `/produtos/corantes-uv/`: Varia por produto e intensidade desejada. A ficha técnica traz a faixa indicada.
+- `/produtos/solventes/`: Diluição e escoamento do Base
+- `/produtos/solventes/`: Diluição e escoamento do Base OS
+- `/produtos/solventes/`: Diluição e escoamento do Top Coat
+- `/produtos/solventes/`: Diluição e secagem da laca
+- `/produtos/solventes/`: Remoção de óleos, desmoldantes e resíduos
+- `/produtos/solventes/`: Evaporação adequada à linha, sem defeitos de superfície
+- `/produtos/solventes/`: Compatibilidade com plásticos sensíveis, como o PS
+- `/produtos/solventes/`: Menos defeitos de superfície
+- `/produtos/solventes/`: Depende da formulação. O PS é sensível a solventes fortes, e a Corquímica indica a opção c
+- `/segmentos/automotivo/`: Emblemas e molduras passam por base, metalização e Top Coat. Peças internas recebem verniz
+- `/segmentos/automotivo/`: Desenvolve formulações sob medida, mediante os requisitos do cliente.
+- `/segmentos/cosmeticos/`: Resistência à fragrância do perfume, que contém solventes e óleos essenciais
+- `/segmentos/cosmeticos/`: Resistência a cremes, óleos e produtos cosméticos
+- `/segmentos/cosmeticos/`: O sistema Base, metalização e Top Coat é testado com álcool e fragrância. O nível de resis
+- `/segmentos/cosmeticos/`: Fragrâncias contêm solventes que podem manchar ou amolecer acabamentos fracos. Por isso te
+- `/segmentos/plasticos/`: Atendemos clientes em todo o Brasil.
+- `/politica-de-privacidade/`: 
+- `/politica-de-privacidade/`: 
+- `/politica-de-privacidade/`: 
+
+## Fotos que faltam (18)
+- `home-hero`
+- `home-segmentos`
+- `home-apoio-tecnico`
+- `home-feira-internacional`
+- `home-laboratorio`
+- `sobre-fabrica`
+- `familia-verniz-uv-base`
+- `familia-verniz-uv-top-coat`
+- `familia-lacas`
+- `familia-tintas-abs-ps`
+- `familia-tintas-piso`
+- `familia-corantes-uv`
+- `familia-solventes`
+- `segmento-moda`
+- `segmento-moveleiro`
+- `segmento-automotivo`
+- `segmento-cosmeticos`
+- `segmento-plasticos`

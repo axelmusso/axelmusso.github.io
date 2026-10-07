@@ -1,0 +1,97 @@
+{
+ "home-hero": {
+  "alt": "Peças plásticas metalizadas e frascos de verniz UV sob luz azul",
+  "shot": "Foto larga (16:9) de peças metalizadas e vernizes sobre bancada, luz azul, espaço livre à esquerda para o título",
+  "ratio": "hero"
+ },
+ "home-sobre": {
+  "alt": "Equipe e laboratório da Corquímica em Estância Velha",
+  "shot": "Equipe no laboratório ou na fábrica, em grupo, olhando para a câmera",
+  "ratio": "r43"
+ },
+ "home-segmentos": {
+  "alt": "Salto metalizado e acessórios plásticos acabados com verniz UV",
+  "shot": "Salto de calçado metalizado ao lado de acessórios, fundo neutro",
+  "ratio": "r45"
+ },
+ "home-apoio-tecnico": {
+  "alt": "Técnico da Corquímica regulando a aplicação na linha do cliente",
+  "shot": "Técnico da Corquímica na fábrica do cliente, com a pistola ou a cabine de cura UV",
+  "ratio": "card"
+ },
+ "home-feira-internacional": {
+  "alt": "Equipe da Corquímica em feira internacional",
+  "shot": "Foto do estande ou da equipe em feira internacional",
+  "ratio": "card"
+ },
+ "home-laboratorio": {
+  "alt": "Laboratório de desenvolvimento de cores e vernizes da Corquímica",
+  "shot": "Bancada do laboratório com amostras de cor",
+  "ratio": "card"
+ },
+ "sobre-fabrica": {
+  "alt": "Fachada e fábrica da Corquímica em Estância Velha, RS",
+  "shot": "Fachada da Corquímica e área de produção",
+  "ratio": "r45"
+ },
+ "familia-verniz-uv-base": {
+  "alt": "Peça acabada com Verniz UV Base, Corquímica",
+  "shot": "Peça real acabada com Verniz UV Base, de preferência metade em acabamento e metade bruta, fundo escuro",
+  "ratio": "r45"
+ },
+ "familia-verniz-uv-top-coat": {
+  "alt": "Peça acabada com Verniz UV Top Coat, Corquímica",
+  "shot": "Peça real acabada com Verniz UV Top Coat, de preferência metade em acabamento e metade bruta, fundo escuro",
+  "ratio": "r45"
+ },
+ "familia-lacas": {
+  "alt": "Peça acabada com Lacas, Corquímica",
+  "shot": "Peça real acabada com Lacas, de preferência metade em acabamento e metade bruta, fundo escuro",
+  "ratio": "r45"
+ },
+ "familia-tintas-abs-ps": {
+  "alt": "Peça acabada com Tintas para ABS e PS, Corquímica",
+  "shot": "Peça real acabada com Tintas para ABS e PS, de preferência metade em acabamento e metade bruta, fundo escuro",
+  "ratio": "r45"
+ },
+ "familia-tintas-piso": {
+  "alt": "Peça acabada com Tintas para piso, Corquímica",
+  "shot": "Peça real acabada com Tintas para piso, de preferência metade em acabamento e metade bruta, fundo escuro",
+  "ratio": "r45"
+ },
+ "familia-corantes-uv": {
+  "alt": "Peça acabada com Corantes UV, Corquímica",
+  "shot": "Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro",
+  "ratio": "r45"
+ },
+ "familia-solventes": {
+  "alt": "Peça acabada com Solventes e Desengraxantes, Corquímica",
+  "shot": "Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro",
+  "ratio": "r45"
+ },
+ "segmento-moda": {
+  "alt": "Peças do segmento moda com acabamento Corquímica",
+  "shot": "Peças reais do segmento Moda (com autorização do cliente), fundo neutro",
+  "ratio": "r45"
+ },
+ "segmento-moveleiro": {
+  "alt": "Peças do segmento moveleiro com acabamento Corquímica",
+  "shot": "Peças reais do segmento Moveleiro (com autorização do cliente), fundo neutro",
+  "ratio": "r45"
+ },
+ "segmento-automotivo": {
+  "alt": "Peças do segmento automotivo com acabamento Corquímica",
+  "shot": "Peças reais do segmento Automotivo (com autorização do cliente), fundo neutro",
+  "ratio": "r45"
+ },
+ "segmento-cosmeticos": {
+  "alt": "Peças do segmento cosméticos com acabamento Corquímica",
+  "shot": "Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro",
+  "ratio": "r45"
+ },
+ "segmento-plasticos": {
+  "alt": "Peças do segmento plástico em geral com acabamento Corquímica",
+  "shot": "Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro",
+  "ratio": "r45"
+ }
+}

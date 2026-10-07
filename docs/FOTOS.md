@@ -1,0 +1,42 @@
+# Lista de fotos
+
+Salve cada foto com o nome do "slot" em `src/assets/photos/`. Use fotos reais da fábrica, de peças e de aplicação. Até 200 KB cada, largura mínima de 1600 px.
+
+- [ ] `home-hero` (hero): Foto larga (16:9) de peças metalizadas e vernizes sobre bancada, luz azul, espaço livre à esquerda para o título
+  - arquivo: `src/assets/photos/home-hero.webp` (ou .jpg) · alt: Peças plásticas metalizadas e frascos de verniz UV sob luz azul
+- [ ] `home-sobre` (r43): Equipe no laboratório ou na fábrica, em grupo, olhando para a câmera
+  - arquivo: `src/assets/photos/home-sobre.webp` (ou .jpg) · alt: Equipe e laboratório da Corquímica em Estância Velha
+- [ ] `home-segmentos` (r45): Salto de calçado metalizado ao lado de acessórios, fundo neutro
+  - arquivo: `src/assets/photos/home-segmentos.webp` (ou .jpg) · alt: Salto metalizado e acessórios plásticos acabados com verniz UV
+- [ ] `home-apoio-tecnico` (card): Técnico da Corquímica na fábrica do cliente, com a pistola ou a cabine de cura UV
+  - arquivo: `src/assets/photos/home-apoio-tecnico.webp` (ou .jpg) · alt: Técnico da Corquímica regulando a aplicação na linha do cliente
+- [ ] `home-feira-internacional` (card): Foto do estande ou da equipe em feira internacional
+  - arquivo: `src/assets/photos/home-feira-internacional.webp` (ou .jpg) · alt: Equipe da Corquímica em feira internacional
+- [ ] `home-laboratorio` (card): Bancada do laboratório com amostras de cor
+  - arquivo: `src/assets/photos/home-laboratorio.webp` (ou .jpg) · alt: Laboratório de desenvolvimento de cores e vernizes da Corquímica
+- [ ] `sobre-fabrica` (r45): Fachada da Corquímica e área de produção
+  - arquivo: `src/assets/photos/sobre-fabrica.webp` (ou .jpg) · alt: Fachada e fábrica da Corquímica em Estância Velha, RS
+- [ ] `familia-verniz-uv-base` (r45): Peça real acabada com Verniz UV Base, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-verniz-uv-base.webp` (ou .jpg) · alt: Peça acabada com Verniz UV Base, Corquímica
+- [ ] `familia-verniz-uv-top-coat` (r45): Peça real acabada com Verniz UV Top Coat, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-verniz-uv-top-coat.webp` (ou .jpg) · alt: Peça acabada com Verniz UV Top Coat, Corquímica
+- [ ] `familia-lacas` (r45): Peça real acabada com Lacas, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-lacas.webp` (ou .jpg) · alt: Peça acabada com Lacas, Corquímica
+- [ ] `familia-tintas-abs-ps` (r45): Peça real acabada com Tintas para ABS e PS, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-tintas-abs-ps.webp` (ou .jpg) · alt: Peça acabada com Tintas para ABS e PS, Corquímica
+- [ ] `familia-tintas-piso` (r45): Peça real acabada com Tintas para piso, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-tintas-piso.webp` (ou .jpg) · alt: Peça acabada com Tintas para piso, Corquímica
+- [ ] `familia-corantes-uv` (r45): Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-corantes-uv.webp` (ou .jpg) · alt: Peça acabada com Corantes UV, Corquímica
+- [ ] `familia-solventes` (r45): Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro
+  - arquivo: `src/assets/photos/familia-solventes.webp` (ou .jpg) · alt: Peça acabada com Solventes e Desengraxantes, Corquímica
+- [ ] `segmento-moda` (r45): Peças reais do segmento Moda (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-moda.webp` (ou .jpg) · alt: Peças do segmento moda com acabamento Corquímica
+- [ ] `segmento-moveleiro` (r45): Peças reais do segmento Moveleiro (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-moveleiro.webp` (ou .jpg) · alt: Peças do segmento moveleiro com acabamento Corquímica
+- [ ] `segmento-automotivo` (r45): Peças reais do segmento Automotivo (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-automotivo.webp` (ou .jpg) · alt: Peças do segmento automotivo com acabamento Corquímica
+- [ ] `segmento-cosmeticos` (r45): Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-cosmeticos.webp` (ou .jpg) · alt: Peças do segmento cosméticos com acabamento Corquímica
+- [ ] `segmento-plasticos` (r45): Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro
+  - arquivo: `src/assets/photos/segmento-plasticos.webp` (ou .jpg) · alt: Peças do segmento plástico em geral com acabamento Corquímica
