@@ -792,6 +792,49 @@
     ]
    ]
   },
+  "linha-branca": {
+   "slug": "linea-blanca",
+   "n": "Línea blanca",
+   "short": "Piezas y acabados de electrodomésticos y dispensadores de agua",
+   "h1": "Acabado para línea blanca: barnices para piezas de electrodomésticos y dispensadores de agua",
+   "title": "Barniz UV para piezas de electrodomésticos | Corquímica",
+   "meta": "Barnices para botones, tiradores, paneles y acabados de electrodomésticos, dispensadores y purificadores de agua. Hable con Corquímica.",
+   "kw": [
+    "barniz para electrodomésticos",
+    "barniz uv línea blanca",
+    "acabado de botones de electrodomésticos",
+    "metalizado de piezas de electrodomésticos",
+    "barniz para dispensadores de agua"
+   ],
+   "intro": "En la línea blanca, Corquímica atiende con sus barnices piezas plásticas de electrodomésticos y dispensadores de agua, como botones, perillas, tiradores, paneles y acabados decorativos, que requieren buena apariencia y resistencia al uso diario.",
+   "apps": [
+    "Botones y perillas de cocinas, placas de cocción y hornos",
+    "Tiradores, molduras y acabados de refrigeradores",
+    "Paneles y teclas de lavadoras y microondas",
+    "Dispensadores y purificadores de agua",
+    "Piezas de aires acondicionados y ventiladores",
+    "Detalles metalizados de pequeños electrodomésticos, como cafeteras y licuadoras"
+   ],
+   "how": "Los botones, perillas y molduras metalizados reciben el Barniz UV Base, el metalizado al vacío y el Top Coat. Las piezas pintadas o en el color del plástico reciben barniz de protección, brillante, mate o soft touch. El sistema se define después de la prueba en la pieza.",
+   "faq": [
+    [
+     "¿Qué piezas de electrodomésticos atiende Corquímica?",
+     "Botones, perillas, tiradores, molduras, paneles y acabados plásticos de electrodomésticos, dispensadores y purificadores de agua, entre otras piezas."
+    ],
+    [
+     "¿Se pueden metalizar botones y molduras de electrodomésticos?",
+     "Sí, con el sistema Base UV según el plástico, metalizado al vacío y Top Coat."
+    ],
+    [
+     "¿Existe acabado soft touch para electrodomésticos?",
+     "Sí. La línea de efectos incluye soft touch, negro piano y efecto mojado."
+    ],
+    [
+     "¿Cómo comienzo un proyecto de línea blanca?",
+     "Escriba al área comercial por WhatsApp, describa la pieza y el acabado deseado y solicite una muestra."
+    ]
+   ]
+  },
   "plasticos": {
    "slug": "plasticos",
    "n": "Plásticos en general",
@@ -853,7 +896,7 @@
   ],
   [
    "¿Para qué sectores suministran?",
-   "Moda (tacones y adornos), mobiliario, automotriz, cosmética y plásticos en general."
+   "Moda (tacones y adornos), mobiliario, automotriz, cosmética, línea blanca y plásticos en general."
   ],
   [
    "¿Cómo solicito una muestra?",
@@ -888,6 +931,7 @@
   "segmento-moveleiro": "Tirador cromado en la puerta de un mueble de cocina",
   "segmento-automotivo": "Marco de parrilla automotriz cromado sobre un soporte en la fábrica",
   "segmento-cosmeticos": "Mano con guante blanco sosteniendo un pote de cosmético con tapa dorada",
+  "segmento-linha-branca": "Piezas plásticas de electrodomésticos con acabado Corquímica",
   "segmento-plasticos": "Caja con piezas plásticas inyectadas de varios colores y acabados, frente a una inyectora"
  }
 }

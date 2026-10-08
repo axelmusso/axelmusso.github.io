@@ -792,6 +792,49 @@
     ]
    ]
   },
+  "linha-branca": {
+   "slug": "home-appliances",
+   "n": "Home appliances",
+   "short": "Parts and finishes for appliances and water dispensers",
+   "h1": "Finishes for home appliances: coatings for appliance parts and water dispensers",
+   "title": "UV coatings for home appliance parts | Corquímica",
+   "meta": "Coatings for buttons, knobs, handles, panels and trim on home appliances, water dispensers and purifiers. Talk to Corquímica.",
+   "kw": [
+    "coating for home appliances",
+    "uv coating for white goods",
+    "appliance button finishing",
+    "appliance parts metallization",
+    "coating for water dispensers"
+   ],
+   "intro": "In the home appliance segment, Corquímica supplies its coatings for plastic parts of appliances and water dispensers, such as buttons, knobs, handles, panels and decorative trim, which need a good look and resistance to daily use.",
+   "apps": [
+    "Buttons and knobs for stoves, cooktops and ovens",
+    "Handles, trim strips and finishes for refrigerators",
+    "Panels and keys for washing machines and microwaves",
+    "Water dispensers and purifiers",
+    "Parts for air conditioners and fans",
+    "Metallized details on small appliances such as coffee makers and blenders"
+   ],
+   "how": "Metallized buttons, knobs and trim receive the UV Base Coat, vacuum metallization and Top Coat. Painted or molded-in-color parts receive a protective coating in gloss, matte or soft touch. The system is defined after testing on the part.",
+   "faq": [
+    [
+     "Which appliance parts does Corquímica work with?",
+     "Buttons, knobs, handles, trim strips, panels and plastic finishes for home appliances, water dispensers and purifiers, among other parts."
+    ],
+    [
+     "Can appliance buttons and trim be metallized?",
+     "Yes, with a UV base coat suited to the plastic, vacuum metallization and Top Coat."
+    ],
+    [
+     "Is there a soft-touch finish for appliances?",
+     "Yes. The effects line includes soft touch, piano black and wet look."
+    ],
+    [
+     "How do I start a home appliance project?",
+     "Message our sales team on WhatsApp, describe the part and the finish you want, and request a sample."
+    ]
+   ]
+  },
   "plasticos": {
    "slug": "plastics",
    "n": "General plastics",
@@ -853,7 +896,7 @@
   ],
   [
    "Which industries do you supply?",
-   "Fashion (heels and trims), furniture, automotive, cosmetics and general plastics."
+   "Fashion (heels and trims), furniture, automotive, cosmetics, home appliances and general plastics."
   ],
   [
    "How do I request a sample?",
@@ -888,6 +931,7 @@
   "segmento-moveleiro": "Chrome handle on a kitchen cabinet door",
   "segmento-automotivo": "Chrome automotive grille frame on a stand in the factory",
   "segmento-cosmeticos": "Hand in a white glove holding a cosmetic jar with a gold lid",
+  "segmento-linha-branca": "Plastic home appliance parts with a Corquímica finish",
   "segmento-plasticos": "Bin of injection-molded plastic parts in various colors and finishes, in front of an injection molding machine"
  }
 }

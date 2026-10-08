@@ -40,5 +40,7 @@ Salve cada foto com o nome do "slot" em `src/assets/photos/`. Use fotos reais da
   - arquivo: `src/assets/photos/segmento-automotivo.webp` (ou .jpg) · alt: Moldura de grade automotiva cromada sobre suporte na fábrica
 - [x] `segmento-cosmeticos` (r45): Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro
   - arquivo: `src/assets/photos/segmento-cosmeticos.webp` (ou .jpg) · alt: Mão com luva branca segurando pote de cosmético com tampa dourada
+- [ ] `segmento-linha-branca` (r45): Botões, manoplas ou frisos metalizados de eletrodomésticos, ou um bebedouro, em fundo neutro
+  - arquivo: `src/assets/photos/segmento-linha-branca.webp` (ou .jpg) · alt: Peças plásticas de eletrodomésticos com acabamento Corquímica
 - [x] `segmento-plasticos` (r45): Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro
   - arquivo: `src/assets/photos/segmento-plasticos.webp` (ou .jpg) · alt: Caixa com peças plásticas injetadas em várias cores e acabamentos, diante de injetora

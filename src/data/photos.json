@@ -94,6 +94,11 @@
   "shot": "Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro",
   "ratio": "r45"
  },
+ "segmento-linha-branca": {
+  "alt": "Peças plásticas de eletrodomésticos com acabamento Corquímica",
+  "shot": "Botões, manoplas ou frisos metalizados de eletrodomésticos, ou um bebedouro, em fundo neutro",
+  "ratio": "r45"
+ },
  "segmento-plasticos": {
   "alt": "Caixa com peças plásticas injetadas em várias cores e acabamentos, diante de injetora",
   "shot": "Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro",

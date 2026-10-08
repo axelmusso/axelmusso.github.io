@@ -321,6 +321,7 @@ figure.swapper .swap{position:absolute;inset:0;width:100%;height:100%;object-fit
 .float2:has(.row[data-seg="moveleiro"]:is(:hover,:focus-visible)) .swap[data-seg="moveleiro"],
 .float2:has(.row[data-seg="automotivo"]:is(:hover,:focus-visible)) .swap[data-seg="automotivo"],
 .float2:has(.row[data-seg="cosmeticos"]:is(:hover,:focus-visible)) .swap[data-seg="cosmeticos"],
+.float2:has(.row[data-seg="linha-branca"]:is(:hover,:focus-visible)) .swap[data-seg="linha-branca"],
 .float2:has(.row[data-seg="plasticos"]:is(:hover,:focus-visible)) .swap[data-seg="plasticos"]{opacity:1}
 @media (prefers-reduced-motion: reduce){figure.swapper .swap{transition:none}}
 

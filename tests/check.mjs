@@ -69,9 +69,9 @@ for (const p of ['llms.txt', 'llms-full.txt', 'robots.txt', 'favicon.svg', 'og-d
 if (!staging && !/Sitemap:/.test(robots)) err('robots.txt sem Sitemap');
 // páginas obrigatórias (português, espanhol e inglês)
 const need = [
-  '/', '/sobre/', '/contato/', '/produtos/', '/segmentos/', ...['verniz-uv-base', 'verniz-uv-top-coat', 'lacas', 'tintas-abs-ps', 'tintas-piso', 'corantes-uv', 'resinas-3d', 'solventes'].map((x) => `/produtos/${x}/`), ...['moda', 'moveleiro', 'automotivo', 'cosmeticos', 'plasticos'].map((x) => `/segmentos/${x}/`),
-  '/es/', '/es/sobre-nosotros/', '/es/contacto/', '/es/productos/', '/es/sectores/', ...['barniz-uv-base', 'barniz-uv-top-coat', 'lacas', 'pinturas-abs-ps', 'pinturas-para-pisos', 'colorantes-uv', 'resinas-3d', 'solventes-desengrasantes'].map((x) => `/es/productos/${x}/`), ...['moda', 'mobiliario', 'automotriz', 'cosmetica', 'plasticos'].map((x) => `/es/sectores/${x}/`),
-  '/en/', '/en/about/', '/en/contact/', '/en/products/', '/en/industries/', ...['uv-base-coat', 'uv-top-coat', 'lacquers', 'paints-abs-ps', 'floor-paints', 'uv-colorants', '3d-resins', 'solvents-degreasers'].map((x) => `/en/products/${x}/`), ...['fashion', 'furniture', 'automotive', 'cosmetics', 'plastics'].map((x) => `/en/industries/${x}/`),
+  '/', '/sobre/', '/contato/', '/produtos/', '/segmentos/', ...['verniz-uv-base', 'verniz-uv-top-coat', 'lacas', 'tintas-abs-ps', 'tintas-piso', 'corantes-uv', 'resinas-3d', 'solventes'].map((x) => `/produtos/${x}/`), ...['moda', 'moveleiro', 'automotivo', 'cosmeticos', 'linha-branca', 'plasticos'].map((x) => `/segmentos/${x}/`),
+  '/es/', '/es/sobre-nosotros/', '/es/contacto/', '/es/productos/', '/es/sectores/', ...['barniz-uv-base', 'barniz-uv-top-coat', 'lacas', 'pinturas-abs-ps', 'pinturas-para-pisos', 'colorantes-uv', 'resinas-3d', 'solventes-desengrasantes'].map((x) => `/es/productos/${x}/`), ...['moda', 'mobiliario', 'automotriz', 'cosmetica', 'linea-blanca', 'plasticos'].map((x) => `/es/sectores/${x}/`),
+  '/en/', '/en/about/', '/en/contact/', '/en/products/', '/en/industries/', ...['uv-base-coat', 'uv-top-coat', 'lacquers', 'paints-abs-ps', 'floor-paints', 'uv-colorants', '3d-resins', 'solvents-degreasers'].map((x) => `/en/products/${x}/`), ...['fashion', 'furniture', 'automotive', 'cosmetics', 'home-appliances', 'plastics'].map((x) => `/en/industries/${x}/`),
 ];
 for (const u of need) if (!real.some((p) => p.url === u)) err(`falta a página ${u}`);
 console.log(`Modo: ${staging ? 'RASCUNHO' : 'PRODUÇÃO'} · ${real.length} páginas · ${locs.length} URLs no sitemap`);
