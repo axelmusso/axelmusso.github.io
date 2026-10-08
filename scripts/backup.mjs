@@ -19,7 +19,12 @@ if (!KEY) {
   console.log('::warning::Backup no Supabase não feito: falta o segredo SUPABASE_SECRET_KEY no GitHub (veja o README, seção "Versões e backups").');
   process.exit(mode === 'baixar' ? 1 : 0);
 }
-// A chave vai nos dois cabeçalhos (o armazenamento do Supabase exige o Authorization).
+// Use a chave secreta no formato JWT (service_role, começa com "eyJ"): o armazenamento do Supabase
+// exige um JWT no cabeçalho Authorization e não aceita as chaves novas sb_secret_….
+if (!KEY.startsWith('eyJ')) {
+  console.log('::warning::A chave SUPABASE_SECRET_KEY cadastrada não é a service_role (formato JWT, começa com "eyJ"). Troque pela chave em Supabase → Project Settings → API Keys → Legacy API Keys → service_role.');
+  process.exit(mode === 'baixar' ? 1 : 0);
+}
 const auth = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 const sh = (cmd, opts = {}) => execSync(cmd, { cwd: ROOT, stdio: ['ignore', 'pipe', 'inherit'], ...opts }).toString().trim();
 // Data e hora de Brasília, ex.: 2026-10-08 15:30
