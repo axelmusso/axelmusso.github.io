@@ -28,8 +28,8 @@ Salve cada foto com o nome do "slot" em `src/assets/photos/`. Use fotos reais da
   - arquivo: `src/assets/photos/familia-tintas-piso.webp` (ou .jpg) · alt: Piso industrial cinza brilhante com faixa de demarcação amarela
 - [x] `familia-corantes-uv` (r45): Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro
   - arquivo: `src/assets/photos/familia-corantes-uv.webp` (ou .jpg) · alt: Mão com luva branca organizando fivelas em dourado, prata e rosé em bandeja de inox
-- [ ] `familia-resinas-3d` (r45): Protótipo impresso em resina 3D, de preferência ao lado da mesma peça metalizada
-  - arquivo: `src/assets/photos/familia-resinas-3d.webp` (ou .jpg) · alt: Protótipo impresso com resina 3D Corquímica
+- [x] `familia-resinas-3d` (r45): Protótipo impresso em resina 3D, de preferência ao lado da mesma peça metalizada
+  - arquivo: `src/assets/photos/familia-resinas-3d.webp` (ou .jpg) · alt: Peça cinza impressa em resina 3D, com suportes, sobre a plataforma de uma impressora 3D, com frasco de resina ao fundo
 - [x] `familia-solventes` (r45): Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro
   - arquivo: `src/assets/photos/familia-solventes.webp` (ou .jpg) · alt: Operador com luvas azuis despejando solvente de galão metálico em balde
 - [x] `segmento-moda` (r45): Peças reais do segmento Moda (com autorização do cliente), fundo neutro
@@ -40,7 +40,7 @@ Salve cada foto com o nome do "slot" em `src/assets/photos/`. Use fotos reais da
   - arquivo: `src/assets/photos/segmento-automotivo.webp` (ou .jpg) · alt: Moldura de grade automotiva cromada sobre suporte na fábrica
 - [x] `segmento-cosmeticos` (r45): Peças reais do segmento Cosméticos (com autorização do cliente), fundo neutro
   - arquivo: `src/assets/photos/segmento-cosmeticos.webp` (ou .jpg) · alt: Mão com luva branca segurando pote de cosmético com tampa dourada
-- [ ] `segmento-linha-branca` (r45): Botões, manoplas ou frisos metalizados de eletrodomésticos, ou um bebedouro, em fundo neutro
-  - arquivo: `src/assets/photos/segmento-linha-branca.webp` (ou .jpg) · alt: Peças plásticas de eletrodomésticos com acabamento Corquímica
+- [x] `segmento-linha-branca` (r45): Botões, manoplas ou frisos metalizados de eletrodomésticos, ou um bebedouro, em fundo neutro
+  - arquivo: `src/assets/photos/segmento-linha-branca.webp` (ou .jpg) · alt: Manoplas plásticas pretas e brilhantes de fogão sobre bancada de inox, com fogões na linha de produção ao fundo
 - [x] `segmento-plasticos` (r45): Peças reais do segmento Plástico em geral (com autorização do cliente), fundo neutro
   - arquivo: `src/assets/photos/segmento-plasticos.webp` (ou .jpg) · alt: Caixa com peças plásticas injetadas em várias cores e acabamentos, diante de injetora
