@@ -43,3 +43,27 @@ Salve em `src/assets/photos/<slot>.webp` (lista em `docs/FOTOS.md`).
 - Endereço canônico sem www (`corquimica.com.br`), igual ao site antigo.
 - Linhas antigas fora da nova estrutura (couro e calçadista auxiliares, galvânica, epóxi industrial, betoneira): redirecionam para Produtos ou Moda.
 - Palavras-chave: baseadas em concorrentes e pesquisas. Google Trends não foi consultado. Veja `docs/PALAVRAS-CHAVE.md`.
+
+## Versões e backups
+Cada publicação gera uma **versão** guardada em dois lugares:
+1. **GitHub**: o histórico de commits (aba *Commits*). Cada commit tem data, hora e descrição.
+2. **Supabase**: um `.zip` com o código-fonte (`fonte/`) e o site pronto (`site/`) na pasta privada `site-versoes`, registrado na tabela `site_versoes` (data e hora de Brasília, código da versão, descrição, tamanho). Os contatos do formulário também são copiados para `site-versoes/contatos/` todo dia às 6h e a cada publicação manual.
+
+Como nada muda no ar sem uma publicação, a última versão guardada é sempre o estado anterior à próxima mudança.
+
+**Ver as versões:** Supabase → *Table Editor* → `site_versoes` (ordene por `criado_em`).
+
+**Voltar para uma versão:** GitHub → aba *Actions* → **Restaurar versão** → *Run workflow*, informe o código da versão (ex.: `90167e6`) e a origem (`github`; use `supabase` só se o GitHub não tiver a versão). O workflow cria um novo commit com os arquivos daquela versão e republica. O histórico não é apagado: para desfazer, restaure a versão seguinte. As ferramentas de publicação e backup atuais são mantidas mesmo ao voltar para uma versão antiga.
+
+**Chave usada:** o segredo `SUPABASE_SECRET_KEY` do GitHub (Settings → Secrets → Actions) deve ser a chave **service_role** (Supabase → Project Settings → API Keys → Legacy API Keys). Ela só existe no GitHub, nunca no site. Se faltar, a publicação continua e o backup só emite um aviso.
+
+**Espaço:** cada versão ocupa cerca de 4 MB. O plano gratuito do Supabase tem 1 GB de armazenamento (cerca de 200 versões). Apague versões antigas pela pasta `site-versoes` quando necessário.
+
+## Segurança
+- Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
+- Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.
+- Supabase com RLS: visitantes só **inserem** contatos e **leem** artigos publicados. Backups, versões e contatos só são acessíveis com a chave secreta.
+- Limite no banco contra spam do formulário: até 20 contatos por hora e nenhum contato repetido em menos de 1 minuto (`privado.limitar_leads`).
+- Ações do GitHub fixadas pelo código exato; o Dependabot abre um pull request mensal quando há atualização.
+- Branch `main` protegida contra apagamento e reescrita do histórico.
+- Recomendado: verificação em duas etapas no GitHub e no Supabase, e *Enforce HTTPS* no GitHub Pages ao configurar o domínio.
