@@ -19,8 +19,8 @@ if (!KEY) {
   console.log('::warning::Backup no Supabase não feito: falta o segredo SUPABASE_SECRET_KEY no GitHub (veja o README, seção "Versões e backups").');
   process.exit(mode === 'baixar' ? 1 : 0);
 }
-// Chaves novas (sb_secret_…) vão só no cabeçalho apikey; as antigas (JWT) também no Authorization.
-const auth = { apikey: KEY, ...(KEY.startsWith('eyJ') ? { Authorization: `Bearer ${KEY}` } : {}) };
+// A chave vai nos dois cabeçalhos (o armazenamento do Supabase exige o Authorization).
+const auth = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 const sh = (cmd, opts = {}) => execSync(cmd, { cwd: ROOT, stdio: ['ignore', 'pipe', 'inherit'], ...opts }).toString().trim();
 // Data e hora de Brasília, ex.: 2026-10-08 15:30
 const agora = () => {
