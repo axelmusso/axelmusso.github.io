@@ -343,11 +343,20 @@ export const STR = { pt: PT, es: ES, en: EN };
 export const monthYear = (lang, iso) =>
   new Date(iso + 'T12:00:00').toLocaleDateString(META[lang].locale, { month: 'long', year: 'numeric' });
 
+// Bandeiras simplificadas para o seletor (recortadas em círculo pelo CSS): Brasil, Espanha e Estados Unidos.
+const usStripes = Array.from({ length: 7 }, (_, i) => `<rect y="${(i * 24 / 7).toFixed(2)}" width="24" height="${(24 / 7).toFixed(2)}" fill="${i % 2 ? '#fff' : '#B22234'}"/>`).join('');
+const usStars = [2.6, 5.5, 8.4].flatMap((x) => [2.4, 5.2, 8].map((y) => `<circle cx="${x}" cy="${y}" r=".75"/>`)).join('');
+const FLAG = {
+  pt: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" fill="#229E45"/><path d="M12 3.6 22 12 12 20.4 2 12z" fill="#F8D12E"/><circle cx="12" cy="12" r="4.9" fill="#1A3D8F"/><path d="M7.3 11.1c3-1.3 6.4-1 9.4.9" fill="none" stroke="#fff" stroke-width=".9"/></svg>',
+  es: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" fill="#C60B1E"/><rect y="6" width="24" height="12" fill="#FFC400"/></svg>',
+  en: `<svg viewBox="0 0 24 24" aria-hidden="true">${usStripes}<rect width="11" height="${(4 * 24 / 7).toFixed(2)}" fill="#3C3B6E"/><g fill="#fff">${usStars}</g></svg>`,
+};
+
 // Seletor de idioma do cabeçalho. alt = { pt: '/…', es: '/es/…', en: '/en/…' }.
 export function langSwitch(lang, alt) {
   return `<nav class="langs" aria-label="${esc(STR[lang].langAria)}">${LANGS.map((l) => {
     const href = alt[l] || routes(l).home;
     const cur = l === lang ? ' aria-current="true"' : '';
-    return `<a href="${href}" hreflang="${META[l].html}" lang="${META[l].html}" title="${META[l].name}"${cur}>${META[l].short}</a>`;
+    return `<a href="${href}" hreflang="${META[l].html}" lang="${META[l].html}" title="${META[l].name}"${cur}><span class="flag">${FLAG[l]}</span><span class="vh">${META[l].name}</span></a>`;
   }).join('')}</nav>`;
 }
