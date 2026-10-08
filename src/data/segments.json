@@ -26,6 +26,7 @@
    "lacas",
    "tintas-abs-ps",
    "corantes-uv",
+   "resinas-3d",
    "solventes"
   ],
   "how": "O salto passa pelo Verniz UV Base, é metalizado a vácuo e recebe o Top Coat, que pode ser tingido com corantes UV para dourado, rosé, grafite ou a cor da coleção.",
@@ -70,6 +71,7 @@
    "verniz-uv-top-coat",
    "lacas",
    "corantes-uv",
+   "resinas-3d",
    "solventes"
   ],
   "how": "Os acessórios recebem base UV, metalização e Top Coat para brilho duradouro. Os revestimentos plásticos recebem verniz UV de proteção, com acabamento brilhante, fosco ou soft touch.",
@@ -114,6 +116,7 @@
    "verniz-uv-top-coat",
    "lacas",
    "corantes-uv",
+   "resinas-3d",
    "solventes"
   ],
   "how": "Emblemas e molduras passam por base, metalização e Top Coat. Peças internas recebem verniz de proteção e acabamento. O desempenho exigido varia por montadora, por isso cada projeto passa por testes.",
@@ -168,6 +171,7 @@
    "verniz-uv-top-coat",
    "lacas",
    "corantes-uv",
+   "resinas-3d",
    "solventes"
   ],
   "how": "A peça recebe o Verniz UV Base, é metalizada a vácuo e recebe o Top Coat, que pode ser colorido com corantes UV. Para cor lisa, usam-se lacas. O sistema é testado com o álcool e com a fragrância do cliente, que são os ataques químicos mais comuns na embalagem.",
@@ -218,6 +222,7 @@
    "tintas-abs-ps",
    "tintas-piso",
    "corantes-uv",
+   "resinas-3d",
    "solventes"
   ],
   "how": "A equipe avalia o plástico, o processo e o acabamento, define o sistema (primer, tinta, base, top) e acompanha a aplicação na sua fábrica.",

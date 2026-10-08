@@ -53,7 +53,7 @@ const PT = {
   homeTitle: 'Verniz UV, lacas e tintas para plástico | Corquímica',
   homeDesc: 'Fabricante de verniz UV Base e Top Coat, lacas, tintas para ABS e PS, corantes UV e solventes em Estância Velha, RS. Peça amostra pelo WhatsApp.',
   heroH1: 'Vernizes UV, lacas e tintas para plásticos e metais',
-  heroLead: 'A Corquímica fabrica verniz UV Base e Top Coat, lacas, tintas para ABS e PS, tintas para piso, corantes UV e solventes, em Estância Velha, RS. Desenvolvidos para a sua peça, com apoio técnico dentro da sua fábrica.',
+  heroLead: 'A Corquímica fabrica, em Estância Velha, RS, vernizes UV Base e Top Coat, lacas, tintas, corantes UV, resinas 3D e solventes para diferentes substratos plásticos, como ABS, PS, PP, PVC e TPU, além de Zamac. Desenvolvidos para a sua peça, com apoio técnico dentro da sua fábrica.',
   viewProducts: 'Ver produtos',
   essenceLabel: 'Nossa essência',
   essenceBig: (y, c) => `A Corquímica é fabricante de vernizes UV, lacas, tintas e corantes em Estância Velha, RS. <b>Atua desde ${y} e atende mais de ${c} clientes em todo o país</b>, com formulações pensadas para a necessidade de cada um.`,
@@ -97,9 +97,9 @@ const PT = {
   landline: 'Telefone fixo', email: 'E-mail', address: 'Endereço', viewMap: 'Ver no mapa',
   // produtos
   productsTitle: 'Produtos: verniz UV, lacas, tintas e corantes | Corquímica',
-  productsDesc: 'Verniz UV Base e Top Coat, lacas, tintas para ABS e PS, tintas para piso, corantes UV, solventes e desengraxantes. Conheça as famílias de produto da Corquímica.',
+  productsDesc: 'Verniz UV Base e Top Coat, lacas, tintas para ABS e PS e para piso, corantes UV, resinas 3D, solventes e desengraxantes. Conheça as famílias de produto da Corquímica.',
   productsCrumb: 'Produtos', productsH1: 'Produtos da Corquímica para acabamento de plásticos e metais',
-  productsDef: (n) => `São ${n} famílias que funcionam juntas: o verniz UV Base prepara a peça, a metalização a vácuo dá o efeito metálico e o Verniz UV Top Coat protege a metalização. Lacas e tintas dão cor, corantes UV tingem os vernizes, e os solventes e desengraxantes completam o processo.`,
+  productsDef: (n) => `São ${n} famílias que funcionam juntas: o verniz UV Base prepara a peça, a metalização a vácuo dá o efeito metálico e o Verniz UV Top Coat protege a metalização. Lacas e tintas dão cor, corantes UV tingem os vernizes, as resinas 3D permitem prototipar a peça antes da matriz, e os solventes e desengraxantes completam o processo.`,
   viewDetails: 'Ver detalhes',
   productsCtaTitle: 'Não sabe qual produto usar?', productsCtaSub: 'Conte a peça e o acabamento desejado. A equipe indica o sistema.', productsCtaMsg: 'Olá! Preciso de ajuda para escolher o produto certo para a minha peça.',
   // segmentos
@@ -136,7 +136,7 @@ const PT = {
 <h2>Seus direitos</h2><p>Você pode pedir acesso, correção ou exclusão dos seus dados pelo e-mail ${mail}.</p>`,
   // JSON-LD
   areaServed: 'Brasil',
-  knowsAbout: ['Verniz UV', 'Metalização a vácuo', 'Laca acrílica', 'Tintas para plástico', 'Corantes UV', 'Solventes industriais'],
+  knowsAbout: ['Verniz UV', 'Metalização a vácuo', 'Laca acrílica', 'Tintas para plástico', 'Corantes UV', 'Resinas 3D', 'Solventes industriais'],
 };
 
 const ES = {
@@ -160,7 +160,7 @@ const ES = {
   homeTitle: 'Barniz UV, lacas y pinturas para plástico | Corquímica',
   homeDesc: 'Fabricante de barniz UV Base y Top Coat, lacas, pinturas para ABS y PS, colorantes UV y solventes en Estância Velha, RS, Brasil. Solicite muestra por WhatsApp.',
   heroH1: 'Barnices UV, lacas y pinturas para plásticos y metales',
-  heroLead: 'Corquímica fabrica barniz UV Base y Top Coat, lacas, pinturas para ABS y PS, pinturas para pisos, colorantes UV y solventes en Estância Velha, RS, Brasil. Desarrollados para su pieza, con soporte técnico dentro de su planta.',
+  heroLead: 'Corquímica fabrica, en Estância Velha, RS, Brasil, barnices UV Base y Top Coat, lacas, pinturas, colorantes UV, resinas 3D y solventes para diferentes sustratos plásticos, como ABS, PS, PP, PVC y TPU, además de Zamak. Desarrollados para su pieza, con soporte técnico dentro de su planta.',
   viewProducts: 'Ver productos',
   essenceLabel: 'Nuestra esencia',
   essenceBig: (y, c) => `Corquímica es fabricante de barnices UV, lacas, pinturas y colorantes en Estância Velha, RS, Brasil. <b>Opera desde ${y} y atiende a más de ${c} clientes en todo Brasil</b>, con formulaciones pensadas para las necesidades de cada uno.`,
@@ -201,9 +201,9 @@ const ES = {
   contactDef: 'La vía más rápida es WhatsApp. Cuéntenos el material de la pieza y el acabado que desea, y el equipo le indica el sistema y le envía una muestra.',
   landline: 'Teléfono fijo', email: 'Correo electrónico', address: 'Dirección', viewMap: 'Ver en el mapa',
   productsTitle: 'Productos: barniz UV, lacas, pinturas y colorantes | Corquímica',
-  productsDesc: 'Barniz UV Base y Top Coat, lacas, pinturas para ABS y PS, pinturas para pisos, colorantes UV, solventes y desengrasantes. Conozca las familias de productos de Corquímica.',
+  productsDesc: 'Barniz UV Base y Top Coat, lacas, pinturas para ABS, PS y pisos, colorantes UV, resinas 3D, solventes y desengrasantes. Conozca las familias de productos de Corquímica.',
   productsCrumb: 'Productos', productsH1: 'Productos de Corquímica para el acabado de plásticos y metales',
-  productsDef: (n) => `Son ${n} familias que funcionan juntas: el barniz UV Base prepara la pieza, el metalizado al vacío da el efecto metálico y el Barniz UV Top Coat protege el metalizado. Las lacas y pinturas dan color, los colorantes UV tiñen los barnices, y los solventes y desengrasantes completan el proceso.`,
+  productsDef: (n) => `Son ${n} familias que funcionan juntas: el barniz UV Base prepara la pieza, el metalizado al vacío da el efecto metálico y el Barniz UV Top Coat protege el metalizado. Las lacas y pinturas dan color, los colorantes UV tiñen los barnices, las resinas 3D permiten prototipar la pieza antes del molde, y los solventes y desengrasantes completan el proceso.`,
   viewDetails: 'Ver detalles',
   productsCtaTitle: '¿No sabe qué producto usar?', productsCtaSub: 'Cuéntenos la pieza y el acabado deseado. El equipo le indica el sistema.', productsCtaMsg: '¡Hola! Necesito ayuda para elegir el producto adecuado para mi pieza.',
   industriesTitle: 'Sectores: moda, mobiliario, automotriz, cosmética | Corquímica',
@@ -235,7 +235,7 @@ const ES = {
 <h2>Por cuánto tiempo los conservamos</h2><p>Conservamos los datos durante el tiempo necesario para la atención comercial.</p>
 <h2>Sus derechos</h2><p>Puede solicitar el acceso, la corrección o la eliminación de sus datos por correo electrónico a ${mail}.</p>`,
   areaServed: 'Brasil',
-  knowsAbout: ['Barniz UV', 'Metalizado al vacío', 'Laca acrílica', 'Pinturas para plástico', 'Colorantes UV', 'Solventes industriales'],
+  knowsAbout: ['Barniz UV', 'Metalizado al vacío', 'Laca acrílica', 'Pinturas para plástico', 'Colorantes UV', 'Resinas 3D', 'Solventes industriales'],
 };
 
 const EN = {
@@ -259,7 +259,7 @@ const EN = {
   homeTitle: 'UV coatings, lacquers and paints for plastics | Corquímica',
   homeDesc: 'Manufacturer of UV Base Coat and Top Coat, lacquers, paints for ABS and PS, UV colorants and solvents in Estância Velha, RS, Brazil. Request a sample on WhatsApp.',
   heroH1: 'UV coatings, lacquers and paints for plastics and metals',
-  heroLead: 'Corquímica manufactures UV Base Coat and Top Coat, lacquers, paints for ABS and PS, floor paints, UV colorants and solvents in Estância Velha, RS, Brazil. Developed for your part, with technical support inside your plant.',
+  heroLead: 'Corquímica manufactures UV Base Coat and Top Coat, lacquers, paints, UV colorants, 3D resins and solvents in Estância Velha, RS, Brazil, for a wide range of plastic substrates such as ABS, PS, PP, PVC and TPU, as well as Zamak. Developed for your part, with technical support inside your plant.',
   viewProducts: 'View products',
   essenceLabel: 'Who we are',
   essenceBig: (y, c) => `Corquímica manufactures UV coatings, lacquers, paints and colorants in Estância Velha, RS, Brazil. <b>In business since ${y}, it serves more than ${c} customers throughout Brazil</b>, with formulations designed around each one's needs.`,
@@ -300,9 +300,9 @@ const EN = {
   contactDef: 'WhatsApp is the fastest way. Tell us the part material and the finish you want, and the team will recommend the system and send a sample.',
   landline: 'Landline', email: 'Email', address: 'Address', viewMap: 'View on map',
   productsTitle: 'Products: UV coatings, lacquers, paints, colorants | Corquímica',
-  productsDesc: 'UV Base Coat and Top Coat, lacquers, paints for ABS and PS, floor paints, UV colorants, solvents and degreasers. Explore the Corquímica product families.',
+  productsDesc: 'UV Base Coat and Top Coat, lacquers, paints for ABS, PS and floors, UV colorants, 3D resins, solvents and degreasers. Explore the Corquímica product families.',
   productsCrumb: 'Products', productsH1: 'Corquímica products for finishing plastics and metals',
-  productsDef: (n) => `Corquímica offers ${n} product families that work together: the UV Base Coat prepares the part, vacuum metallization creates the metallic effect and the UV Top Coat protects the metallization. Lacquers and paints add color, UV colorants tint the coatings, and solvents and degreasers complete the process.`,
+  productsDef: (n) => `Corquímica offers ${n} product families that work together: the UV Base Coat prepares the part, vacuum metallization creates the metallic effect and the UV Top Coat protects the metallization. Lacquers and paints add color, UV colorants tint the coatings, 3D resins make it possible to prototype the part before the mold, and solvents and degreasers complete the process.`,
   viewDetails: 'View details',
   productsCtaTitle: 'Not sure which product to use?', productsCtaSub: 'Tell us about the part and the finish you want. The team will recommend the system.', productsCtaMsg: 'Hello! I need help choosing the right product for my part.',
   industriesTitle: 'Industries: fashion, furniture, auto, cosmetics | Corquímica',
@@ -334,7 +334,7 @@ const EN = {
 <h2>How long we keep it</h2><p>We keep the data for as long as needed to handle your sales inquiry.</p>
 <h2>Your rights</h2><p>You can request access to, correction of or deletion of your data by emailing ${mail}.</p>`,
   areaServed: 'Brazil',
-  knowsAbout: ['UV coatings', 'Vacuum metallization', 'Acrylic lacquer', 'Paints for plastics', 'UV colorants', 'Industrial solvents'],
+  knowsAbout: ['UV coatings', 'Vacuum metallization', 'Acrylic lacquer', 'Paints for plastics', 'UV colorants', '3D resins', 'Industrial solvents'],
 };
 
 export const STR = { pt: PT, es: ES, en: EN };

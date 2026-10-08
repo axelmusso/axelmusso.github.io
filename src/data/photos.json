@@ -64,6 +64,11 @@
   "shot": "Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro",
   "ratio": "r45"
  },
+ "familia-resinas-3d": {
+  "alt": "Protótipo impresso com resina 3D Corquímica",
+  "shot": "Protótipo impresso em resina 3D, de preferência ao lado da mesma peça metalizada",
+  "ratio": "r45"
+ },
  "familia-solventes": {
   "alt": "Operador com luvas azuis despejando solvente de galão metálico em balde",
   "shot": "Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro",

@@ -10,6 +10,7 @@ Base: títulos e buscas dos concorrentes e pesquisa no Google. O Google Trends n
 | /produtos/tintas-abs-ps/ | Tinta para saltos em ABS e PS | Corquímica | tinta para saltos, tinta para abs, tinta para poliestireno, pintura de saltos, tinta para plástico abs |
 | /produtos/tintas-piso/ | Tintas para piso industrial | Corquímica | tinta para piso, tinta para piso industrial, tinta para piso de concreto, pintura de piso, tinta para piso resistente |
 | /produtos/corantes-uv/ | Corantes UV para verniz e tinta | Corquímica | corante uv, corante para verniz uv, corante líquido para verniz, pigmento para verniz, verniz uv colorido |
+| /produtos/resinas-3d/ | Resinas 3D para prototipagem de peças | Corquímica | resina 3d, resina para impressão 3d, resina 3d para prototipagem, resina 3d flexível, protótipo metalizado |
 | /produtos/solventes/ | Solventes e desengraxantes para linha UV | Corquímica | solvente para verniz uv, diluente para laca, desengraxante industrial, desengraxante para plástico, solvente para pistola de pintura |
 | /segmentos/moda/ | Verniz e tinta para saltos e enfeites de moda | Corquímica | metalização de saltos, pintura de saltos, verniz para enfeites de calçados, acabamento para acessórios de moda, verniz uv para calçados |
 | /segmentos/moveleiro/ | Verniz e tinta para móveis e acessórios | Corquímica | verniz uv para móveis, acessórios moveleiros metalização, verniz para revestimento plástico, laca para móveis, puxadores metalizados |

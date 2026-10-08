@@ -33,7 +33,8 @@ for (const p of real) {
   }
   // texto em português esquecido nas versões em espanhol e inglês
   if (lang !== 'pt-BR') {
-    const vis = text(h).replace(/<head>[\s\S]*?<\/head>/, ' ').replace(/<[^>]+>/g, ' ').replace(/Corquímica Indústria e Comércio Ltda\./g, ' ');
+    // o aviso de foto pendente (FOTO REAL) é interno e fica em português
+    const vis = text(h).replace(/FOTO REAL:[^<]*/g, ' ').replace(/<head>[\s\S]*?<\/head>/, ' ').replace(/<[^>]+>/g, ' ').replace(/Corquímica Indústria e Comércio Ltda\./g, ' ');
     const PT_WORDS = /(?<!\p{L})(você|não|também|peças?|verniz|vernizes|metalização|desengraxantes?|corantes?|Olá|Fale|Conheça|Atualizado|Início|tintas?|atendemos em|Perguntas)(?!\p{L})/iu;
     const EN_EXTRA = /(?<!\p{L})(barniz|barnices|pinturas?|metalizado|usted|también|cliente|sector|productos?|piezas?)(?!\p{L})/iu;
     const m1 = vis.match(PT_WORDS); if (m1) err(`${u}: possível texto em português: "${m1[0]}"`);
@@ -68,9 +69,9 @@ for (const p of ['llms.txt', 'llms-full.txt', 'robots.txt', 'favicon.svg', 'og-d
 if (!staging && !/Sitemap:/.test(robots)) err('robots.txt sem Sitemap');
 // páginas obrigatórias (português, espanhol e inglês)
 const need = [
-  '/', '/sobre/', '/contato/', '/produtos/', '/segmentos/', ...['verniz-uv-base', 'verniz-uv-top-coat', 'lacas', 'tintas-abs-ps', 'tintas-piso', 'corantes-uv', 'solventes'].map((x) => `/produtos/${x}/`), ...['moda', 'moveleiro', 'automotivo', 'cosmeticos', 'plasticos'].map((x) => `/segmentos/${x}/`),
-  '/es/', '/es/sobre-nosotros/', '/es/contacto/', '/es/productos/', '/es/sectores/', ...['barniz-uv-base', 'barniz-uv-top-coat', 'lacas', 'pinturas-abs-ps', 'pinturas-para-pisos', 'colorantes-uv', 'solventes-desengrasantes'].map((x) => `/es/productos/${x}/`), ...['moda', 'mobiliario', 'automotriz', 'cosmetica', 'plasticos'].map((x) => `/es/sectores/${x}/`),
-  '/en/', '/en/about/', '/en/contact/', '/en/products/', '/en/industries/', ...['uv-base-coat', 'uv-top-coat', 'lacquers', 'paints-abs-ps', 'floor-paints', 'uv-colorants', 'solvents-degreasers'].map((x) => `/en/products/${x}/`), ...['fashion', 'furniture', 'automotive', 'cosmetics', 'plastics'].map((x) => `/en/industries/${x}/`),
+  '/', '/sobre/', '/contato/', '/produtos/', '/segmentos/', ...['verniz-uv-base', 'verniz-uv-top-coat', 'lacas', 'tintas-abs-ps', 'tintas-piso', 'corantes-uv', 'resinas-3d', 'solventes'].map((x) => `/produtos/${x}/`), ...['moda', 'moveleiro', 'automotivo', 'cosmeticos', 'plasticos'].map((x) => `/segmentos/${x}/`),
+  '/es/', '/es/sobre-nosotros/', '/es/contacto/', '/es/productos/', '/es/sectores/', ...['barniz-uv-base', 'barniz-uv-top-coat', 'lacas', 'pinturas-abs-ps', 'pinturas-para-pisos', 'colorantes-uv', 'resinas-3d', 'solventes-desengrasantes'].map((x) => `/es/productos/${x}/`), ...['moda', 'mobiliario', 'automotriz', 'cosmetica', 'plasticos'].map((x) => `/es/sectores/${x}/`),
+  '/en/', '/en/about/', '/en/contact/', '/en/products/', '/en/industries/', ...['uv-base-coat', 'uv-top-coat', 'lacquers', 'paints-abs-ps', 'floor-paints', 'uv-colorants', '3d-resins', 'solvents-degreasers'].map((x) => `/en/products/${x}/`), ...['fashion', 'furniture', 'automotive', 'cosmetics', 'plastics'].map((x) => `/en/industries/${x}/`),
 ];
 for (const u of need) if (!real.some((p) => p.url === u)) err(`falta a página ${u}`);
 console.log(`Modo: ${staging ? 'RASCUNHO' : 'PRODUÇÃO'} · ${real.length} páginas · ${locs.length} URLs no sitemap`);

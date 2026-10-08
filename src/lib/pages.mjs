@@ -88,7 +88,7 @@ export function home(ctx) {
 
 <section class="sec dark on-dark" id="processo"><div class="wrap"><span class="label">${esc(t.stepsLabel)}</span><h2 style="margin-top:18px;max-width:680px">${esc(t.stepsH2)}</h2>
 <ol class="flow">${steps.map((s) => `<li><span class="n">${s[0]}</span><h3>${esc(s[1])}</h3><p>${esc(s[2])}</p></li>`).join('')}</ol>
-<div class="alignbar"><span>${esc(t.stepsBar)}</span>${waBtn(ctx, t.btnProject, t.msgProject, 'sand')}</div></div></section>
+<div class="alignbar"><span>${esc(t.stepsBar)}</span>${waBtn(ctx, t.btnProject, t.msgProject)}</div></div></section>
 
 <section class="sec"><div class="wrap"><div class="plans"><div class="lft"><span class="label">${esc(t.howLabel)}</span><h2>${esc(t.howH2)}</h2></div>
 <div class="plan hi"><h3>${esc(t.plan1)}</h3><p>${esc(t.plan1Text)}</p><ul>${t.plan1Li.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>

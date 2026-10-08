@@ -505,6 +505,87 @@
   ]
  },
  {
+  "id": "resinas-3d",
+  "n": "Resinas 3D",
+  "short": "Resinas rígidas, semirrígidas e flexíveis para prototipagem.",
+  "h1": "Resinas 3D para prototipagem: peças rígidas, semirrígidas e flexíveis na cor desejada",
+  "title": "Resinas 3D para prototipagem de peças | Corquímica",
+  "meta": "Resinas 3D rígidas, semirrígidas e flexíveis, na tonalidade desejada, para prototipar peças antes da matriz. Compatíveis com os vernizes para metalização.",
+  "kw": [
+   "resina 3d",
+   "resina para impressão 3d",
+   "resina 3d para prototipagem",
+   "resina 3d flexível",
+   "protótipo metalizado"
+  ],
+  "def": "As resinas 3D da Corquímica são usadas na impressão de protótipos de peças. Estão disponíveis nas versões rígida, semirrígida e flexível, na tonalidade desejada pelo cliente, e são extremamente indicadas para validar a peça antes de investir na matriz.",
+  "prac": "Na prática, o cliente imprime o protótipo com a resina 3D Corquímica e pode aplicar sobre ele o sistema de vernizes Corquímica para metalizar a peça. Assim, o protótipo ganha um aspecto mais próximo do produto final e ajuda a aprovar o projeto antes da fabricação da matriz.",
+  "feat": [
+   "Resinas rígidas, semirrígidas e flexíveis",
+   "Tonalidade desejada pelo cliente",
+   "Extremamente indicadas para prototipagem antes da matriz",
+   "Peças impressas compatíveis com os vernizes Corquímica",
+   "Protótipos que podem ser metalizados",
+   "Aspecto mais próximo do projeto final"
+  ],
+  "ben": [
+   "Projeto validado antes de investir na matriz",
+   "Protótipo com aparência de peça final",
+   "Ajustes de design feitos ainda na fase de protótipo",
+   "Resina e vernizes do mesmo fabricante"
+  ],
+  "table": [
+   [
+    "Resina 3D rígida",
+    "Impressão 3D",
+    "Protótipos de peças rígidas"
+   ],
+   [
+    "Resina 3D semirrígida",
+    "Impressão 3D",
+    "Protótipos de peças semirrígidas"
+   ],
+   [
+    "Resina 3D flexível",
+    "Impressão 3D",
+    "Protótipos de peças flexíveis"
+   ]
+  ],
+  "seg": [
+   "moda",
+   "moveleiro",
+   "automotivo",
+   "cosmeticos",
+   "plasticos"
+  ],
+  "faq": [
+   [
+    "Para que serve a resina 3D da Corquímica?",
+    "Para imprimir protótipos de peças. Ela é extremamente indicada para validar a peça antes de o cliente investir na fabricação da matriz."
+   ],
+   [
+    "Quais tipos de resina 3D a Corquímica oferece?",
+    "Resinas rígidas, semirrígidas e flexíveis, na tonalidade desejada pelo cliente."
+   ],
+   [
+    "Dá para metalizar uma peça impressa com a resina 3D?",
+    "Sim. As peças impressas com as resinas 3D da Corquímica são compatíveis com os nossos vernizes e podem ser metalizadas, ficando com um aspecto mais próximo do projeto final."
+   ],
+   [
+    "A resina 3D pode ser feita na cor do projeto?",
+    "Sim. A resina é fornecida na tonalidade desejada pelo cliente."
+   ],
+   [
+    "Por que prototipar antes de fazer a matriz?",
+    "Porque o protótipo permite avaliar a forma, o encaixe e a aparência da peça antes do investimento na matriz, quando os ajustes ainda são simples."
+   ],
+   [
+    "Como peço a indicação da resina 3D?",
+    "Chame o comercial pelo WhatsApp e conte qual peça você quer prototipar e o acabamento desejado."
+   ]
+  ]
+ },
+ {
   "id": "solventes",
   "n": "Solventes e Desengraxantes",
   "short": "Solventes para linha UV e laca, e desengraxantes de limpeza.",

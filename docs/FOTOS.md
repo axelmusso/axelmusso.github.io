@@ -28,6 +28,8 @@ Salve cada foto com o nome do "slot" em `src/assets/photos/`. Use fotos reais da
   - arquivo: `src/assets/photos/familia-tintas-piso.webp` (ou .jpg) · alt: Piso industrial cinza brilhante com faixa de demarcação amarela
 - [x] `familia-corantes-uv` (r45): Peça real acabada com Corantes UV, de preferência metade em acabamento e metade bruta, fundo escuro
   - arquivo: `src/assets/photos/familia-corantes-uv.webp` (ou .jpg) · alt: Mão com luva branca organizando fivelas em dourado, prata e rosé em bandeja de inox
+- [ ] `familia-resinas-3d` (r45): Protótipo impresso em resina 3D, de preferência ao lado da mesma peça metalizada
+  - arquivo: `src/assets/photos/familia-resinas-3d.webp` (ou .jpg) · alt: Protótipo impresso com resina 3D Corquímica
 - [x] `familia-solventes` (r45): Peça real acabada com Solventes e Desengraxantes, de preferência metade em acabamento e metade bruta, fundo escuro
   - arquivo: `src/assets/photos/familia-solventes.webp` (ou .jpg) · alt: Operador com luvas azuis despejando solvente de galão metálico em balde
 - [x] `segmento-moda` (r45): Peças reais do segmento Moda (com autorização do cliente), fundo neutro
