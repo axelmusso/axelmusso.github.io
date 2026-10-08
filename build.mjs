@@ -79,7 +79,10 @@ state.mode = 'staging'; resetPending();
 buildPages();
 const pendText = state.pendingText.slice();
 const pendPhotos = [...state.pendingPhotos];
-const goLive = process.env.FORCE_PRODUCTION === '1' || (pendText.length === 0 && pendPhotos.length === 0);
+// Só indexa no domínio oficial: sem CUSTOM_DOMAIN igual ao domínio de site.json, o site segue em rascunho.
+const domainReady = (process.env.CUSTOM_DOMAIN || '').trim() === new URL(site.url).host;
+state.awaitingDomain = pendText.length === 0 && pendPhotos.length === 0 && !domainReady;
+const goLive = process.env.FORCE_PRODUCTION === '1' || (pendText.length === 0 && pendPhotos.length === 0 && domainReady);
 state.mode = goLive ? 'production' : 'staging';
 resetPending();
 const pages = buildPages();
@@ -136,7 +139,7 @@ fs.mkdirSync(R('docs'), { recursive: true });
 const photoDoc = Object.entries(photosMeta).map(([slot, m]) => `- [${photoFiles.has(slot) ? 'x' : ' '}] \`${slot}\` (${m.ratio}): ${m.shot}\n  - arquivo: \`src/assets/photos/${slot}.webp\` (ou .jpg) · alt: ${m.alt}`).join('\n');
 fs.writeFileSync(R('docs/FOTOS.md'), `# Lista de fotos\n\nSalve cada foto com o nome do "slot" em \`src/assets/photos/\`. Use fotos reais da fábrica, de peças e de aplicação. Até 200 KB cada, largura mínima de 1600 px.\n\n${photoDoc}\n`);
 fs.writeFileSync(R('docs/PALAVRAS-CHAVE.md'), `# Mapa de palavras-chave por página\n\nBase: títulos e buscas dos concorrentes e pesquisa no Google. O Google Trends não pôde ser consultado nesta sessão. Confirme volumes no Google Search Console e no Planejador de Palavras-chave.\n\n| Página | Title | Palavras-chave principais |\n|---|---|---|\n${[...families.map((f) => [`/produtos/${f.id}/`, f.title, f.kw]), ...segments.map((s) => [`/segmentos/${s.id}/`, s.title, s.kw])].map(([u, t, k]) => `| ${u} | ${plain(t)} | ${k.join(', ')} |`).join('\n')}\n`);
-fs.writeFileSync(R('docs/PENDENCIAS.md'), `# Pendências para publicar com indexação\n\nModo atual do build: **${mode}**.\n\n## Textos a validar (${pendText.length})\n${pendText.map((x) => `- \`${x.page}\`: ${x.text}`).join('\n') || '- nenhum'}\n\n## Fotos que faltam (${pendPhotos.length})\n${pendPhotos.map((s) => `- \`${s}\``).join('\n') || '- nenhuma'}\n`);
+fs.writeFileSync(R('docs/PENDENCIAS.md'), `# Pendências para publicar com indexação\n\nModo atual do build: **${mode}**.\n\n## Textos a validar (${pendText.length})\n${pendText.map((x) => `- \`${x.page}\`: ${x.text}`).join('\n') || '- nenhum'}\n\n## Fotos que faltam (${pendPhotos.length})\n${pendPhotos.map((s) => `- \`${s}\``).join('\n') || '- nenhuma'}\n\n## Domínio\n${domainReady ? '- configurado' : `- falta configurar \`${new URL(site.url).host}\` (variável \`CUSTOM_DOMAIN\` no GitHub e DNS no Registro.br)`}\n`);
 
 console.log(`\nBuild: ${pages.length} páginas, ${nRed} redirecionamentos, modo ${mode.toUpperCase()}`);
-if (mode === 'staging') console.log(`Rascunho (noindex): ${pendText.length} texto(s) a validar, ${pendPhotos.length} foto(s) pendente(s). Veja docs/PENDENCIAS.md`);
+if (mode === 'staging') console.log(state.awaitingDomain ? `Rascunho (noindex): conteúdo completo, aguardando o domínio ${new URL(site.url).host} (variável CUSTOM_DOMAIN).` : `Rascunho (noindex): ${pendText.length} texto(s) a validar, ${pendPhotos.length} foto(s) pendente(s). Veja docs/PENDENCIAS.md`);

@@ -33,7 +33,7 @@ ${page.withForm ? `<meta name="cq-wa" content="${site.whatsapp}">${sb.url ? `<me
 </head>
 <body class="${page.bodyClass || ''}">
 <a class="skip" href="#conteudo">Ir para o conteúdo</a>
-${state.mode === 'staging' ? '<div class="stagingbar">RASCUNHO: esta versão não é indexada pelo Google e mostra marcações de itens a validar e fotos pendentes.</div>' : ''}
+${state.mode === 'staging' ? `<div class="stagingbar">${state.awaitingDomain ? 'RASCUNHO: esta versão ainda não é indexada pelo Google. A indexação é liberada quando o domínio oficial for configurado.' : 'RASCUNHO: esta versão não é indexada pelo Google e mostra marcações de itens a validar e fotos pendentes.'}</div>` : ''}
 <header class="site"><div class="wrap">
   <a class="logo" href="/" aria-label="Corquímica, página inicial">${LOGO}<span>Corquímica</span></a>
   <input type="checkbox" id="mt" class="mt" aria-label="Abrir menu">
@@ -44,7 +44,6 @@ ${state.mode === 'staging' ? '<div class="stagingbar">RASCUNHO: esta versão nã
     <div class="dd"><a class="l" href="/segmentos/"${cur('/segmentos/')}>Segmentos</a><div class="panel">${segLinks}</div></div>
     ${hasArticles ? `<a class="l" href="/conteudo-tecnico/"${cur('/conteudo-tecnico/')}>Conteúdo técnico</a>` : ''}
     <a class="l" href="/contato/"${cur('/contato/')}>Contato</a>
-    <a class="pb out sm" href="${esc(waUrl(site))}" target="_blank" rel="noopener">WhatsApp <i>${AR}</i></a>
   </nav>
 </div></header>
 <main id="conteudo">

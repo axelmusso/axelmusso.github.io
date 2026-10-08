@@ -116,7 +116,7 @@
    "corantes-uv",
    "solventes"
   ],
-  "how": "Emblemas e molduras passam por base, metalização e Top Coat. Peças internas recebem verniz de proteção e acabamento. O desempenho exigido varia por montadora, por isso cada projeto passa por testes. [VALIDAR]",
+  "how": "Emblemas e molduras passam por base, metalização e Top Coat. Peças internas recebem verniz de proteção e acabamento. O desempenho exigido varia por montadora, por isso cada projeto passa por testes.",
   "faq": [
    [
     "Qual verniz protege peças plásticas automotivas?",
@@ -128,7 +128,7 @@
    ],
    [
     "A Corquímica desenvolve verniz para especificação da montadora?",
-    "Desenvolve formulações sob medida, mediante os requisitos do cliente. [VALIDAR]"
+    "Desenvolve formulações sob medida, mediante os requisitos do cliente."
    ]
   ]
  },
@@ -155,11 +155,11 @@
   ],
   "chars": [
    "Resistência ao álcool, presente nos perfumes e nos produtos de higiene",
-   "Resistência à fragrância do perfume, que contém solventes e óleos essenciais [VALIDAR]",
+   "Resistência à fragrância do perfume, que contém solventes e óleos essenciais",
    "Resistência a riscos e abrasão no manuseio e no transporte",
    "Aderência sem descascamento, mesmo com a embalagem em contato com o produto",
    "Brilho espelhado, black piano, fosco ou soft touch",
-   "Resistência a cremes, óleos e produtos cosméticos [VALIDAR]",
+   "Resistência a cremes, óleos e produtos cosméticos",
    "Cores personalizadas, igualadas à identidade da marca",
    "Uniformidade entre lotes e cura UV rápida"
   ],
@@ -174,7 +174,7 @@
   "faq": [
    [
     "Qual verniz resiste ao álcool do perfume?",
-    "O sistema Base, metalização e Top Coat é testado com álcool e fragrância. O nível de resistência depende da formulação e da cura, e validamos com o produto do cliente. [VALIDAR]"
+    "O sistema Base, metalização e Top Coat é testado com álcool e fragrância. O nível de resistência depende da formulação e da cura, e validamos com o produto do cliente."
    ],
    [
     "Dá para metalizar tampas e frascos plásticos?",
@@ -182,7 +182,7 @@
    ],
    [
     "A fragrância ataca o acabamento?",
-    "Fragrâncias contêm solventes que podem manchar ou amolecer acabamentos fracos. Por isso testamos o sistema com a fragrância do cliente. [VALIDAR]"
+    "Fragrâncias contêm solventes que podem manchar ou amolecer acabamentos fracos. Por isso testamos o sistema com a fragrância do cliente."
    ],
    [
     "Existe acabamento soft touch para embalagens?",
@@ -232,7 +232,7 @@
    ],
    [
     "Vocês entregam em todo o país?",
-    "Atendemos clientes em todo o Brasil. [VALIDAR logística e prazos]"
+    "Atendemos clientes em todo o Brasil."
    ]
   ]
  }

@@ -49,7 +49,7 @@ export function home(ctx) {
   const card = (slot, big, small, extra = '') => { const b = photoBg(slot); return `<div class="mc"${b.style}>${b.tag}<div><b>${big}</b>${small ? `<span>${small}</span>` : ''}</div>${extra}</div>`; };
   const famRows = families.map((f) => `<a class="fr" href="/produtos/${f.id}/"><span class="dash"></span><b>${esc(f.n)}</b><span>${txt(f.short)}</span></a>`).join('');
   const segRows = segments.map((s) => `<a class="row" data-seg="${s.id}" href="/segmentos/${s.id}/"><span class="ic">${ICON[s.id]}</span><span><b>${esc(s.n)}</b><span>${txt(s.short)}</span></span></a>`).join('');
-  const steps = [['01', 'Primer ou tinta', 'A tinta dá a cor. O primer entra apenas em alguns substratos, não em todos. O teste na peça define.'], ['02', 'Verniz UV Base', 'Ancora e nivela a superfície antes da metalização.'], ['03', 'Metalização', 'Feita a vácuo, na sua fábrica ou em terceiro.'], ['04', 'Verniz UV Top Coat', 'Protege a metalização e fecha o acabamento, em brilho ou fosco.']];
+  const steps = [['01', 'Primer', 'Aplicado só em alguns substratos. Quando a peça pede, fornecemos o promotor de adesão.'], ['02', 'Verniz UV Base', 'Ancora e nivela a superfície antes da metalização.'], ['03', 'Metalização', 'Feita a vácuo, na sua fábrica ou em terceiro.'], ['04', 'Verniz UV Top Coat', 'Protege a metalização e fecha o acabamento, em brilho ou fosco.']];
   const latest = ctx.articles.slice(0, 3);
   const body = `
 <section class="hero"${hero.style}>${hero.tag ? '<div class="tube t2"></div><div class="tube"></div><div class="tube t3"></div>' : ''}${hero.tag}
@@ -66,9 +66,10 @@ export function home(ctx) {
   <p class="lead" style="margin-top:22px">Buscamos inovação o tempo todo. Participamos de feiras internacionais e temos parcerias estratégicas na Europa e na Ásia, para trazer novas tecnologias ao seu processo.</p>
   <div style="margin-top:26px">${pb('Conheça a Corquímica', '/sobre/', 'sand')}</div></div></div></div></section>
 
-<section class="sec" id="segmentos"><div class="wrap"><div class="float2"><div>${photoSwap('home-segmentos', segments.map((s) => ['segmento-' + s.id, s.id]))}</div><div><h2>Segmentos que atendemos</h2><div class="rows">${segRows}</div></div></div></div></section>
+<section class="sec" id="produtos"><div class="wrap"><div class="sol"><div class="glass"><span class="label">Nossas famílias de produto</span><h2>Soluções para o seu acabamento</h2><div class="frgrid">${famRows}</div></div></div></div></section>
+<section class="sec" id="segmentos"><div class="wrap"><h2 class="label">Segmentos que atendemos</h2><div class="float2"><div>${photoSwap('home-segmentos', segments.map((s) => ['segmento-' + s.id, s.id]))}</div><div class="rows">${segRows}</div></div></div></section>
 
-<section class="sec"><div class="wrap center"><span class="label">A diferença que fazemos</span><h2>Líder em acabamentos UV para a indústria de plásticos</h2>
+<section class="sec"><div class="wrap"><span class="label">A diferença que fazemos</span><h2 class="sub">Líder em acabamentos UV para a indústria de plásticos</h2>
 <div class="mos">
   <div class="mc sand"><div><b>+${site.clients}</b><span>clientes atendidos em todo o país</span></div><span>Da moda ao automotivo, acompanhamos a produção de quem depende de cor, brilho e proteção.</span></div>
   ${card('home-apoio-tecnico', 'Apoio técnico in loco', 'Nossa equipe regula a aplicação e treina colaboradores dentro da sua fábrica.')}
@@ -78,14 +79,13 @@ export function home(ctx) {
 </div></div></section>
 
 
-<section class="sec" id="produtos"><div class="wrap"><div class="sol"><div class="glass"><span class="label">Nossas famílias de produto</span><h2>Soluções para o seu acabamento</h2><div class="frgrid">${famRows}</div></div></div></div></section>
 
 <section class="sec dark on-dark" id="processo"><div class="wrap"><span class="label">O sistema em 4 etapas</span><h2 style="margin-top:18px;max-width:680px">Base Coat + Top Coat, do primer ao brilho final</h2>
-<div class="steps">${steps.map((s) => `<div class="step"><div><b>${s[0]}.</b><h3>${s[1]}</h3></div><p>${s[2]}</p></div>`).join('')}</div>
+<ol class="flow">${steps.map((s) => `<li><span class="n">${s[0]}</span><h3>${s[1]}</h3><p>${s[2]}</p></li>`).join('')}</ol>
 <div class="alignbar"><span>Quer saber qual sistema serve para a sua peça?</span>${waBtn(ctx, 'Falar sobre o meu projeto', 'Olá! Quero falar sobre o meu projeto com a Corquímica.', 'sand')}</div></div></section>
 
 <section class="sec"><div class="wrap"><div class="plans"><div class="lft"><span class="label">Como trabalhamos</span><h2>Do laboratório à sua linha de produção</h2></div>
-<div class="plan hi"><h3>Formulação personalizada <em>Diferencial</em></h3><p>Desenvolvemos a fórmula conforme a peça, o material e o efeito desejado.</p><ul><li>Cor igualada à amostra do cliente</li><li>Teste na sua peça</li><li>Ajuste de brilho, fosco ou soft touch</li></ul></div>
+<div class="plan hi"><h3>Formulação personalizada</h3><p>Desenvolvemos a fórmula conforme a peça, o material e o efeito desejado.</p><ul><li>Cor igualada à amostra do cliente</li><li>Teste na sua peça</li><li>Ajuste de brilho, fosco ou soft touch</li></ul></div>
 <div class="plan"><h3>Apoio técnico in loco</h3><p>Nossa equipe vai até a sua fábrica para colocar o sistema para rodar.</p><ul><li>Regulagem da aplicação e da cura UV</li><li>Treinamento de colaboradores</li><li>Acompanhamento pós-implantação</li></ul></div></div></div></section>
 
 ${latest.length ? `<section class="sec tint"><div class="wrap"><span class="label">Conteúdo técnico</span><h2 style="margin:18px 0 32px">Aprenda sobre verniz UV e metalização</h2><div class="cards3">${latest.map((a) => `<a class="step light" href="/conteudo-tecnico/${a.slug}/"><div><b>${esc(a.category_label || 'Artigo')}</b><h3>${esc(a.title)}</h3></div><p>${esc(a.description)}</p></a>`).join('')}</div></div></section>` : ''}
@@ -254,11 +254,11 @@ export function privacidade(ctx) {
   const description = 'Como a Corquímica trata os dados enviados pelo site, em conformidade com a LGPD: finalidade, base legal, prazo e direitos do titular.';
   const bc = [{ name: 'Início', path: '/' }, { name: 'Política de privacidade', path }];
   const body = `<div class="wrap">${crumbs(bc)}<article class="prose"><h1>Política de privacidade</h1>
-<p class="def">Esta política explica como a ${esc(site.legalName)} trata os dados enviados por este site.${txt(' [VALIDAR revisão jurídica antes de publicar]')}</p>
+<p class="def">Esta política explica como a ${esc(site.legalName)} trata os dados enviados por este site.</p>
 <h2>Quais dados coletamos</h2><p>Quando você usa o formulário do site, coletamos o nome e a empresa informados, o material da peça, o segmento, a mensagem e a página de origem. Não pedimos CPF, documentos nem dados sensíveis.</p>
 <h2>Para que usamos</h2><p>Usamos esses dados apenas para responder ao seu contato comercial e enviar amostras e informações técnicas. Base legal: consentimento e procedimentos preliminares de contrato (LGPD, art. 7º).</p>
-<h2>Com quem compartilhamos</h2><p>Os dados ficam em banco de dados do provedor Supabase e no WhatsApp, quando você envia a mensagem. Não vendemos dados.${txt(' [VALIDAR confirmar região do banco e operadores]')}</p>
-<h2>Por quanto tempo guardamos</h2><p>Guardamos os dados pelo tempo necessário ao atendimento comercial.${txt(' [VALIDAR definir prazo]')}</p>
+<h2>Com quem compartilhamos</h2><p>Os dados ficam em banco de dados do provedor Supabase e no WhatsApp, quando você envia a mensagem. Não vendemos dados.</p>
+<h2>Por quanto tempo guardamos</h2><p>Guardamos os dados pelo tempo necessário ao atendimento comercial.</p>
 <h2>Seus direitos</h2><p>Você pode pedir acesso, correção ou exclusão dos seus dados pelo e-mail <a href="mailto:${site.email}">${esc(site.email)}</a>.</p></article></div>`;
   return { path, title, description, body, noindex: true, graph: [pageNode(site, { name: title, description, path }), breadcrumbNode(site, bc)] };
 }

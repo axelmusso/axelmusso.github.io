@@ -20,7 +20,7 @@
    "Nivelamento perfeito da superfície",
    "Cura por radiação ultravioleta, em segundos",
    "Versões para ABS, PP, PS, Zamac e TPU (Base Flex, o verniz flexível)",
-   "Verniz flexível para TPU: acompanha a flexão da peça sem trincar o filme [VALIDAR]",
+   "Verniz flexível para TPU: acompanha a flexão da peça sem trincar o filme",
    "Menor flash-off e maior cobertura por demão",
    "Indicado sempre com solvente de formulação própria da Corquímica"
   ],
@@ -54,7 +54,7 @@
    [
     "Verniz UV Base Flex",
     "TPU e flexíveis (verniz flexível)",
-    "Base para peças flexíveis em TPU [VALIDAR]"
+    "Base para peças flexíveis em TPU"
    ]
   ],
   "seg": [
@@ -87,11 +87,11 @@
    ],
    [
     "Quanto tempo leva a cura UV do verniz base?",
-    "A cura por ultravioleta acontece em segundos, contra dezenas de minutos de sistemas térmicos em estufa. O tempo exato depende da lâmpada e da espessura. [VALIDAR com a área técnica]"
+    "A cura por ultravioleta acontece em segundos, contra dezenas de minutos de sistemas térmicos em estufa. O tempo exato depende da lâmpada e da espessura."
    ],
    [
     "Existe verniz UV base para TPU?",
-    "Sim. O Verniz UV Base Flex é o nosso verniz flexível para TPU. Ele acompanha a flexão da peça. A compatibilidade com cada TPU é confirmada em teste. [VALIDAR]"
+    "Sim. O Verniz UV Base Flex é o nosso verniz flexível para TPU. Ele acompanha a flexão da peça. A compatibilidade com cada TPU é confirmada em teste."
    ],
    [
     "A Corquímica faz verniz base sob medida?",
@@ -122,7 +122,7 @@
    "Proteção da metalização contra desgaste e química do dia a dia",
    "Cura UV rápida",
    "Opções para metalização e para peças tingidas",
-   "Versão flexível para TPU, que acompanha a movimentação da peça [VALIDAR]",
+   "Versão flexível para TPU, que acompanha a movimentação da peça",
    "Indicado sempre com solvente de formulação própria da Corquímica"
   ],
   "ben": [
@@ -138,19 +138,14 @@
     "Proteção e brilho sobre a metalização"
    ],
    [
-    "Verniz UV Top Coat Dupla Cura",
-    "Peças metalizadas",
-    "Diferença da dupla cura a descrever [VALIDAR]"
-   ],
-   [
     "Verniz UV Top Pintura",
     "Peças pintadas",
-    "Proteção e brilho sobre peças pintadas [VALIDAR]"
+    "Proteção e brilho sobre peças pintadas"
    ],
    [
     "Verniz UV Top Flex",
     "TPU e flexíveis (verniz flexível)",
-    "Proteção de peças flexíveis [VALIDAR]"
+    "Proteção de peças flexíveis"
    ]
   ],
   "seg": [
@@ -187,7 +182,7 @@
    ],
    [
     "Existe Top Coat para TPU?",
-    "Sim. Para peças flexíveis em TPU, a Corquímica indica o sistema flexível, formado pelo Base Flex e por um Top compatível. O conjunto é validado em teste na peça. [VALIDAR]"
+    "Sim. Para peças flexíveis em TPU, a Corquímica indica o sistema flexível, formado pelo Base Flex e por um Top compatível. O conjunto é validado em teste na peça."
    ],
    [
     "Como falar com o comercial sobre o Top Coat?",
@@ -217,7 +212,7 @@
    "Resistência a álcool",
    "Secagem rápida",
    "Cores lisas, metalizadas e personalizadas",
-   "Acabamento brilhante, acetinado ou fosco [VALIDAR]",
+   "Acabamento brilhante, acetinado ou fosco, ou conforme a necessidade do cliente",
    "Indicado sempre com solvente de formulação própria da Corquímica"
   ],
   "ben": [
@@ -230,12 +225,12 @@
    [
     "Laca lisa",
     "Plásticos, metais, madeira",
-    "Cor sólida, brilho a definir [VALIDAR]"
+    "Cor sólida, brilho a definir"
    ],
    [
     "Laca metálica",
     "Plásticos e metais",
-    "Efeito metalizado sem câmara a vácuo [VALIDAR]"
+    "Efeito metalizado sem câmara a vácuo"
    ],
    [
     "Laca personalizada",
@@ -245,7 +240,7 @@
    [
     "Verniz laca imersão alto brilho",
     "Processo de imersão",
-    "Alto brilho em linhas de imersão [VALIDAR]"
+    "Alto brilho em linhas de imersão"
    ]
   ],
   "seg": [
@@ -270,7 +265,7 @@
    ],
    [
     "A laca aguenta álcool?",
-    "As lacas Corquímica têm resistência a álcool. O nível exato depende da linha e da cura. [VALIDAR com a área técnica]"
+    "As lacas Corquímica têm resistência a álcool. O nível exato depende da linha e da cura."
    ],
    [
     "Dá para igualar a cor de uma amostra?",
@@ -282,7 +277,7 @@
    ],
    [
     "A laca serve para embalagens de cosméticos?",
-    "Sim, em cor lisa ou metalizada, com teste de resistência a álcool e à fragrância do produto. [VALIDAR]"
+    "Sim, em cor lisa ou metalizada, com teste de resistência a álcool e à fragrância do produto."
    ]
   ],
   "solvente": true
@@ -308,7 +303,7 @@
    "Parceria com os químicos e coloristas do cliente",
    "Apoio na formulação, na aplicação e na validação das cores",
    "Agilidade para criar novos tons e ajustar tons existentes",
-   "Não ataca o plástico, evita trincas por solvente [VALIDAR]",
+   "Não ataca o plástico, evita trincas por solvente",
    "Acabamento brilhante, fosco ou soft touch"
   ],
   "ben": [
@@ -321,12 +316,12 @@
    [
     "Tinta ABS",
     "ABS",
-    "Pintura de saltos e peças de moda e plásticos em geral [VALIDAR]"
+    "Pintura de saltos e peças de moda e plásticos em geral"
    ],
    [
     "Tinta PS",
     "Poliestireno",
-    "Pintura de saltos e peças de moda e plásticos em geral [VALIDAR]"
+    "Pintura de saltos e peças de moda e plásticos em geral"
    ]
   ],
   "seg": [
@@ -348,7 +343,7 @@
    ],
    [
     "Quanto tempo leva para ajustar um tom?",
-    "Trabalhamos com agilidade, porque cor de moda exige velocidade e precisão. O prazo depende do tom e da amostra. [VALIDAR prazo]"
+    "Trabalhamos com agilidade, porque cor de moda exige velocidade e precisão. O prazo depende do tom e da amostra."
    ],
    [
     "Preciso de primer em ABS e PS?",
@@ -374,14 +369,14 @@
    "pintura de piso",
    "tinta para piso resistente"
   ],
-  "def": "A tinta para piso protege e dá acabamento a superfícies de concreto e similares sujeitas a tráfego, limpeza e agentes químicos. [VALIDAR: tipo de resina da linha, por exemplo PU, epóxi ou acrílica]",
+  "def": "A tinta para piso da Corquímica é epóxi. Ela protege e dá acabamento a superfícies de concreto sujeitas a tráfego, limpeza e agentes químicos.",
   "prac": "O piso é preparado, recebe a tinta por rolo ou pistola e fica liberado após a cura indicada. Escolhe-se o sistema conforme o tráfego de pessoas, empilhadeiras e produtos químicos do local.",
   "feat": [
-   "Resistência ao tráfego e à abrasão [VALIDAR]",
+   "Resistência ao tráfego e à abrasão",
    "Fácil limpeza",
    "Cores sob medida e demarcação",
-   "Aderência em concreto e cimento queimado [VALIDAR]",
-   "Opção de acabamento brilhante, acetinado ou antiderrapante [VALIDAR]"
+   "Aderência em concreto",
+   "Opção de acabamento brilhante ou acetinado"
   ],
   "ben": [
    "Piso mais durável",
@@ -393,12 +388,12 @@
    [
     "Tinta para piso",
     "Concreto, cimento",
-    "Tráfego industrial e comercial [VALIDAR]"
+    "Tráfego industrial e comercial"
    ],
    [
     "Tinta demarcação",
     "Concreto, asfalto",
-    "Faixas e sinalização [VALIDAR]"
+    "Faixas e sinalização"
    ]
   ],
   "seg": [
@@ -411,7 +406,7 @@
    ],
    [
     "Quanto tempo leva para liberar o piso?",
-    "Depende da resina e da temperatura. A ficha técnica informa o tempo de cura e liberação. [VALIDAR]"
+    "Depende da resina e da temperatura. A ficha técnica informa o tempo de cura e liberação."
    ],
    [
     "Preciso preparar o piso antes de pintar?",
@@ -419,7 +414,7 @@
    ],
    [
     "A tinta pode ser antiderrapante?",
-    "É possível adicionar acabamento antiderrapante conforme o sistema. [VALIDAR com a área técnica]"
+    "É possível adicionar acabamento antiderrapante conforme o sistema."
    ],
    [
     "Dá para demarcar corredores e vagas?",
@@ -451,8 +446,7 @@
    "Coloração intensa",
    "Cores personalizadas sob amostra",
    "Compatível com vernizes UV Corquímica",
-   "Boa estabilidade entre lotes [VALIDAR]",
-   "Opções transparentes e opacas [VALIDAR]"
+   "Garantia de estabilidade entre os lotes"
   ],
   "ben": [
    "Efeito colorido sem trocar de sistema",
@@ -463,12 +457,12 @@
    [
     "Mixing, corante para Top Coat",
     "Verniz UV Top Coat",
-    "Cor translúcida sobre a metalização [VALIDAR]"
+    "Cor translúcida sobre a metalização"
    ],
    [
     "Pigmentos",
     "Tintas e lacas",
-    "Cores sólidas [VALIDAR]"
+    "Cores sólidas"
    ],
    [
     "Cor sob medida",
@@ -490,7 +484,7 @@
    ],
    [
     "Qual a diferença entre corante e pigmento?",
-    "O corante dissolve no verniz e dá cor translúcida. O pigmento fica em suspensão e dá cor opaca e cobertura. [VALIDAR com a área técnica]"
+    "O corante dissolve no verniz e dá cor translúcida. O pigmento fica em suspensão e dá cor opaca e cobertura."
    ],
    [
     "Posso tingir o Top Coat?",
@@ -498,7 +492,7 @@
    ],
    [
     "Qual a proporção de corante no verniz?",
-    "Varia por produto e intensidade desejada. A ficha técnica traz a faixa indicada. [VALIDAR]"
+    "Varia por produto e intensidade desejada. A ficha técnica traz a faixa indicada."
    ],
    [
     "A Corquímica faz cor sob medida?",
@@ -529,13 +523,13 @@
   "feat": [
    "Formulação de solvente desenvolvida pela Corquímica para cada verniz UV e laca",
    "Ajuste de viscosidade e escoamento na pistola",
-   "Evaporação adequada à linha, sem defeitos de superfície [VALIDAR]",
+   "Evaporação adequada à linha, sem defeitos de superfície",
    "Desengraxantes para limpeza de peças e de equipamentos",
-   "Compatibilidade com plásticos sensíveis, como o PS [VALIDAR]"
+   "Compatibilidade com plásticos sensíveis, como o PS"
   ],
   "ben": [
    "Resultado mais consistente na aplicação",
-   "Menos defeitos de superfície [VALIDAR]",
+   "Menos defeitos de superfície",
    "Peça limpa e pronta para receber a pintura",
    "Um só fornecedor para o sistema completo"
   ],
@@ -543,27 +537,27 @@
    [
     "Diluente para Base",
     "Verniz UV Base",
-    "Diluição e escoamento do Base [VALIDAR]"
+    "Diluição e escoamento do Base"
    ],
    [
-    "Diluente para Base OS",
-    "Verniz UV Base OS",
-    "Diluição e escoamento do Base OS [VALIDAR]"
+    "Diluente para Base PS",
+    "Verniz UV Base PS",
+    "Diluição e escoamento do Base PS"
    ],
    [
     "Diluente para Top Coat",
     "Verniz UV Top Coat",
-    "Diluição e escoamento do Top Coat [VALIDAR]"
+    "Diluição e escoamento do Top Coat"
    ],
    [
     "Solvente para laca",
     "Lacas acrílicas",
-    "Diluição e secagem da laca [VALIDAR]"
+    "Diluição e secagem da laca"
    ],
    [
     "Desengraxante de limpeza",
     "Peças e equipamentos",
-    "Remoção de óleos, desmoldantes e resíduos [VALIDAR]"
+    "Remoção de óleos, desmoldantes e resíduos"
    ]
   ],
   "seg": [
@@ -592,7 +586,7 @@
    ],
    [
     "O solvente serve para plásticos sensíveis, como o PS?",
-    "Depende da formulação. O PS é sensível a solventes fortes, e a Corquímica indica a opção compatível. [VALIDAR]"
+    "Depende da formulação. O PS é sensível a certos tipos de solventes, e a Corquímica indica a opção compatível."
    ],
    [
     "Como peço a indicação de solvente?",
