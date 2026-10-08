@@ -50,7 +50,7 @@ const articles = await loadArticles();
 const base = {
   articles, hasArticles: articles.length > 0,
   supabase: { url: SB_URL, key: SB_KEY },
-  cssHash: hash('src/styles/main.css'), jsHash: hash('src/scripts/lead.js'),
+  cssHash: hash('src/styles/main.css'), jsHash: hash('src/scripts/lead.js'), themeHash: hash('src/scripts/theme.js'),
 };
 
 // Contexto de cada idioma: textos de interface, caminhos e conteúdo traduzido (o português é a base).
@@ -114,6 +114,7 @@ const outPath = (p) => (p.endsWith('.html') ? p.slice(1) : p.slice(1) + 'index.h
 for (const p of pages) write(outPath(p.path), p.html);
 write('assets/main.css', fs.readFileSync(R('src/styles/main.css')));
 write('assets/lead.js', fs.readFileSync(R('src/scripts/lead.js')));
+write('assets/theme.js', fs.readFileSync(R('src/scripts/theme.js')));
 if (fs.existsSync(R('public'))) for (const f of fs.readdirSync(R('public'))) fs.copyFileSync(R('public', f), path.join(OUT, f));
 for (const [, file] of photoFiles) write('img/' + file, fs.readFileSync(R('src/assets/photos', file)));
 write('.nojekyll', '');

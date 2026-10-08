@@ -33,6 +33,7 @@ ${head(ctx, { ...page, noindex })}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="/assets/main.css?v=${ctx.cssHash}">
+<script src="/assets/theme.js?v=${ctx.themeHash}"></script>
 ${page.withForm ? `<meta name="cq-wa" content="${site.whatsapp}">${sb.url ? `<meta name="cq-supabase-url" content="${esc(sb.url)}"><meta name="cq-supabase-key" content="${esc(sb.key)}">` : ''}
 <script src="/assets/lead.js?v=${ctx.jsHash}" defer></script>` : ''}
 </head>
@@ -50,6 +51,7 @@ ${state.mode === 'staging' ? `<div class="stagingbar">${esc(state.awaitingDomain
     ${showArticles ? `<a class="l" href="${r.articles}"${cur(r.articles)}>${esc(t.navArticles)}</a>` : ''}
     <a class="l" href="${r.contact}"${cur(r.contact)}>${esc(t.navContact)}</a>
   </nav>
+  <button type="button" class="theme-toggle" data-to-dark="${esc(t.themeToDark)}" data-to-light="${esc(t.themeToLight)}" aria-label="${esc(t.themeToDark)}" hidden><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button>
   ${langSwitch(lang, page.alt || {})}
 </div></header>
 <main id="conteudo">

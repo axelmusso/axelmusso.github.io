@@ -15,9 +15,9 @@
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;font-weight:400}
 h1,h2,h3,p{margin:0}
-h1,h2,h3{font-weight:500;letter-spacing:-.015em;line-height:1.15;text-wrap:balance}
+h1,h2,h3{font-weight:500;letter-spacing:-.01em;line-height:1.15;text-wrap:balance}
 h2{font-size:clamp(30px,4.2vw,50px)}
-h3{font-size:20px;line-height:1.3;letter-spacing:-.01em}
+h3{font-size:20px;line-height:1.3;letter-spacing:-.005em}
 button,a{font:inherit;color:inherit}
 /* uma só fonte: IBM Plex Sans, pesos 400 e 500 (os carregados) */
 b,strong,th,h1,h2,h3,h4,h5,h6{font-weight:500}
@@ -27,7 +27,7 @@ a{text-decoration:none}
 :focus-visible{outline:3px solid var(--blue);outline-offset:3px}
 .wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(20px,5vw,64px)}
 .sec{padding-block:clamp(64px,9vw,120px)}
-.label{display:inline-flex;align-items:center;gap:10px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.label{display:inline-flex;align-items:center;gap:10px;font-size:15px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);font-weight:400}
 .label::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--blue)}
 .on-dark .label{color:var(--on-dark-mut)}
 .rule{height:1px;background:var(--line);border:0;margin:28px 0 0}
@@ -402,3 +402,29 @@ body.home .langs a[aria-current] .flag{box-shadow:0 0 0 2px #0a0a3c,0 0 0 3.5px 
   .langs a{padding:7px}
 }
 
+
+/* tipografia (opção A): espaçamento uniforme em títulos de listas e perguntas */
+.row b,details.faq summary{letter-spacing:-.005em}
+
+/* botão de tema (sol/lua) no cabeçalho: mostra a lua no claro e o sol no escuro */
+.theme-toggle{flex:none;display:grid;place-items:center;width:36px;height:36px;margin-left:10px;padding:0;border:1px solid var(--line);border-radius:50%;background:transparent;color:inherit;cursor:pointer;transition:background .2s}
+.theme-toggle:hover{background:var(--sand)}
+.theme-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.theme-toggle .i-moon{fill:currentColor;stroke:none}
+.theme-toggle .i-sun{display:none}
+.theme-toggle[aria-pressed="true"] .i-sun{display:block}
+.theme-toggle[aria-pressed="true"] .i-moon{display:none}
+.theme-toggle[hidden]{display:none}
+body.home .theme-toggle{border-color:#ffffff40}
+body.home .theme-toggle:hover{background:#ffffff1f}
+.langs{margin-left:8px}
+@media (max-width:980px){.theme-toggle{order:2;margin-left:auto}.langs{margin-left:4px}}
+@media (max-width:560px){
+  header.site .wrap{gap:6px}
+  .logo{font-size:19px;gap:9px}.logo svg{height:26px}
+  .theme-toggle{width:32px;height:32px}.theme-toggle svg{width:16px;height:16px}
+  .langs{gap:0}.langs a{padding:5px}.langs .flag{width:20px;height:20px}
+  .burger{width:40px}
+}
+@media (max-width:380px){.logo{font-size:17px;gap:7px}.logo svg{height:22px}.langs a{padding:4px}}
+@media (max-width:330px){.logo span{display:none}}
