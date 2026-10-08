@@ -7,6 +7,8 @@ export const AR = '<svg class="arr" viewBox="0 0 16 16" aria-hidden="true"><path
 // Logo oficial (ƆQ com barra), redesenhado em vetor a partir do arquivo da marca.
 export const LOGO = '<svg viewBox="121 32 683 408" aria-hidden="true"><path fill="#3570AF" d="M131.3 134A157 157 0 1 1 131.3 246H198.8A97 97 0 1 0 198.8 134Z"/><circle cx="647" cy="189" r="127" fill="none" stroke="#E92D2B" stroke-width="60"/><path fill="#E92D2B" d="M697 227L796 301L766 341L667 267Z"/><rect x="121" y="378" width="683" height="62" fill="#3570AF"/></svg>';
 
+export const igUrl = (site) => `https://www.instagram.com/${site.instagram}/`;
+
 export const waUrl = (site, msg) =>
   `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(msg || 'Olá! Vim pelo site da Corquímica e gostaria de falar com o comercial.')}`;
 
@@ -61,6 +63,7 @@ ${page.body}
     <a href="${esc(waUrl(site, t.waDefault))}" target="_blank" rel="noopener">WhatsApp: ${esc(site.whatsappDisplay)}</a>
     <a href="tel:${site.phone}">${esc(t.fPhone)}: ${esc(site.phoneDisplay)}</a>
     <a href="mailto:${site.email}">${esc(site.email)}</a>
+    <a href="${igUrl(site)}" target="_blank" rel="noopener" aria-label="${esc(t.igFollow)}: @${esc(site.instagram)}">Instagram: @${esc(site.instagram)}</a>
     <a href="${r.contact}">${esc(t.fAllContacts)}</a></div>
   <div class="col"><b>${esc(t.fProducts)}</b>${prodLinks}</div>
   <div class="col"><b>${esc(t.fIndustries)}</b>${segLinks}<b style="margin-top:14px">${esc(t.fCompany)}</b><a href="${r.about}">${esc(t.fAbout)}</a>${showArticles ? `<a href="${r.articles}">${esc(t.navArticles)}</a>` : ''}<a href="${r.privacy}">${esc(t.fPrivacy)}</a></div>

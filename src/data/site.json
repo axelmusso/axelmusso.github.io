@@ -20,8 +20,10 @@
  },
  "social": [
   "https://www.facebook.com/CorquimicaIndustria",
-  "https://br.linkedin.com/company/corquimica-industria-e-comercio"
+  "https://br.linkedin.com/company/corquimica-industria-e-comercio",
+  "https://www.instagram.com/corquimica/"
  ],
+ "instagram": "corquimica",
  "clients": "100",
  "tonsPerYear": "100"
 }

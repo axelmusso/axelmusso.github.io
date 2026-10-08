@@ -1,7 +1,7 @@
 // Modelos de página. Cada função devolve { key, path, title, description, body, graph, ... }.
 // ctx traz o idioma: ctx.lang, ctx.t (textos de interface), ctx.r (caminhos) e o conteúdo já traduzido.
 import { esc, txt, plain, md, photo, photoBg, photoSwap } from './util.mjs';
-import { AR, pb, waBtn, waUrl } from './layout.mjs';
+import { AR, pb, waBtn, waUrl, igUrl } from './layout.mjs';
 import { breadcrumbNode, faqNode, pageNode, abs } from './seo.mjs';
 import { monthYear } from './i18n.mjs';
 
@@ -139,7 +139,7 @@ export function contato(ctx) {
 <div class="ph2"><div><span class="label">${esc(t.contactCrumb)}</span><h1>${esc(t.contactH1)}</h1>
 <p class="def">${esc(t.contactDef)}</p>
 <div style="margin:26px 0">${waBtn(ctx, t.waFloat, t.waDefault)}</div>
-<address class="contact-list"><p><b>WhatsApp</b><a href="${esc(waUrl(site, t.waDefault))}" target="_blank" rel="noopener">${esc(site.whatsappDisplay)}</a></p><p><b>${esc(t.landline)}</b><a href="tel:${site.phone}">${esc(site.phoneDisplay)}</a></p><p><b>${esc(t.email)}</b><a href="mailto:${site.email}">${esc(site.email)}</a></p><p><b>${esc(t.address)}</b>${esc(site.address.street)}, ${esc(site.address.district)}<br>${esc(site.address.city)}, ${esc(site.address.region)}${country} · <a href="${esc(map)}" target="_blank" rel="noopener">${esc(t.viewMap)}</a></p></address></div>
+<address class="contact-list"><p><b>WhatsApp</b><a href="${esc(waUrl(site, t.waDefault))}" target="_blank" rel="noopener">${esc(site.whatsappDisplay)}</a></p><p><b>${esc(t.landline)}</b><a href="tel:${site.phone}">${esc(site.phoneDisplay)}</a></p><p><b>${esc(t.email)}</b><a href="mailto:${site.email}">${esc(site.email)}</a></p><p><b>Instagram</b><a href="${igUrl(site)}" target="_blank" rel="noopener" aria-label="${esc(t.igFollow)}: @${esc(site.instagram)}">@${esc(site.instagram)}</a></p><p><b>${esc(t.address)}</b>${esc(site.address.street)}, ${esc(site.address.district)}<br>${esc(site.address.city)}, ${esc(site.address.region)}${country} · <a href="${esc(map)}" target="_blank" rel="noopener">${esc(t.viewMap)}</a></p></address></div>
 <div>${lead(ctx, { pageUrl: path })}</div></div></div>`;
   return { key: 'contact', path, title, description, body, withForm: true, graph: [pageNode(ctx, { type: 'ContactPage', name: title, description, path }), breadcrumbNode(site, bc)] };
 }
