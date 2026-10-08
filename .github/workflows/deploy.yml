@@ -30,9 +30,9 @@ jobs:
         run: node scripts/backup.mjs site
         env:
           SB_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-      # Cópia diária dos contatos do formulário, na mesma pasta privada.
+      # Cópia dos contatos do formulário (diária e nas publicações manuais), na mesma pasta privada.
       - name: Copiar os contatos do formulário
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: node scripts/backup.mjs contatos
         env:
