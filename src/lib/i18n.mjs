@@ -131,7 +131,7 @@ const PT = {
   privBody: (legal, mail) => `<p class="def">Esta política explica como a ${legal} trata os dados enviados por este site.</p>
 <h2>Quais dados coletamos</h2><p>Quando você usa o formulário do site, coletamos o nome e a empresa informados, o material da peça, o segmento, a mensagem e a página de origem. Não pedimos CPF, documentos nem dados sensíveis.</p>
 <h2>Para que usamos</h2><p>Usamos esses dados apenas para responder ao seu contato comercial e enviar amostras e informações técnicas. Base legal: consentimento e procedimentos preliminares de contrato (LGPD, art. 7º).</p>
-<h2>Com quem compartilhamos</h2><p>Os dados ficam em banco de dados do provedor Supabase e no WhatsApp, quando você envia a mensagem. Não vendemos dados.</p>
+<h2>Com quem compartilhamos</h2><p>Os dados ficam em banco de dados do provedor Supabase e no WhatsApp, quando você envia a mensagem. Também mantemos cópias de segurança desses dados em uma área privada do mesmo provedor. Não vendemos dados.</p>
 <h2>Por quanto tempo guardamos</h2><p>Guardamos os dados pelo tempo necessário ao atendimento comercial.</p>
 <h2>Seus direitos</h2><p>Você pode pedir acesso, correção ou exclusão dos seus dados pelo e-mail ${mail}.</p>`,
   // JSON-LD
@@ -231,7 +231,7 @@ const ES = {
   privBody: (legal, mail) => `<p class="def">Esta política explica cómo ${legal} trata los datos enviados por este sitio web.</p>
 <h2>Qué datos recopilamos</h2><p>Cuando usa el formulario del sitio, recopilamos el nombre y la empresa informados, el material de la pieza, el sector, el mensaje y la página de origen. No solicitamos el CPF (número fiscal brasileño), documentos ni datos sensibles.</p>
 <h2>Para qué los usamos</h2><p>Usamos estos datos solo para responder a su contacto comercial y enviar muestras e información técnica. Base legal: consentimiento y procedimientos preliminares de contrato (LGPD, art. 7).</p>
-<h2>Con quién los compartimos</h2><p>Los datos quedan en la base de datos del proveedor Supabase y en WhatsApp, cuando usted envía el mensaje. No vendemos datos.</p>
+<h2>Con quién los compartimos</h2><p>Los datos quedan en la base de datos del proveedor Supabase y en WhatsApp, cuando usted envía el mensaje. También mantenemos copias de seguridad de estos datos en un área privada del mismo proveedor. No vendemos datos.</p>
 <h2>Por cuánto tiempo los conservamos</h2><p>Conservamos los datos durante el tiempo necesario para la atención comercial.</p>
 <h2>Sus derechos</h2><p>Puede solicitar el acceso, la corrección o la eliminación de sus datos por correo electrónico a ${mail}.</p>`,
   areaServed: 'Brasil',
@@ -330,7 +330,7 @@ const EN = {
   privBody: (legal, mail) => `<p class="def">This policy explains how ${legal} handles the data sent through this website.</p>
 <h2>What data we collect</h2><p>When you use the website form, we collect the name and company you provide, the part material, the industry, the message and the source page. We do not ask for a CPF (Brazilian taxpayer ID), documents or sensitive data.</p>
 <h2>How we use it</h2><p>We use this data only to respond to your sales inquiry and to send samples and technical information. Legal basis: consent and preliminary contract procedures (LGPD, art. 7).</p>
-<h2>Who we share it with</h2><p>The data is stored in a database hosted by the provider Supabase and in WhatsApp, when you send the message. We do not sell data.</p>
+<h2>Who we share it with</h2><p>The data is stored in a database hosted by the provider Supabase and in WhatsApp, when you send the message. We also keep backup copies of this data in a private area of the same provider. We do not sell data.</p>
 <h2>How long we keep it</h2><p>We keep the data for as long as needed to handle your sales inquiry.</p>
 <h2>Your rights</h2><p>You can request access to, correction of or deletion of your data by emailing ${mail}.</p>`,
   areaServed: 'Brazil',

@@ -1,0 +1,61 @@
+name: Restaurar versão
+# Volta o site para uma versão anterior. Cria um novo commit com os arquivos daquela versão
+# (o histórico não é apagado) e republica. Para desfazer, basta restaurar a versão seguinte.
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: 'Código da versão (commit, ex.: 90167e6). A lista com data e hora está na tabela site_versoes do Supabase e no histórico do GitHub.'
+        required: true
+      origem:
+        description: 'De onde buscar a versão (use supabase só se o histórico do GitHub não tiver a versão)'
+        type: choice
+        options: [github, supabase]
+        default: github
+permissions: { contents: write, actions: write }
+concurrency: { group: restaurar, cancel-in-progress: false }
+jobs:
+  restaurar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: { node-version: 22 }
+      - name: Trazer os arquivos da versão escolhida
+        env:
+          VERSAO: ${{ inputs.versao }}
+          ORIGEM: ${{ inputs.origem }}
+          SB_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          case "$VERSAO" in (*[!0-9a-fA-F]*|'') echo "::error::Código de versão inválido: $VERSAO"; exit 1;; esac
+          # guarda as ferramentas atuais de publicação, backup e restauração antes de trocar os arquivos
+          mkdir -p /tmp/ferramentas && cp -R .github scripts /tmp/ferramentas/
+          if [ "$ORIGEM" = github ]; then
+            git cat-file -e "$VERSAO^{commit}" 2>/dev/null || { echo "::error::Versão $VERSAO não encontrada no GitHub. Tente com origem = supabase."; exit 1; }
+            git rm -rq .
+            git checkout "$(git rev-parse "$VERSAO")" -- .
+          else
+            node scripts/backup.mjs baixar "$VERSAO" /tmp/versao.zip
+            git rm -rq .
+            unzip -q /tmp/versao.zip 'fonte/*' -d /tmp/v
+            cp -R /tmp/v/fonte/. .
+          fi
+          # as ferramentas atuais continuam valendo, mesmo ao voltar para uma versão mais antiga
+          rm -rf .github scripts && cp -R /tmp/ferramentas/.github /tmp/ferramentas/scripts .
+      - name: Registrar a restauração e republicar
+        env:
+          VERSAO: ${{ inputs.versao }}
+          ORIGEM: ${{ inputs.origem }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "O site já está nessa versão."; exit 0; fi
+          git commit -q -m "Restaura a versão $VERSAO (origem: $ORIGEM)"
+          git push origin HEAD:main
+          gh workflow run deploy.yml --ref main
+          echo "Versão $VERSAO restaurada. A publicação começou na aba Actions."

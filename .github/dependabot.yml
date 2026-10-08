@@ -1,0 +1,6 @@
+# Avisa por pull request quando sair atualização das ações usadas na publicação (fixadas por código).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }

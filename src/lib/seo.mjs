@@ -72,9 +72,17 @@ export function head(ctx, p) {
   const alt = p.alt || { [lang]: p.path };
   const hreflang = p.path === '/404.html' ? '' : LANGS.filter((l) => alt[l]).map((l) => `<link rel="alternate" hreflang="${META[l].html}" href="${esc(abs(site, alt[l]))}">`).join('\n')
     + (alt.pt ? `\n<link rel="alternate" hreflang="x-default" href="${esc(abs(site, alt.pt))}">` : '');
+  // Política de segurança: só scripts do próprio site; fontes do Google; dados só para o Supabase do formulário.
+  const csp = [
+    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    'font-src https://fonts.gstatic.com', "img-src 'self' data:", `connect-src 'self'${ctx.supabase?.url ? ' ' + ctx.supabase.url : ''}`,
+    "form-action 'self' https://wa.me", "base-uri 'self'", "object-src 'none'",
+  ].join('; ');
   const ogAlt = LANGS.filter((l) => l !== lang && alt[l]).map((l) => `<meta property="og:locale:alternate" content="${META[l].og}">`).join('\n');
   return `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="${esc(csp)}">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${esc(plain(p.title))}</title>
 <meta name="description" content="${esc(plain(p.description))}">
 <meta name="robots" content="${robots}">

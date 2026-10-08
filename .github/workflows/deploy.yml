@@ -10,8 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Ações fixadas pelo código exato (commit), para não receber mudanças sem revisão. O Dependabot propõe as atualizações.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 22 }
       - name: Gerar site
         run: node build.mjs
@@ -22,8 +23,22 @@ jobs:
           CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
       - name: Testes de SEO
         run: node tests/check.mjs
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      # Cópia de segurança desta versão no Supabase (código-fonte + site pronto). Não bloqueia a publicação se falhar.
+      - name: Guardar esta versão no Supabase
+        if: github.event_name != 'schedule'
+        continue-on-error: true
+        run: node scripts/backup.mjs site
+        env:
+          SB_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      # Cópia diária dos contatos do formulário, na mesma pasta privada.
+      - name: Copiar os contatos do formulário
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        run: node scripts/backup.mjs contatos
+        env:
+          SB_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with: { path: dist }
   deploy:
     needs: build
@@ -31,4 +46,4 @@ jobs:
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
     steps:
       - id: d
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
