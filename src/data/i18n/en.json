@@ -1,0 +1,434 @@
+{
+ "site": {
+  "tagline": "UV coatings, lacquers, paints and colorants for plastics and metals",
+  "description": "Manufacturer of UV coatings (Base Coat and Top Coat), lacquers, paints for ABS and PS, floor paints, UV colorants, solvents and degreasers in Estância Velha, RS, Brazil. More than 100 customers throughout Brazil."
+ },
+ "families": {
+  "verniz-uv-base": {
+   "slug": "uv-base-coat",
+   "n": "UV Base Coat",
+   "short": "Anchoring and leveling before vacuum metallization.",
+   "h1": "UV Base Coat for vacuum metallization on ABS, PP, PS and Zamak",
+   "title": "UV Base Coat for vacuum metallization | Corquímica",
+   "meta": "UV Base Coat for ABS, PP, PS, Zamak and TPU. Excellent adhesion, leveling and cure in seconds. Request a sample and technical data sheet.",
+   "kw": ["uv base coat", "base coat for metallization", "uv coating for abs", "uv base coat for plastics", "base coat for vacuum metallization"],
+   "def": "The UV Base Coat is the first layer applied to the part before vacuum metallization. It anchors the metallization, levels the surface and provides the mirror finish that the Top Coat will later protect. For flexible TPU parts, Corquímica offers the UV Base Coat Flex.",
+   "prac": "In practice, the plastic or Zamak part is spray-coated with the Base Coat, cured under ultraviolet light in seconds and moved on to the metallizing chamber. Without the base coat, the deposited aluminum loses gloss and may peel off.",
+   "feat": [
+    "Excellent adhesion, no peeling",
+    "Perfect surface leveling",
+    "Ultraviolet cure in seconds",
+    "Versions for ABS, PP, PS, Zamak and TPU (Base Flex, the flexible coating)",
+    "Flexible coating for TPU: follows the part as it flexes without cracking the film",
+    "Shorter flash-off and higher coverage per coat",
+    "Always recommended with a solvent formulated by Corquímica"
+   ],
+   "ben": [
+    "Mirror-like metallized finish",
+    "Less rework and scrap",
+    "Faster line than oven-cure systems",
+    "Complete system with the Top Coat from the same manufacturer"
+   ],
+   "table": [
+    ["UV Base Coat ABS", "ABS", "Base coat for vacuum metallization of ABS parts"],
+    ["UV Base Coat PP", "Polypropylene", "Base coat for metallization of PP parts"],
+    ["UV Base Coat PS", "Polystyrene", "Base coat for metallization of PS parts"],
+    ["UV Base Coat Zamak", "Zamak", "Base coat for Zamak accessories and trims"],
+    ["UV Base Coat Flex", "TPU and flexible materials (flexible coating)", "Base coat for flexible TPU parts"]
+   ],
+   "faq": [
+    ["What is a UV base coat?", "It is the coating applied before vacuum metallization. It gives the part adhesion and leveling, and prepares the surface to receive the metallization and then the Top Coat."],
+    ["What is the difference between a base coat and a top coat?", "The base coat sits under the metallization and anchors it. The top coat sits over the metallization and protects it against scratches, wear and chemical attack."],
+    ["Which solvent should I use with the UV Base Coat?", "Corquímica always recommends a solvent formulation developed in-house for the UV Base Coat, to best deliver the result the customer expects. Tell us about your process and the team will recommend the solvent."],
+    ["Which UV base coat should I use on ABS, PP or PS?", "Each plastic has a specific base coat. Corquímica offers base coats for ABS, PP, PS, Zamak and TPU. Send a part for testing and the technical team will recommend the version."],
+    ["Do I need a primer before the base coat?", "It depends on the material. On low surface energy plastics such as PP, a primer may be required. The recommendation is made after testing on the part."],
+    ["How long does the UV base coat take to cure?", "UV curing takes seconds, compared with tens of minutes for thermal oven systems. The exact time depends on the lamp and the film thickness."],
+    ["Is there a UV base coat for TPU?", "Yes. The UV Base Coat Flex is our flexible coating for TPU. It follows the part as it flexes. Compatibility with each TPU is confirmed by testing."],
+    ["Does Corquímica make custom base coats?", "Yes. The lab adjusts the formulation to the customer's part, substrate and equipment, with on-site technical support."]
+   ]
+  },
+  "verniz-uv-top-coat": {
+   "slug": "uv-top-coat",
+   "n": "UV Top Coat",
+   "short": "Protection and gloss over the metallization.",
+   "h1": "UV Top Coat: protection and gloss for metallized parts",
+   "title": "UV Top Coat for metallized parts | Corquímica",
+   "meta": "UV top coat with scratch resistance and a mirror finish for metallized parts. Manufacturer in Estância Velha, RS, Brazil. Request a sample.",
+   "kw": ["uv top coat", "top coat for metallization", "scratch-resistant uv coating", "protective coating for metallized parts", "uv top coat for plastics"],
+   "def": "The UV Top Coat is the final layer applied over the metallized part. It protects the metallization, an extremely thin film, against scratches, wear and chemical agents, and delivers the mirror finish. A flexible version is also available for TPU parts.",
+   "prac": "After the metallizing chamber, the Top Coat is spray-applied and UV-cured in seconds. The part comes out ready for assembly, with stable gloss and resistance to handling.",
+   "feat": [
+    "High scratch and abrasion resistance",
+    "Mirror or matte finish",
+    "Protects the metallization against wear and everyday chemicals",
+    "Fast UV cure",
+    "Options for metallized and tinted parts",
+    "Flexible version for TPU that follows the part's movement",
+    "Always recommended with a solvent formulated by Corquímica"
+   ],
+   "ben": [
+    "More durable finished part",
+    "Fewer complaints about peeling and stains",
+    "Premium, uniform appearance",
+    "Compatible with Corquímica UV base coats"
+   ],
+   "table": [
+    ["UV Top Coat", "Metallized parts", "Protection and gloss over the metallization"],
+    ["UV Top Coat for Painted Parts", "Painted parts", "Protection and gloss over painted parts"],
+    ["UV Top Coat Flex", "TPU and flexible materials (flexible coating)", "Protection of flexible parts"]
+   ],
+   "faq": [
+    ["What is a UV top coat used for?", "It protects the vacuum metallization and provides a gloss or matte finish with scratch resistance."],
+    ["Can I metallize without a top coat?", "It is not recommended. The metallization is a very thin film and is damaged by handling. The Top Coat prevents scratches, stains and loss of gloss."],
+    ["Which solvent should I use with the UV Top Coat?", "Corquímica always recommends a solvent formulation developed in-house for the Top Coat, to best deliver the result the customer expects. Tell us about your process and the team will recommend the solvent."],
+    ["Can the top coat be tinted?", "Yes. With UV colorants the top coat can be tinted to achieve gold, bronze, blue and other colors over the metallized base."],
+    ["Is the top coat suitable for automotive parts?", "It is suitable for the finishing and cosmetic protection of parts and accessories. Exterior performance depends on testing for each project."],
+    ["What is the difference between a UV top coat and a PU coating?", "UV cures in seconds under ultraviolet radiation, with no long oven bake. PU cures by chemical or thermal reaction and usually takes longer. The choice depends on the part and the line."],
+    ["Is there a top coat for TPU?", "Yes. For flexible TPU parts, Corquímica recommends the flexible system: the Base Flex plus a compatible top coat. The combination is validated by testing on the part."],
+    ["How do I contact sales about the Top Coat?", "Message our sales team on WhatsApp with the part material and the effect you want. The team will reply with a recommendation and send a sample."]
+   ]
+  },
+  "lacas": {
+   "slug": "lacquers",
+   "n": "Lacquers",
+   "short": "Solid colors and metallic effects with fast drying.",
+   "h1": "Acrylic lacquers for plastics, metals and furniture: solid colors and metallic effects",
+   "title": "Acrylic lacquers for plastics and furniture | Corquímica",
+   "meta": "Corquímica acrylic lacquers: solid and metallic colors, adhesion, alcohol resistance and fast drying. Manufacturer in RS, Brazil.",
+   "kw": ["acrylic lacquer", "lacquer for plastics", "lacquer for metallization", "furniture lacquer", "metallic lacquer"],
+   "def": "Acrylic lacquer is a fast-drying paint that forms a smooth film with color and gloss. Corquímica manufactures lacquers in solid colors and metallic effects for plastics, metals and furniture parts.",
+   "prac": "The lacquer is spray-applied, then air-dried or given a short oven dry, and leaves the part in its final color. It can be used on its own or as a base for other finishes.",
+   "feat": [
+    "Good adhesion to a variety of substrates",
+    "Alcohol resistance",
+    "Fast drying",
+    "Solid, metallic and custom colors",
+    "Gloss, satin or matte finish, or as the customer requires",
+    "Always recommended with a solvent formulated by Corquímica"
+   ],
+   "ben": [
+    "Exact color, matched to the customer's sample",
+    "Line productivity",
+    "Less rework",
+    "Compatible with protective coatings"
+   ],
+   "table": [
+    ["Solid lacquer", "Plastics, metals, wood", "Solid color, gloss level to be defined"],
+    ["Metallic lacquer", "Plastics and metals", "Metallic effect without a vacuum chamber"],
+    ["Custom lacquer", "Per project", "Color developed in the lab"],
+    ["High-gloss dip lacquer", "Dip coating process", "High gloss on dip coating lines"]
+   ],
+   "faq": [
+    ["What is acrylic lacquer?", "It is a fast-drying paint with a smooth film, used to give color and gloss to plastics, metals and wood."],
+    ["Lacquer or UV coating: which should I choose?", "Lacquer adds color and dries quickly without UV light. UV coating cures in seconds under the lamp and gives more hardness and gloss. Many lines combine both."],
+    ["Which solvent should I use with the lacquer?", "Corquímica always recommends a solvent formulation developed in-house for each lacquer, to best deliver the result the customer expects. Tell us about your process and the team will recommend the solvent."],
+    ["Is the lacquer alcohol resistant?", "Corquímica lacquers are alcohol resistant. The exact level depends on the line and the cure."],
+    ["Can you match the color of a sample?", "Yes. The lab develops the color from the sample sent by the customer."],
+    ["Is the lacquer suitable for furniture?", "Yes, for furniture accessories, panels and plastic parts. For plastic coverings that need high protection, a UV coating may be recommended on top."],
+    ["Is the lacquer suitable for cosmetic packaging?", "Yes, in solid or metallic colors, with resistance testing against alcohol and the product's fragrance."]
+   ]
+  },
+  "tintas-abs-ps": {
+   "slug": "paints-abs-ps",
+   "n": "Paints for ABS and PS",
+   "short": "Paints for heels, fashion parts and general plastics.",
+   "h1": "Paints for ABS and PS: painting heels and plastic fashion parts",
+   "title": "Paint for ABS and PS heels | Corquímica",
+   "meta": "Paints for heels and ABS and PS parts, for fashion and general plastics. We work alongside the customer's colorists and adjust colors quickly.",
+   "kw": ["paint for shoe heels", "paint for abs", "paint for polystyrene", "heel painting", "abs plastic paint"],
+   "def": "Corquímica paints for ABS and PS are used to paint heels and other plastic parts, and serve only the fashion and general plastics segments. They are formulated to adhere to these plastics without attacking the part.",
+   "prac": "We work alongside the customer's chemists and colorists, supporting color formulation, application and validation. We know this work demands speed and precision, so we develop new shades and adjust existing ones quickly whenever needed.",
+   "feat": [
+    "Focus on painting ABS and PS heels",
+    "Partnership with the customer's chemists and colorists",
+    "Support with color formulation, application and validation",
+    "Quick development of new shades and adjustment of existing ones",
+    "Does not attack the plastic and prevents solvent cracking",
+    "Gloss, matte or soft-touch finish"
+   ],
+   "ben": [
+    "Collection colors approved quickly",
+    "Less rework when adjusting shades",
+    "Consistent color from batch to batch",
+    "Technical support on the paint line"
+   ],
+   "table": [
+    ["ABS Paint", "ABS", "Painting heels, fashion parts and general plastics"],
+    ["PS Paint", "Polystyrene", "Painting heels, fashion parts and general plastics"]
+   ],
+   "faq": [
+    ["Which paint should I use on ABS and PS heels?", "Use a paint formulated for these plastics, one that adheres without attacking the heel. Corquímica recommends the system after testing your part."],
+    ["Which segments are the ABS and PS paints for?", "They are used only in fashion, mainly for painting heels, and in general plastics."],
+    ["Does Corquímica help formulate colors?", "Yes. We work alongside the customer's chemists and colorists, supporting color formulation, application and validation."],
+    ["How long does it take to adjust a shade?", "We work quickly, because fashion color demands speed and precision. The lead time depends on the shade and the sample."],
+    ["Do I need a primer on ABS and PS?", "In many cases adhesion is direct. On parts with mold release agent or a difficult surface, a primer helps. Testing on the part decides."],
+    ["Can I paint and then metallize?", "Yes. The UV Base Coat prepares the part, the metallization comes next, and the Top Coat protects it."]
+   ]
+  },
+  "tintas-piso": {
+   "slug": "floor-paints",
+   "n": "Floor paints",
+   "short": "Floor painting and protection, formulated for each application.",
+   "h1": "Floor paints: protection and finish for industrial and commercial spaces",
+   "title": "Industrial floor paints | Corquímica",
+   "meta": "Floor paints resistant to traffic and cleaning. Formulated for each application, with technical support. Talk to Corquímica.",
+   "kw": ["floor paint", "industrial floor paint", "concrete floor paint", "floor painting", "durable floor paint"],
+   "def": "Corquímica floor paint is epoxy. It protects and finishes concrete surfaces exposed to traffic, cleaning and chemical agents.",
+   "prac": "The floor is prepared, the paint is applied by roller or spray, and the floor is released after the specified cure. The system is chosen according to the foot traffic, forklifts and chemicals in the area.",
+   "feat": [
+    "Resistance to traffic and abrasion",
+    "Easy to clean",
+    "Custom colors and line marking",
+    "Adhesion to concrete",
+    "Gloss or satin finish options"
+   ],
+   "ben": [
+    "Longer-lasting floor",
+    "Cleaner, safer environment",
+    "Fewer maintenance shutdowns",
+    "Formulation tailored to the use"
+   ],
+   "table": [
+    ["Floor paint", "Concrete, cement", "Industrial and commercial traffic"],
+    ["Line marking paint", "Concrete, asphalt", "Lanes and signage"]
+   ],
+   "faq": [
+    ["Which paint should I use on an industrial floor?", "Use a paint with high resistance to traffic and abrasion, chosen according to how the area is used. Corquímica recommends the system after understanding the application."],
+    ["How long before the floor can be used?", "It depends on the resin and the temperature. The technical data sheet gives the cure and return-to-service times."],
+    ["Do I need to prepare the floor before painting?", "Yes. The floor must be clean, dry and free of loose material. Correct preparation has the greatest influence on durability."],
+    ["Can the paint be anti-slip?", "An anti-slip finish can be added, depending on the system."],
+    ["Can you mark aisles and parking spaces?", "Yes, with custom line marking colors."],
+    ["What is the difference between floor paint and regular paint?", "Floor paint has the resin and fillers to withstand abrasion, traffic and cleaning. Regular wall paint peels quickly under those conditions."]
+   ]
+  },
+  "corantes-uv": {
+   "slug": "uv-colorants",
+   "n": "UV colorants",
+   "short": "Intense, custom color for UV coatings and paints.",
+   "h1": "UV colorants for coatings and paints: intense, custom color",
+   "title": "UV colorants for coatings and paints | Corquímica",
+   "meta": "UV colorants with intense, custom coloring for coatings, lacquers and paints. Custom color charts. Talk to Corquímica.",
+   "kw": ["uv colorant", "colorant for uv coating", "liquid colorant for coatings", "pigment for coatings", "tinted uv coating"],
+   "def": "UV colorant is the color concentrate mixed into UV-curing coatings or paints. It tints the finish without losing transparency or cure, and makes it possible to create custom colors.",
+   "prac": "The colorant is added to the coating in the specified ratio, mixed until homogeneous and applied. This is how a clear Top Coat becomes gold, bronze, blue or red over the metallized part.",
+   "feat": [
+    "Intense coloring",
+    "Custom colors matched to samples",
+    "Compatible with Corquímica UV coatings",
+    "Guaranteed batch-to-batch stability"
+   ],
+   "ben": [
+    "Color effects without changing systems",
+    "Color matching for the customer's collection",
+    "Less inventory, since color is made to order"
+   ],
+   "table": [
+    ["Mixing, colorant for Top Coat", "UV Top Coat", "Translucent color over the metallization"],
+    ["Pigments", "Paints and lacquers", "Solid colors"],
+    ["Custom color", "Per project", "Matched to the customer's sample"]
+   ],
+   "faq": [
+    ["What is a UV colorant?", "It is a color concentrate for UV-curing coatings and paints. It tints the film without compromising the cure."],
+    ["What is the difference between a dye and a pigment?", "A dye dissolves in the coating and gives translucent color. A pigment stays in suspension and gives opaque color and hiding power."],
+    ["Can I tint the Top Coat?", "Yes. Adding UV colorant to the Top Coat creates colored finishes over the metallization."],
+    ["What ratio of colorant goes into the coating?", "It varies by product and the intensity you want. The technical data sheet gives the recommended range."],
+    ["Does Corquímica make custom colors?", "Yes. Send a sample and the lab will match the color, with samples for approval."],
+    ["Does the colorant affect UV curing?", "Very intense colors may require adjusting the lamp or the film thickness. Testing on the part determines the adjustment."]
+   ]
+  },
+  "solventes": {
+   "slug": "solvents-degreasers",
+   "n": "Solvents and Degreasers",
+   "short": "Solvents for UV and lacquer lines, and cleaning degreasers.",
+   "h1": "Solvents for UV coatings and lacquers, and cleaning degreasers",
+   "title": "Solvents and degreasers for UV lines | Corquímica",
+   "meta": "Solvents developed by Corquímica for UV coatings and lacquers, and degreasers for cleaning parts and equipment. Contact our sales team.",
+   "kw": ["solvent for uv coating", "lacquer thinner", "industrial degreaser", "degreaser for plastics", "spray gun solvent"],
+   "def": "Corquímica solvents are formulated for the UV line and for lacquers, and adjust the viscosity and flow of the product during application. The degreasers remove oils, mold release agents and dirt from parts and equipment.",
+   "prac": "Each UV coating and each lacquer is recommended with a solvent formulation developed by Corquímica, to deliver the result the customer expects. The degreaser is used to clean parts before painting and to clean spray guns and equipment.",
+   "feat": [
+    "Solvent formulation developed by Corquímica for each UV coating and lacquer",
+    "Viscosity and flow adjustment at the spray gun",
+    "Evaporation rate suited to the line, with no surface defects",
+    "Degreasers for cleaning parts and equipment",
+    "Compatibility with sensitive plastics such as PS"
+   ],
+   "ben": [
+    "More consistent application results",
+    "Fewer surface defects",
+    "Clean parts, ready for painting",
+    "A single supplier for the complete system"
+   ],
+   "table": [
+    ["Thinner for Base", "UV Base Coat", "Thinning and flow of the Base"],
+    ["Thinner for Base PS", "UV Base Coat PS", "Thinning and flow of the Base PS"],
+    ["Thinner for Top Coat", "UV Top Coat", "Thinning and flow of the Top Coat"],
+    ["Lacquer solvent", "Acrylic lacquers", "Thinning and drying of the lacquer"],
+    ["Cleaning degreaser", "Parts and equipment", "Removal of oils, mold release agents and residues"]
+   ],
+   "faq": [
+    ["What is the solvent used for on a UV line?", "It adjusts the viscosity and flow of the coating for spray application, and influences the final finish of the part."],
+    ["Can I use any solvent with the UV coating?", "It is not recommended. Each UV coating and each lacquer is recommended with a solvent formulation developed by Corquímica, to deliver the expected result."],
+    ["What is a cleaning degreaser?", "It is a product that removes oil, mold release agent and dirt from parts before painting, and also cleans spray guns and equipment."],
+    ["Do I need to degrease the part before painting?", "In most cases, yes. Mold release and grease residues cause peeling and defects. Testing on the part defines the process."],
+    ["Is the solvent suitable for sensitive plastics such as PS?", "It depends on the formulation. PS is sensitive to certain types of solvents, and Corquímica recommends the compatible option."],
+    ["How do I request a solvent recommendation?", "Message our sales team on WhatsApp and tell us which coating or lacquer you use and the part material."]
+   ]
+  }
+ },
+ "segments": {
+  "moda": {
+   "slug": "fashion",
+   "n": "Fashion",
+   "short": "Heels, trims and fashion accessories",
+   "h1": "Finishes for fashion: painting and metallizing heels and trims",
+   "title": "Coatings and paints for heels and fashion trims | Corquímica",
+   "meta": "Painting and metallizing of heels, trims and fashion accessories with Corquímica UV coatings, lacquers and colorants. Request a sample.",
+   "kw": ["heel metallization", "heel painting", "coating for shoe trims", "finish for fashion accessories", "uv coating for footwear"],
+   "intro": "The fashion industry needs parts with gloss, color and resistance to daily wear. Corquímica supplies the complete system for painting and metallizing heels, trims, buckles and accessories in ABS, PS, PP and Zamak.",
+   "apps": [
+    "Women's shoe heels in ABS and PS",
+    "Trims, buckles and decorative hardware",
+    "Costume jewelry and plastic and metal accessories",
+    "Parts with crackle, soft-touch or mirror effects"
+   ],
+   "how": "The heel receives the UV Base Coat, is vacuum metallized and receives the Top Coat, which can be tinted with UV colorants for gold, rose gold, graphite or the collection color.",
+   "faq": [
+    ["Which coating should I use to metallize heels?", "The system of UV Base Coat for ABS or PS, vacuum metallization and UV Top Coat. The base coat version depends on the heel's plastic."],
+    ["Can trims be made in the collection color?", "Yes. With UV colorants and custom lacquers, the lab matches the color of the collection sample."],
+    ["What special effects are available for fashion?", "Piano black, wet look, soft touch and crackle, among others."]
+   ]
+  },
+  "moveleiro": {
+   "slug": "furniture",
+   "n": "Furniture",
+   "short": "Furniture accessories and plastic coverings",
+   "h1": "Finishes for the furniture industry: metallized accessories and plastic coverings",
+   "title": "Coatings and paints for furniture and accessories | Corquímica",
+   "meta": "Coatings and lacquers for furniture accessories, metallized handles and plastic coverings. UV coating manufacturer in RS, Brazil.",
+   "kw": ["uv coating for furniture", "furniture accessory metallization", "coating for plastic coverings", "furniture lacquer", "metallized handles"],
+   "intro": "In the furniture industry, Corquímica handles the painting and metallization of accessories such as handles, legs and decorative parts, and supplies coatings for plastic coverings that need protection against scratches and stains.",
+   "apps": [
+    "Metallized plastic handles, legs and hardware",
+    "Plastic coverings and laminates",
+    "Decorative parts and lighting fixtures",
+    "Panels with lacquer and UV coating"
+   ],
+   "how": "Accessories receive a UV base coat, metallization and Top Coat for lasting gloss. Plastic coverings receive a protective UV coating with a gloss, matte or soft-touch finish.",
+   "faq": [
+    ["Which coating should I use on plastic furniture coverings?", "A protective UV coating, gloss or matte depending on the project. Corquímica recommends it after testing the material."],
+    ["Can handles be metallized?", "Yes. A UV base coat suited to the plastic is used, followed by vacuum metallization and Top Coat."],
+    ["Is there an anti-fingerprint finish?", "Yes, the soft-touch line has a velvety feel and reduces marks."]
+   ]
+  },
+  "automotivo": {
+   "slug": "automotive",
+   "n": "Automotive",
+   "short": "Protection and cosmetic finishing for parts and accessories",
+   "h1": "Coatings for the automotive industry: protection and cosmetic finish",
+   "title": "UV coatings for automotive parts | Corquímica",
+   "meta": "UV coatings for the protection and cosmetic finishing of automotive parts and accessories. Custom formulation. Talk to Corquímica.",
+   "kw": ["automotive uv coating", "coating for automotive plastic parts", "uv protective coating", "automotive plastic finishing", "automotive parts metallization"],
+   "intro": "For the automotive industry, Corquímica supplies protective and cosmetic coatings for plastic and metallized parts and accessories, with scratch resistance and a focus on durability.",
+   "apps": [
+    "Moldings, emblems and chrome details",
+    "Interior trim and panels",
+    "Accessories and customization parts",
+    "Plastic parts that need protection and gloss"
+   ],
+   "how": "Emblems and moldings go through base coat, metallization and Top Coat. Interior parts receive a protective and finishing coating. Required performance varies by automaker, so every project is tested.",
+   "faq": [
+    ["Which coating protects automotive plastic parts?", "Protective UV coatings and Top Coat, with scratch and abrasion resistance. Exterior use requires project testing."],
+    ["Can emblems and moldings be metallized?", "Yes, with the UV base coat, vacuum metallization and Top Coat system."],
+    ["Does Corquímica develop coatings to automaker specifications?", "It develops custom formulations based on the customer's requirements."]
+   ]
+  },
+  "cosmeticos": {
+   "slug": "cosmetics",
+   "n": "Cosmetics",
+   "short": "Plastic packaging for perfumes and cosmetics",
+   "h1": "Finishes for plastic cosmetic packaging: metallization, painting and protection",
+   "title": "UV coatings for cosmetic packaging | Corquímica",
+   "meta": "Metallization, painting and finishing of plastic cosmetic and perfume packaging, resistant to alcohol and fragrance. Talk to Corquímica.",
+   "kw": ["uv coating for cosmetic packaging", "plastic packaging metallization", "perfume bottle finishing", "metallized plastic packaging", "alcohol-resistant coating"],
+   "intro": "Perfume and cosmetic packaging needs a premium look and a finish that withstands contact with the product. Corquímica supplies the system to metallize, paint and protect caps, bottles, jars and plastic accessories in this segment.",
+   "apps": [
+    "Caps, collars and metallized details for perfume bottles",
+    "Jars, tubes and plastic bottles for skin care",
+    "Makeup packaging such as lipsticks, foundations and compacts",
+    "Packaging accessories and decorative components"
+   ],
+   "chars": [
+    "Resistance to alcohol, found in perfumes and personal care products",
+    "Resistance to perfume fragrance, which contains solvents and essential oils",
+    "Scratch and abrasion resistance during handling and transport",
+    "Adhesion without peeling, even with the packaging in contact with the product",
+    "Mirror gloss, piano black, matte or soft touch",
+    "Resistance to creams, oils and cosmetic products",
+    "Custom colors matched to the brand identity",
+    "Batch-to-batch consistency and fast UV cure"
+   ],
+   "how": "The part receives the UV Base Coat, is vacuum metallized and receives the Top Coat, which can be colored with UV colorants. Lacquers are used for solid colors. The system is tested with the customer's alcohol and fragrance, the most common chemical attacks on packaging.",
+   "faq": [
+    ["Which coating resists perfume alcohol?", "The Base, metallization and Top Coat system is tested with alcohol and fragrance. The resistance level depends on the formulation and the cure, and we validate it with the customer's product."],
+    ["Can plastic caps and bottles be metallized?", "Yes, with a UV base coat suited to the plastic, vacuum metallization and Top Coat."],
+    ["Does fragrance attack the finish?", "Fragrances contain solvents that can stain or soften weak finishes. That is why we test the system with the customer's fragrance."],
+    ["Is there a soft-touch finish for packaging?", "Yes. The effects line includes soft touch, piano black and wet look."]
+   ]
+  },
+  "plasticos": {
+   "slug": "plastics",
+   "n": "General plastics",
+   "short": "Any process that needs painting and protection",
+   "h1": "Paints and coatings for general plastics: painting and protection for your line",
+   "title": "Paints and coatings for industrial plastics | Corquímica",
+   "meta": "Paints, lacquers and UV coatings for any industrial plastic, with custom formulation and on-site technical support. Talk to Corquímica on WhatsApp.",
+   "kw": ["paint and coating for plastics", "industrial plastic painting", "uv coating for plastics", "paint for plastic parts", "plastic protection"],
+   "intro": "If your part is plastic and needs color, gloss or protection, Corquímica has a system for it. We handle any painting, metallization and protection process, from electronics to packaging and housewares.",
+   "apps": [
+    "Electronics and home appliances",
+    "Packaging and caps, including cosmetics",
+    "Housewares and toys",
+    "Technical and industrial parts"
+   ],
+   "how": "The team evaluates the plastic, the process and the finish, defines the system (primer, paint, base coat, top coat) and follows the application at your plant.",
+   "faq": [
+    ["Do you work with any type of plastic?", "We work with the main industrial plastics, such as ABS, PS, PP and PVC. For specific cases, the lab tests the part."],
+    ["How do I start a project?", "Message our sales team on WhatsApp, describe the part and the finish you want, and request a sample."],
+    ["Do you deliver throughout Brazil?", "We serve customers throughout Brazil."]
+   ]
+  }
+ },
+ "faqGeral": [
+  ["What does Corquímica manufacture?", "Corquímica manufactures UV coatings (Base Coat and Top Coat), lacquers, paints for ABS and PS, floor paints, UV colorants, solvents and degreasers in Estância Velha, RS, Brazil."],
+  ["Where is Corquímica located?", "At Av. Walter Klein, 1442, Lago Azul, Estância Velha, Rio Grande do Sul, Brazil. We serve customers throughout Brazil."],
+  ["What is UV coating?", "It is a coating that cures in seconds under ultraviolet light, forming a hard, glossy and resistant film. No long oven bake is needed."],
+  ["How does the Base Coat and Top Coat system work?", "The Base Coat anchors and levels the part before metallization. The Top Coat then protects the metallization. Together they deliver mirror gloss and durability."],
+  ["Does Corquímica offer custom formulations?", "Yes. Each customer receives a formulation tailored to the part, the material and the process, and the team provides on-site technical support."],
+  ["Which industries do you supply?", "Fashion (heels and trims), furniture, automotive, cosmetics and general plastics."],
+  ["How do I request a sample?", "On WhatsApp at +55 51 99240-5746. Tell us the part material and the effect you want, and our sales team will send the sample and the technical data sheet."],
+  ["Do you serve customers outside Rio Grande do Sul?", "Yes. We already serve more than 100 customers throughout Brazil."],
+  ["How long has Corquímica been in business?", "Corquímica has been in business since 1997 and serves more than 100 customers throughout Brazil."]
+ ],
+ "photos": {
+  "home-hero": "Chrome-plated plastic parts hanging on a rack on the production line, under blue light",
+  "home-sobre": "Hand in a blue glove holding a chrome plastic part in the factory",
+  "home-segmentos": "Shoe heel, buckles and plastic accessories with a chrome finish",
+  "home-apoio-tecnico": "Spray-gun application of coating on a black automotive part in a booth",
+  "home-feira-internacional": "Trade show booth with plastic parts displayed on shelves and a counter",
+  "home-laboratorio": "Lab bench with pigment jars, colored panels and a scale",
+  "sobre-fabrica": "Corquímica facade, a dark building with the CQ logo, behind a fence",
+  "familia-verniz-uv-base": "Plastic parts hanging on a rack entering a curing tunnel with blue light",
+  "familia-verniz-uv-top-coat": "Hand in a blue glove holding a chrome part next to another part on a stainless steel tray",
+  "familia-lacas": "Copper, champagne, black and white handles hanging in a spray booth",
+  "familia-tintas-abs-ps": "Two plastic shoe heels, one unpainted gray and one painted glossy burgundy",
+  "familia-tintas-piso": "Glossy gray industrial floor with a yellow marking line",
+  "familia-corantes-uv": "Hand in a white glove arranging gold, silver and rose gold buckles on a stainless steel tray",
+  "familia-solventes": "Worker in blue gloves pouring solvent from a metal can into a bucket",
+  "segmento-moda": "Gold and silver buckles and chains on a stainless steel tray",
+  "segmento-moveleiro": "Chrome handle on a kitchen cabinet door",
+  "segmento-automotivo": "Chrome automotive grille frame on a stand in the factory",
+  "segmento-cosmeticos": "Hand in a white glove holding a cosmetic jar with a gold lid",
+  "segmento-plasticos": "Bin of injection-molded plastic parts in various colors and finishes, in front of an injection molding machine"
+ }
+}

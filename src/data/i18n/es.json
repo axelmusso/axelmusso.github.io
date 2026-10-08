@@ -1,0 +1,434 @@
+{
+ "site": {
+  "tagline": "Barnices UV, lacas, pinturas y colorantes para plásticos y metales",
+  "description": "Fabricante de barnices UV (Base y Top Coat), lacas, pinturas para ABS y PS, pinturas para pisos, colorantes UV, solventes y desengrasantes, en Estância Velha, RS, Brasil. Más de 100 clientes en todo Brasil."
+ },
+ "families": {
+  "verniz-uv-base": {
+   "slug": "barniz-uv-base",
+   "n": "Barniz UV Base",
+   "short": "Anclaje y nivelación antes del metalizado al vacío.",
+   "h1": "Barniz UV Base para metalizado al vacío en ABS, PP, PS y Zamak",
+   "title": "Barniz UV Base para metalizado al vacío | Corquímica",
+   "meta": "Barniz UV Base para ABS, PP, PS, Zamak y TPU. Excelente adherencia, nivelación y curado en segundos. Solicite muestra y ficha técnica.",
+   "kw": ["barniz uv base", "barniz base para metalizado", "barniz uv para abs", "base coat uv para plástico", "barniz base para metalizado al vacío"],
+   "def": "El Barniz UV Base es la primera capa que se aplica a la pieza antes del metalizado al vacío. Ancla el metalizado, nivela la superficie y da el brillo espejo que luego protegerá el Top Coat. Para piezas flexibles de TPU, Corquímica ofrece el Barniz UV Base Flex.",
+   "prac": "En la práctica, la pieza de plástico o Zamak recibe el Base con pistola, pasa por el curado con luz ultravioleta en segundos y sigue a la cámara de metalizado. Sin la base, el aluminio depositado pierde brillo y puede desprenderse.",
+   "feat": [
+    "Excelente adherencia, sin desprendimiento",
+    "Nivelación perfecta de la superficie",
+    "Curado por radiación ultravioleta, en segundos",
+    "Versiones para ABS, PP, PS, Zamak y TPU (Base Flex, el barniz flexible)",
+    "Barniz flexible para TPU: acompaña la flexión de la pieza sin agrietar la película",
+    "Menor flash-off y mayor cubrimiento por mano",
+    "Indicado siempre con un solvente de formulación propia de Corquímica"
+   ],
+   "ben": [
+    "Metalizado con brillo espejo",
+    "Menos retrabajo y piezas rechazadas",
+    "Línea más rápida que los sistemas de horno",
+    "Sistema completo con el Top Coat del mismo fabricante"
+   ],
+   "table": [
+    ["Barniz UV Base ABS", "ABS", "Base para metalizado al vacío en piezas de ABS"],
+    ["Barniz UV Base PP", "Polipropileno", "Base para metalizado en piezas de PP"],
+    ["Barniz UV Base PS", "Poliestireno", "Base para metalizado en piezas de PS"],
+    ["Barniz UV Base Zamak", "Zamak", "Base para accesorios y adornos de Zamak"],
+    ["Barniz UV Base Flex", "TPU y flexibles (barniz flexible)", "Base para piezas flexibles de TPU"]
+   ],
+   "faq": [
+    ["¿Qué es el barniz UV base?", "Es el barniz que se aplica antes del metalizado al vacío. Da adherencia y nivelación a la pieza y prepara la superficie para recibir el metalizado y, después, el Top Coat."],
+    ["¿Cuál es la diferencia entre barniz base y barniz top?", "El base queda debajo del metalizado y sirve de anclaje. El top queda sobre el metalizado y lo protege contra rayas, desgaste y ataque químico."],
+    ["¿Qué solvente usar con el Barniz UV Base?", "Corquímica siempre indica una formulación de solvente desarrollada por ella para el Barniz UV Base, para atender mejor el resultado que espera el cliente. Informe su proceso y el equipo le indicará el solvente."],
+    ["¿Qué barniz UV base usar en ABS, PP o PS?", "Cada plástico tiene una base específica. Corquímica tiene bases para ABS, PP, PS, Zamak y TPU. Envíe una pieza para prueba y el equipo técnico le indicará la versión."],
+    ["¿Necesito primer antes del barniz base?", "Depende del material. En plásticos de baja energía superficial, como el PP, puede ser necesario un primer. La indicación se da después de la prueba en la pieza."],
+    ["¿Cuánto tarda el curado UV del barniz base?", "El curado por ultravioleta ocurre en segundos, frente a decenas de minutos de los sistemas térmicos en horno. El tiempo exacto depende de la lámpara y del espesor."],
+    ["¿Existe barniz UV base para TPU?", "Sí. El Barniz UV Base Flex es nuestro barniz flexible para TPU. Acompaña la flexión de la pieza. La compatibilidad con cada TPU se confirma en prueba."],
+    ["¿Corquímica hace barniz base a medida?", "Sí. El laboratorio ajusta la formulación según la pieza, el sustrato y el equipo del cliente, con soporte técnico en planta."]
+   ]
+  },
+  "verniz-uv-top-coat": {
+   "slug": "barniz-uv-top-coat",
+   "n": "Barniz UV Top Coat",
+   "short": "Protección y brillo sobre el metalizado.",
+   "h1": "Barniz UV Top Coat: protección y brillo para piezas metalizadas",
+   "title": "Barniz UV Top Coat para piezas metalizadas | Corquímica",
+   "meta": "Top Coat UV con resistencia al rayado y acabado espejo para piezas metalizadas. Fabricante en Estância Velha, RS, Brasil. Solicite muestra.",
+   "kw": ["barniz uv top coat", "barniz top para metalizado", "barniz uv antirrayado", "barniz de protección para metalizado", "top coat uv para plástico"],
+   "def": "El Barniz UV Top Coat es la capa final que se aplica sobre la pieza metalizada. Protege el metalizado, una película finísima, contra rayas, desgaste y agentes químicos, y aporta el acabado espejo. También hay una versión flexible para piezas de TPU.",
+   "prac": "Después de la cámara de metalizado, el Top Coat se aplica con pistola y se cura con luz UV en segundos. La pieza sale lista para el montaje, con brillo estable y resistencia a la manipulación.",
+   "feat": [
+    "Alta resistencia al rayado y a la abrasión",
+    "Acabado espejo o mate",
+    "Protección del metalizado contra el desgaste y los productos químicos del día a día",
+    "Curado UV rápido",
+    "Opciones para metalizado y para piezas teñidas",
+    "Versión flexible para TPU, que acompaña el movimiento de la pieza",
+    "Indicado siempre con un solvente de formulación propia de Corquímica"
+   ],
+   "ben": [
+    "Pieza final más duradera",
+    "Menos reclamos por desprendimiento y manchas",
+    "Apariencia premium y uniforme",
+    "Compatible con las bases UV Corquímica"
+   ],
+   "table": [
+    ["Barniz UV Top Coat", "Piezas metalizadas", "Protección y brillo sobre el metalizado"],
+    ["Barniz UV Top Pintura", "Piezas pintadas", "Protección y brillo sobre piezas pintadas"],
+    ["Barniz UV Top Flex", "TPU y flexibles (barniz flexible)", "Protección de piezas flexibles"]
+   ],
+   "faq": [
+    ["¿Para qué sirve el barniz UV Top Coat?", "Sirve para proteger el metalizado al vacío y dar un acabado brillante o mate, con resistencia al rayado."],
+    ["¿Puedo metalizar sin Top Coat?", "No se recomienda. El metalizado es una película muy fina y se daña con la manipulación. El Top Coat evita rayas, manchas y pérdida de brillo."],
+    ["¿Qué solvente usar con el Barniz UV Top Coat?", "Corquímica siempre indica una formulación de solvente desarrollada por ella para el Top Coat, para atender mejor el resultado que espera el cliente. Informe su proceso y el equipo le indicará el solvente."],
+    ["¿El Top Coat puede ser de color?", "Sí. Con colorantes UV es posible teñir el top y obtener dorado, bronce, azul, entre otros colores, sobre la base metalizada."],
+    ["¿El Top Coat sirve para piezas automotrices?", "Sirve para el acabado y la protección estética de piezas y accesorios. El desempeño en uso exterior depende de las pruebas de cada proyecto."],
+    ["¿Cuál es la diferencia entre el Top Coat UV y el barniz PU?", "El UV cura en segundos por radiación ultravioleta, sin horno prolongado. El PU cura por reacción química o térmica y suele tardar más. La elección depende de la pieza y de la línea."],
+    ["¿Existe Top Coat para TPU?", "Sí. Para piezas flexibles de TPU, Corquímica indica el sistema flexible, formado por el Base Flex y un Top compatible. El conjunto se valida con una prueba en la pieza."],
+    ["¿Cómo hablo con el área comercial sobre el Top Coat?", "Escriba al área comercial por WhatsApp e indique el material de la pieza y el efecto deseado. El equipo responde con la indicación y envía una muestra."]
+   ]
+  },
+  "lacas": {
+   "slug": "lacas",
+   "n": "Lacas",
+   "short": "Colores lisos y efectos metalizados con secado rápido.",
+   "h1": "Lacas acrílicas para plásticos, metales y muebles: color liso y efectos metalizados",
+   "title": "Lacas acrílicas para plástico y muebles | Corquímica",
+   "meta": "Lacas acrílicas Corquímica: colores lisos y metalizados, adherencia, resistencia al alcohol y secado rápido. Fabricante en RS, Brasil.",
+   "kw": ["laca acrílica", "laca para plástico", "laca para metalizado", "laca para muebles", "laca metálica"],
+   "def": "La laca acrílica es una pintura de secado rápido que forma una película lisa, con color y brillo. Corquímica fabrica lacas en colores lisos y con efectos metalizados para plásticos, metales y piezas de mobiliario.",
+   "prac": "La laca se aplica con pistola, seca al aire o en un horno corto y deja la pieza con el color final. Puede usarse sola o como fondo para otros acabados.",
+   "feat": [
+    "Buena adherencia en diversos sustratos",
+    "Resistencia al alcohol",
+    "Secado rápido",
+    "Colores lisos, metalizados y personalizados",
+    "Acabado brillante, satinado o mate, o según la necesidad del cliente",
+    "Indicado siempre con un solvente de formulación propia de Corquímica"
+   ],
+   "ben": [
+    "Color exacto, igualado a la muestra del cliente",
+    "Productividad en la línea",
+    "Menos retrabajo",
+    "Compatible con barnices de protección"
+   ],
+   "table": [
+    ["Laca lisa", "Plásticos, metales, madera", "Color sólido, brillo a definir"],
+    ["Laca metálica", "Plásticos y metales", "Efecto metalizado sin cámara de vacío"],
+    ["Laca personalizada", "Según proyecto", "Color desarrollado en laboratorio"],
+    ["Barniz laca de inmersión alto brillo", "Proceso de inmersión", "Alto brillo en líneas de inmersión"]
+   ],
+   "faq": [
+    ["¿Qué es la laca acrílica?", "Es una pintura de secado rápido, de película lisa, que se usa para dar color y brillo a plásticos, metales y madera."],
+    ["Laca o barniz UV: ¿cuál elegir?", "La laca da color y seca rápido sin luz UV. El barniz UV cura en segundos bajo la lámpara y da más dureza y brillo. Muchas líneas combinan los dos."],
+    ["¿Qué solvente usar con la laca?", "Corquímica siempre indica una formulación de solvente desarrollada por ella para cada laca, para atender mejor el resultado que espera el cliente. Informe su proceso y el equipo le indicará el solvente."],
+    ["¿La laca resiste el alcohol?", "Las lacas Corquímica tienen resistencia al alcohol. El nivel exacto depende de la línea y del curado."],
+    ["¿Se puede igualar el color de una muestra?", "Sí. El laboratorio desarrolla el color a partir de la muestra que envía el cliente."],
+    ["¿La laca sirve para muebles?", "Sí, para accesorios de mobiliario, paneles y piezas plásticas. Para revestimientos plásticos con alta protección, se puede indicar un barniz UV encima."],
+    ["¿La laca sirve para envases de cosméticos?", "Sí, en color liso o metalizado, con prueba de resistencia al alcohol y a la fragancia del producto."]
+   ]
+  },
+  "tintas-abs-ps": {
+   "slug": "pinturas-abs-ps",
+   "n": "Pinturas para ABS y PS",
+   "short": "Pinturas para tacones, piezas de moda y plásticos en general.",
+   "h1": "Pinturas para ABS y PS: pintado de tacones y piezas plásticas de moda",
+   "title": "Pintura para tacones de ABS y PS | Corquímica",
+   "meta": "Pinturas para tacones y piezas de ABS y PS, para moda y plásticos en general. Trabajo conjunto con los coloristas del cliente y agilidad en los ajustes de color.",
+   "kw": ["pintura para tacones", "pintura para abs", "pintura para poliestireno", "pintado de tacones", "pintura para plástico abs"],
+   "def": "Las pinturas para ABS y PS de Corquímica se usan en el pintado de tacones y de otras piezas plásticas, y atienden solo los segmentos de moda y de plásticos en general. Están formuladas para adherirse a estos plásticos sin atacar la pieza.",
+   "prac": "Trabajamos junto con los químicos y coloristas del cliente, apoyando la formulación, la aplicación y la validación de los colores. Sabemos que este trabajo exige velocidad y precisión, por eso desarrollamos nuevos tonos y ajustamos tonos existentes con agilidad, siempre que sea necesario.",
+   "feat": [
+    "Enfoque en el pintado de tacones de ABS y PS",
+    "Trabajo conjunto con los químicos y coloristas del cliente",
+    "Apoyo en la formulación, la aplicación y la validación de los colores",
+    "Agilidad para crear nuevos tonos y ajustar tonos existentes",
+    "No ataca el plástico y evita grietas por solvente",
+    "Acabado brillante, mate o soft touch"
+   ],
+   "ben": [
+    "Color de la colección aprobado con rapidez",
+    "Menos retrabajo en el ajuste de tono",
+    "Color uniforme entre lotes",
+    "Soporte técnico en la línea de pintura"
+   ],
+   "table": [
+    ["Pintura ABS", "ABS", "Pintado de tacones, piezas de moda y plásticos en general"],
+    ["Pintura PS", "Poliestireno", "Pintado de tacones, piezas de moda y plásticos en general"]
+   ],
+   "faq": [
+    ["¿Qué pintura usar para pintar tacones de ABS y PS?", "Use una pintura formulada para estos plásticos, que se adhiera sin atacar el tacón. Corquímica indica el sistema después de probar su pieza."],
+    ["¿Para qué segmentos sirven las pinturas para ABS y PS?", "Se usan solo en moda, principalmente en el pintado de tacones, y en plásticos en general."],
+    ["¿Corquímica ayuda en la formulación de los colores?", "Sí. Trabajamos junto con los químicos y coloristas del cliente, apoyando la formulación, la aplicación y la validación de los colores."],
+    ["¿Cuánto tiempo lleva ajustar un tono?", "Trabajamos con agilidad, porque el color de moda exige velocidad y precisión. El plazo depende del tono y de la muestra."],
+    ["¿Necesito primer en ABS y PS?", "En muchos casos la adherencia es directa. En piezas con desmoldante o acabado difícil, un primer ayuda. La prueba en la pieza lo define."],
+    ["¿Se puede pintar y después metalizar?", "Sí. El Barniz UV Base prepara la pieza, luego viene el metalizado y el Top Coat lo protege."]
+   ]
+  },
+  "tintas-piso": {
+   "slug": "pinturas-para-pisos",
+   "n": "Pinturas para pisos",
+   "short": "Pintura y protección para pisos, con formulación según la aplicación.",
+   "h1": "Pinturas para pisos: protección y acabado para ambientes industriales y comerciales",
+   "title": "Pinturas para pisos industriales | Corquímica",
+   "meta": "Pinturas para pisos con resistencia al tránsito y a la limpieza. Formulación según la aplicación y soporte técnico. Hable con Corquímica.",
+   "kw": ["pintura para pisos", "pintura para pisos industriales", "pintura para pisos de concreto", "pintado de pisos", "pintura resistente para pisos"],
+   "def": "La pintura para pisos de Corquímica es epoxi. Protege y da acabado a superficies de concreto sometidas a tránsito, limpieza y agentes químicos.",
+   "prac": "El piso se prepara, recibe la pintura con rodillo o pistola y queda liberado después del curado indicado. El sistema se elige según el tránsito de personas, montacargas y productos químicos del lugar.",
+   "feat": [
+    "Resistencia al tránsito y a la abrasión",
+    "Fácil limpieza",
+    "Colores a medida y demarcación",
+    "Adherencia en concreto",
+    "Opción de acabado brillante o satinado"
+   ],
+   "ben": [
+    "Piso más duradero",
+    "Ambiente más limpio y seguro",
+    "Menos paradas por mantenimiento",
+    "Formulación ajustada al uso"
+   ],
+   "table": [
+    ["Pintura para pisos", "Concreto, cemento", "Tránsito industrial y comercial"],
+    ["Pintura de demarcación", "Concreto, asfalto", "Franjas y señalización"]
+   ],
+   "faq": [
+    ["¿Qué pintura usar en pisos industriales?", "Use una pintura de alta resistencia al tránsito y a la abrasión, elegida según el uso del lugar. Corquímica indica el sistema después de entender la aplicación."],
+    ["¿Cuánto tiempo hay que esperar para liberar el piso?", "Depende de la resina y de la temperatura. La ficha técnica informa el tiempo de curado y de liberación."],
+    ["¿Necesito preparar el piso antes de pintar?", "Sí. El piso debe estar limpio, seco y sin partes sueltas. La preparación correcta es lo que más influye en la durabilidad."],
+    ["¿La pintura puede ser antideslizante?", "Es posible agregar un acabado antideslizante según el sistema."],
+    ["¿Se pueden demarcar pasillos y plazas de estacionamiento?", "Sí, con colores de demarcación a medida."],
+    ["¿Cuál es la diferencia entre la pintura para pisos y la pintura común?", "La pintura para pisos tiene resina y carga para soportar abrasión, tránsito y limpieza. La pintura común de pared se desprende rápido en esas condiciones."]
+   ]
+  },
+  "corantes-uv": {
+   "slug": "colorantes-uv",
+   "n": "Colorantes UV",
+   "short": "Color intenso y personalizado para barnices y pinturas UV.",
+   "h1": "Colorantes UV para barnices y pinturas: color intenso y personalizado",
+   "title": "Colorantes UV para barniz y pintura | Corquímica",
+   "meta": "Colorantes UV de coloración intensa y personalizada para barnices, lacas y pinturas. Carta de colores a medida. Hable con Corquímica.",
+   "kw": ["colorante uv", "colorante para barniz uv", "colorante líquido para barniz", "pigmento para barniz", "barniz uv de color"],
+   "def": "El colorante UV es el concentrado de color que se mezcla con el barniz o la pintura de curado ultravioleta. Tiñe el acabado sin perder transparencia ni curado, y permite crear colores a medida.",
+   "prac": "El colorante se agrega al barniz en la proporción indicada, se homogeneiza y se aplica. Así es como un Top Coat transparente se vuelve dorado, bronce, azul o rojo sobre la pieza metalizada.",
+   "feat": [
+    "Coloración intensa",
+    "Colores personalizados según muestra",
+    "Compatible con los barnices UV Corquímica",
+    "Garantía de estabilidad entre los lotes"
+   ],
+   "ben": [
+    "Efecto de color sin cambiar de sistema",
+    "Igualación de color para la colección del cliente",
+    "Menos inventario, ya que el color se hace a pedido"
+   ],
+   "table": [
+    ["Mixing, colorante para Top Coat", "Barniz UV Top Coat", "Color translúcido sobre el metalizado"],
+    ["Pigmentos", "Pinturas y lacas", "Colores sólidos"],
+    ["Color a medida", "Según proyecto", "Igualado a la muestra del cliente"]
+   ],
+   "faq": [
+    ["¿Qué es el colorante UV?", "Es un concentrado de color para barnices y pinturas de curado UV. Tiñe la película sin comprometer el curado."],
+    ["¿Cuál es la diferencia entre colorante y pigmento?", "El colorante se disuelve en el barniz y da color translúcido. El pigmento queda en suspensión y da color opaco y cubrimiento."],
+    ["¿Puedo teñir el Top Coat?", "Sí. Agregar colorante UV al Top Coat da acabados de color sobre el metalizado."],
+    ["¿Cuál es la proporción de colorante en el barniz?", "Varía según el producto y la intensidad deseada. La ficha técnica indica el rango recomendado."],
+    ["¿Corquímica hace colores a medida?", "Sí. Envíe una muestra y el laboratorio iguala el color, con muestras para aprobación."],
+    ["¿El colorante altera el curado UV?", "Los colores muy intensos pueden requerir ajustar la lámpara o el espesor. La prueba en la pieza define el ajuste."]
+   ]
+  },
+  "solventes": {
+   "slug": "solventes-desengrasantes",
+   "n": "Solventes y Desengrasantes",
+   "short": "Solventes para línea UV y laca, y desengrasantes de limpieza.",
+   "h1": "Solventes para barniz UV y laca, y desengrasantes de limpieza",
+   "title": "Solventes y desengrasantes para línea UV | Corquímica",
+   "meta": "Solventes desarrollados por Corquímica para barnices UV y lacas, y desengrasantes para limpiar piezas y equipos. Hable con el área comercial.",
+   "kw": ["solvente para barniz uv", "diluyente para laca", "desengrasante industrial", "desengrasante para plástico", "solvente para pistola de pintura"],
+   "def": "Los solventes de Corquímica están formulados para la línea UV y para las lacas, y ajustan la viscosidad y la fluidez del producto en la aplicación. Los desengrasantes eliminan aceites, desmoldantes y suciedad de las piezas y de los equipos.",
+   "prac": "Cada barniz UV y cada laca se indica con una formulación de solvente desarrollada por Corquímica, para lograr el resultado que espera el cliente. El desengrasante se usa en la limpieza de las piezas antes de pintar y en la limpieza de pistolas y equipos.",
+   "feat": [
+    "Formulación de solvente desarrollada por Corquímica para cada barniz UV y laca",
+    "Ajuste de viscosidad y fluidez en la pistola",
+    "Evaporación adecuada a la línea, sin defectos de superficie",
+    "Desengrasantes para limpieza de piezas y equipos",
+    "Compatibilidad con plásticos sensibles, como el PS"
+   ],
+   "ben": [
+    "Resultado más uniforme en la aplicación",
+    "Menos defectos de superficie",
+    "Pieza limpia y lista para recibir la pintura",
+    "Un solo proveedor para el sistema completo"
+   ],
+   "table": [
+    ["Diluyente para Base", "Barniz UV Base", "Dilución y fluidez del Base"],
+    ["Diluyente para Base PS", "Barniz UV Base PS", "Dilución y fluidez del Base PS"],
+    ["Diluyente para Top Coat", "Barniz UV Top Coat", "Dilución y fluidez del Top Coat"],
+    ["Solvente para laca", "Lacas acrílicas", "Dilución y secado de la laca"],
+    ["Desengrasante de limpieza", "Piezas y equipos", "Eliminación de aceites, desmoldantes y residuos"]
+   ],
+   "faq": [
+    ["¿Para qué sirve el solvente en la línea UV?", "Ajusta la viscosidad y la fluidez del barniz para la aplicación con pistola, e influye en el acabado final de la pieza."],
+    ["¿Puedo usar cualquier solvente con el barniz UV?", "No se recomienda. Cada barniz UV y cada laca se indica con una formulación de solvente desarrollada por Corquímica, para lograr el resultado esperado."],
+    ["¿Qué es el desengrasante de limpieza?", "Es un producto que elimina aceite, desmoldante y suciedad de las piezas antes de pintar, y que también limpia pistolas y equipos."],
+    ["¿Necesito desengrasar la pieza antes de pintar?", "En la mayoría de los casos, sí. Los residuos de desmoldante y grasa causan desprendimiento y defectos. La prueba en la pieza define el proceso."],
+    ["¿El solvente sirve para plásticos sensibles, como el PS?", "Depende de la formulación. El PS es sensible a ciertos tipos de solventes, y Corquímica indica la opción compatible."],
+    ["¿Cómo solicito la indicación de solvente?", "Escriba al área comercial por WhatsApp e informe el barniz o la laca que usa y el material de la pieza."]
+   ]
+  }
+ },
+ "segments": {
+  "moda": {
+   "slug": "moda",
+   "n": "Moda",
+   "short": "Tacones, adornos y accesorios de moda",
+   "h1": "Acabado para moda: pintado y metalizado de tacones y adornos",
+   "title": "Barniz y pintura para tacones y adornos de moda | Corquímica",
+   "meta": "Pintado y metalizado de tacones, adornos y accesorios de moda con barnices UV, lacas y colorantes Corquímica. Solicite muestra.",
+   "kw": ["metalizado de tacones", "pintado de tacones", "barniz para adornos de calzado", "acabado para accesorios de moda", "barniz uv para calzado"],
+   "intro": "La industria de la moda necesita piezas con brillo, color y resistencia al uso diario. Corquímica suministra el sistema completo para pintar y metalizar tacones, adornos, hebillas y accesorios, en ABS, PS, PP y Zamak.",
+   "apps": [
+    "Tacones de calzado femenino, en ABS y PS",
+    "Adornos, hebillas y herrajes decorativos",
+    "Bisutería y accesorios plásticos y metálicos",
+    "Piezas con efecto craquelado, soft touch o espejo"
+   ],
+   "how": "El tacón recibe el Barniz UV Base, se metaliza al vacío y recibe el Top Coat, que puede teñirse con colorantes UV para obtener dorado, rosé, grafito o el color de la colección.",
+   "faq": [
+    ["¿Qué barniz usar para metalizar tacones?", "El sistema de Barniz UV Base para ABS o PS, metalizado al vacío y Barniz UV Top Coat. La versión de la base depende del plástico del tacón."],
+    ["¿Se puede hacer el color de la colección en los adornos?", "Sí. Con colorantes UV y lacas personalizadas, el laboratorio iguala el color de la muestra de la colección."],
+    ["¿Qué efectos especiales existen para moda?", "Negro piano, efecto mojado, soft touch y craquelado, entre otros."]
+   ]
+  },
+  "moveleiro": {
+   "slug": "mobiliario",
+   "n": "Mobiliario",
+   "short": "Accesorios de mobiliario y revestimientos plásticos",
+   "h1": "Acabado para el sector del mueble: accesorios metalizados y revestimientos plásticos",
+   "title": "Barniz y pintura para muebles y accesorios | Corquímica",
+   "meta": "Barnices y lacas para accesorios de mobiliario, tiradores metalizados y revestimientos plásticos. Fabricante de barniz UV en RS, Brasil.",
+   "kw": ["barniz uv para muebles", "metalizado de accesorios para muebles", "barniz para revestimiento plástico", "laca para muebles", "tiradores metalizados"],
+   "intro": "En el sector del mueble, Corquímica atiende el pintado y el metalizado de accesorios, como tiradores, patas y piezas decorativas, y suministra barnices para revestimientos plásticos que requieren protección contra rayas y manchas.",
+   "apps": [
+    "Tiradores, patas y herrajes plásticos metalizados",
+    "Revestimientos plásticos y laminados",
+    "Piezas decorativas y luminarias",
+    "Paneles con laca y barniz UV"
+   ],
+   "how": "Los accesorios reciben base UV, metalizado y Top Coat para un brillo duradero. Los revestimientos plásticos reciben barniz UV de protección, con acabado brillante, mate o soft touch.",
+   "faq": [
+    ["¿Qué barniz usar en revestimientos plásticos de muebles?", "Un barniz UV de protección, brillante o mate según el proyecto. Corquímica lo indica después de probar el material."],
+    ["¿Se pueden metalizar tiradores?", "Sí. Se usa Base UV según el plástico, metalizado al vacío y Top Coat."],
+    ["¿Existe un acabado antihuellas?", "Sí, la línea soft touch tiene tacto aterciopelado y reduce las marcas."]
+   ]
+  },
+  "automotivo": {
+   "slug": "automotriz",
+   "n": "Automotriz",
+   "short": "Protección y acabado estético en piezas y accesorios",
+   "h1": "Barnices para el sector automotriz: protección y acabado estético",
+   "title": "Barniz UV para piezas automotrices | Corquímica",
+   "meta": "Barnices UV para la protección y el acabado estético de piezas y accesorios automotrices. Formulación a medida. Hable con Corquímica.",
+   "kw": ["barniz uv automotriz", "barniz para piezas plásticas automotrices", "barniz de protección uv", "acabado de plástico automotriz", "metalizado de piezas automotrices"],
+   "intro": "Para el sector automotriz, Corquímica suministra barnices de protección y acabado estético para piezas y accesorios plásticos y metalizados, con resistencia al rayado y enfoque en la durabilidad.",
+   "apps": [
+    "Molduras, emblemas y detalles cromados",
+    "Acabados interiores y paneles",
+    "Accesorios y piezas de personalización",
+    "Piezas plásticas que requieren protección y brillo"
+   ],
+   "how": "Los emblemas y las molduras pasan por base, metalizado y Top Coat. Las piezas interiores reciben barniz de protección y acabado. El desempeño exigido varía según el fabricante de vehículos, por eso cada proyecto pasa por pruebas.",
+   "faq": [
+    ["¿Qué barniz protege las piezas plásticas automotrices?", "Barnices UV de protección y Top Coat, con resistencia al rayado y a la abrasión. Para uso exterior, se necesitan pruebas del proyecto."],
+    ["¿Se pueden metalizar emblemas y molduras?", "Sí, con el sistema Base UV, metalizado al vacío y Top Coat."],
+    ["¿Corquímica desarrolla barnices según la especificación del fabricante de vehículos?", "Desarrolla formulaciones a medida, de acuerdo con los requisitos del cliente."]
+   ]
+  },
+  "cosmeticos": {
+   "slug": "cosmetica",
+   "n": "Cosmética",
+   "short": "Envases plásticos de perfumes y cosméticos",
+   "h1": "Acabado para envases plásticos de cosméticos: metalizado, pintura y protección",
+   "title": "Barniz UV para envases de cosméticos | Corquímica",
+   "meta": "Metalizado, pintura y acabado de envases plásticos de cosméticos y perfumes, con resistencia al alcohol y a la fragancia. Hable con Corquímica.",
+   "kw": ["barniz uv para envases de cosméticos", "metalizado de envases plásticos", "acabado para frascos de perfume", "envase plástico metalizado", "barniz resistente al alcohol"],
+   "intro": "Los envases de perfumes y cosméticos necesitan una apariencia premium y un acabado que resista el contacto con el producto. Corquímica suministra el sistema para metalizar, pintar y proteger tapas, frascos, potes y accesorios plásticos de este segmento.",
+   "apps": [
+    "Tapas, collares y detalles metalizados de frascos de perfume",
+    "Potes, tubos y frascos plásticos para el cuidado de la piel",
+    "Envases de maquillaje, como labiales, bases y estuches",
+    "Accesorios y componentes decorativos de envases"
+   ],
+   "chars": [
+    "Resistencia al alcohol, presente en los perfumes y en los productos de higiene",
+    "Resistencia a la fragancia del perfume, que contiene solventes y aceites esenciales",
+    "Resistencia al rayado y a la abrasión en la manipulación y el transporte",
+    "Adherencia sin desprendimiento, incluso con el envase en contacto con el producto",
+    "Brillo espejo, negro piano, mate o soft touch",
+    "Resistencia a cremas, aceites y productos cosméticos",
+    "Colores personalizados, igualados a la identidad de la marca",
+    "Uniformidad entre lotes y curado UV rápido"
+   ],
+   "how": "La pieza recibe el Barniz UV Base, se metaliza al vacío y recibe el Top Coat, que puede colorearse con colorantes UV. Para color liso, se usan lacas. El sistema se prueba con el alcohol y con la fragancia del cliente, que son los ataques químicos más comunes en el envase.",
+   "faq": [
+    ["¿Qué barniz resiste el alcohol del perfume?", "El sistema Base, metalizado y Top Coat se prueba con alcohol y fragancia. El nivel de resistencia depende de la formulación y del curado, y lo validamos con el producto del cliente."],
+    ["¿Se pueden metalizar tapas y frascos plásticos?", "Sí, con el Base UV según el plástico, metalizado al vacío y Top Coat."],
+    ["¿La fragancia ataca el acabado?", "Las fragancias contienen solventes que pueden manchar o ablandar los acabados débiles. Por eso probamos el sistema con la fragancia del cliente."],
+    ["¿Existe acabado soft touch para envases?", "Sí. La línea de efectos incluye soft touch, negro piano y efecto mojado."]
+   ]
+  },
+  "plasticos": {
+   "slug": "plasticos",
+   "n": "Plásticos en general",
+   "short": "Cualquier proceso que requiera pintura y protección",
+   "h1": "Pinturas y barnices para plásticos en general: pintura y protección para su línea",
+   "title": "Pinturas y barnices para plásticos industriales | Corquímica",
+   "meta": "Pinturas, lacas y barnices UV para cualquier plástico industrial, con formulación a medida y soporte técnico en planta. Hable con Corquímica por WhatsApp.",
+   "kw": ["pintura y barniz para plástico", "pintado industrial de plásticos", "barniz uv para plástico", "pintura para piezas plásticas", "protección para plástico"],
+   "intro": "Si su pieza es de plástico y necesita color, brillo o protección, Corquímica tiene un sistema para ella. Atendemos cualquier proceso de pintura, metalizado y protección, desde productos electrónicos hasta envases y artículos para el hogar.",
+   "apps": [
+    "Productos electrónicos y electrodomésticos",
+    "Envases y tapas, incluso de cosméticos",
+    "Artículos para el hogar y juguetes",
+    "Piezas técnicas e industriales"
+   ],
+   "how": "El equipo evalúa el plástico, el proceso y el acabado, define el sistema (primer, pintura, base, top) y acompaña la aplicación en su planta.",
+   "faq": [
+    ["¿Atienden cualquier tipo de plástico?", "Atendemos los principales plásticos industriales, como ABS, PS, PP y PVC. Para casos específicos, el laboratorio prueba la pieza."],
+    ["¿Cómo comienzo un proyecto?", "Escriba al área comercial por WhatsApp, describa la pieza y el acabado deseado y solicite una muestra."],
+    ["¿Entregan en todo Brasil?", "Atendemos clientes en todo Brasil."]
+   ]
+  }
+ },
+ "faqGeral": [
+  ["¿Qué fabrica Corquímica?", "Corquímica es un fabricante de barnices UV (Base y Top Coat), lacas, pinturas para ABS y PS, pinturas para pisos, colorantes UV, solventes y desengrasantes, en Estância Velha, RS, Brasil."],
+  ["¿Dónde está Corquímica?", "En la Av. Walter Klein, 1442, Lago Azul, en Estância Velha, Rio Grande do Sul, Brasil. Atendemos clientes en todo Brasil."],
+  ["¿Qué es el barniz UV?", "Es un barniz que cura en segundos bajo luz ultravioleta y forma una película dura, brillante y resistente. No necesita horno prolongado."],
+  ["¿Cómo funciona el sistema Base Coat y Top Coat?", "El Base ancla y nivela la pieza antes del metalizado. El Top protege el metalizado después. Juntos, aportan brillo espejo y durabilidad."],
+  ["¿Corquímica hace formulación personalizada?", "Sí. Cada cliente recibe una formulación ajustada a la pieza, al material y al proceso, y el equipo brinda soporte técnico en planta."],
+  ["¿Para qué sectores suministran?", "Moda (tacones y adornos), mobiliario, automotriz, cosmética y plásticos en general."],
+  ["¿Cómo solicito una muestra?", "Por WhatsApp, al +55 51 99240-5746. Informe el material de la pieza y el efecto deseado, y el área comercial le envía la muestra y la ficha técnica."],
+  ["¿Atienden fuera de Rio Grande do Sul?", "Sí. Ya atendemos a más de 100 clientes en todo Brasil."],
+  ["¿Desde cuándo opera Corquímica?", "Corquímica opera desde 1997 y atiende a más de 100 clientes en todo Brasil."]
+ ],
+ "photos": {
+  "home-hero": "Piezas plásticas cromadas colgadas en un bastidor en la línea de producción, bajo luz azul",
+  "home-sobre": "Mano con guante azul sosteniendo una pieza plástica cromada en la fábrica",
+  "home-segmentos": "Tacón de calzado, hebillas y accesorios plásticos con acabado cromado",
+  "home-apoio-tecnico": "Aplicación de barniz con pistola sobre una pieza automotriz negra en cabina",
+  "home-feira-internacional": "Stand en una feria con piezas plásticas expuestas en estantes y mostrador",
+  "home-laboratorio": "Mesa de laboratorio con frascos de pigmento, placas de colores y balanza",
+  "sobre-fabrica": "Fachada de Corquímica, edificio oscuro con el logotipo CQ, detrás de una reja",
+  "familia-verniz-uv-base": "Piezas plásticas colgadas en un bastidor entrando en un túnel de curado con luz azul",
+  "familia-verniz-uv-top-coat": "Mano con guante azul sosteniendo una pieza cromada, junto a otra pieza en una bandeja de acero inoxidable",
+  "familia-lacas": "Tiradores en cobre, champán, negro y blanco colgados en una cabina de pintura",
+  "familia-tintas-abs-ps": "Dos tacones de calzado de plástico, uno gris sin pintar y otro pintado en color vino brillante",
+  "familia-tintas-piso": "Piso industrial gris brillante con franja de demarcación amarilla",
+  "familia-corantes-uv": "Mano con guante blanco ordenando hebillas en dorado, plateado y rosé en una bandeja de acero inoxidable",
+  "familia-solventes": "Operario con guantes azules vertiendo solvente desde un bidón metálico en un balde",
+  "segmento-moda": "Hebillas y cadenas doradas y plateadas en una bandeja de acero inoxidable",
+  "segmento-moveleiro": "Tirador cromado en la puerta de un mueble de cocina",
+  "segmento-automotivo": "Marco de parrilla automotriz cromado sobre un soporte en la fábrica",
+  "segmento-cosmeticos": "Mano con guante blanco sosteniendo un pote de cosmético con tapa dorada",
+  "segmento-plasticos": "Caja con piezas plásticas inyectadas de varios colores y acabados, frente a una inyectora"
+ }
+}

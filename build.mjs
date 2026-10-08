@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { state, scanPhotos, setPhotoMeta, photoFiles, plain, esc } from './src/lib/util.mjs';
 import { layout } from './src/lib/layout.mjs';
 import { abs } from './src/lib/seo.mjs';
+import { LANGS, META, STR, routes } from './src/lib/i18n.mjs';
 import * as P from './src/lib/pages.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -20,7 +21,7 @@ const segments = J('segments.json');
 const faqGeral = J('faq-geral.json');
 const redirects = J('redirects.json');
 const photosMeta = J('photos.json');
-setPhotoMeta(photosMeta);
+const tr = { es: J('i18n/es.json'), en: J('i18n/en.json') };
 scanPhotos(R('src/assets/photos'));
 
 const pub = fs.existsSync(R('src/data/supabase.public.json')) ? JSON.parse(fs.readFileSync(R('src/data/supabase.public.json'), 'utf8')) : {};
@@ -46,30 +47,46 @@ async function loadArticles() {
 }
 
 const articles = await loadArticles();
-const ctx = {
-  site, families, segments, faqGeral, articles, hasArticles: articles.length > 0,
+const base = {
+  articles, hasArticles: articles.length > 0,
   supabase: { url: SB_URL, key: SB_KEY },
   cssHash: hash('src/styles/main.css'), jsHash: hash('src/scripts/lead.js'),
 };
 
+// Contexto de cada idioma: textos de interface, caminhos e conteúdo traduzido (o português é a base).
+function langCtx(lang) {
+  const x = tr[lang];
+  const fams = families.map((f) => (x ? { ...f, ...x.families[f.id], id: f.id } : { ...f, slug: f.id }));
+  const segs = segments.map((s) => (x ? { ...s, ...x.segments[s.id], id: s.id, nPt: s.n } : { ...s, slug: s.id, nPt: s.n }));
+  const photoMeta = x ? Object.fromEntries(Object.entries(photosMeta).map(([k, m]) => [k, { ...m, alt: x.photos[k] || m.alt }])) : photosMeta;
+  return { ...base, lang, t: STR[lang], r: routes(lang), site: x ? { ...site, ...x.site } : site, families: fams, segments: segs, faqGeral: x ? x.faqGeral : faqGeral, photoMeta };
+}
+const ctxs = Object.fromEntries(LANGS.map((l) => [l, langCtx(l)]));
+
 function buildPages() {
   const list = [];
-  const add = (fn) => { state.page = '?'; const p = fn(); list.push(p); return p; };
-  const mk = (p, fn) => { state.page = p; return fn(); };
-  list.push(mk('/', () => P.home(ctx)));
-  list.push(mk('/sobre/', () => P.sobre(ctx)));
-  list.push(mk('/produtos/', () => P.produtosHub(ctx)));
-  for (const f of families) list.push(mk(`/produtos/${f.id}/`, () => P.familia(ctx, f)));
-  list.push(mk('/segmentos/', () => P.segmentosHub(ctx)));
-  for (const s of segments) list.push(mk(`/segmentos/${s.id}/`, () => P.segmento(ctx, s)));
-  if (ctx.hasArticles) {
-    list.push(mk('/conteudo-tecnico/', () => P.artigosHub(ctx)));
-    for (const a of articles) list.push(mk(`/conteudo-tecnico/${a.slug}/`, () => P.artigo(ctx, a)));
+  for (const lang of LANGS) {
+    const ctx = ctxs[lang];
+    setPhotoMeta(ctx.photoMeta);
+    const mk = (fn) => { state.page = '?'; const p = fn(); p.ctx = ctx; p.lang = lang; list.push(p); };
+    mk(() => P.home(ctx));
+    mk(() => P.sobre(ctx));
+    mk(() => P.produtosHub(ctx));
+    for (const f of ctx.families) mk(() => P.familia(ctx, f));
+    mk(() => P.segmentosHub(ctx));
+    for (const s of ctx.segments) mk(() => P.segmento(ctx, s));
+    if (lang === 'pt' && ctx.hasArticles) {
+      mk(() => P.artigosHub(ctx));
+      for (const a of articles) mk(() => P.artigo(ctx, a));
+    }
+    mk(() => P.contato(ctx));
+    mk(() => P.privacidade(ctx));
+    if (lang === 'pt') mk(() => P.notFound(ctx));
   }
-  list.push(mk('/contato/', () => P.contato(ctx)));
-  list.push(mk('/politica-de-privacidade/', () => P.privacidade(ctx)));
-  list.push(mk('/404.html', () => P.notFound(ctx)));
-  for (const p of list) { state.page = p.path; p.html = layout(ctx, p); }
+  // Versões da mesma página nos outros idiomas (hreflang e seletor de idioma).
+  const groups = {};
+  for (const p of list) (groups[p.key] ||= {})[p.lang] = p.path;
+  for (const p of list) { p.alt = p.key === '404' ? {} : groups[p.key]; state.page = p.path; p.html = layout(p.ctx, p); }
   return list;
 }
 function resetPending() { state.pendingText = []; state.pendingPhotos = new Set(); }
@@ -105,7 +122,8 @@ if (process.env.CUSTOM_DOMAIN) write('CNAME', process.env.CUSTOM_DOMAIN + '\n');
 // sitemap (apenas páginas indexáveis)
 const indexable = pages.filter((p) => !p.noindex && p.path !== '/404.html');
 const lastmod = (p) => (p.graph?.find((g) => g.dateModified && g['@type'] === 'Article')?.dateModified) || site.contentUpdated;
-write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${indexable.map((p) => `  <url><loc>${abs(site, p.path)}</loc><lastmod>${lastmod(p)}</lastmod></url>`).join('\n')}\n</urlset>\n`);
+const smAlt = (p) => LANGS.filter((l) => p.alt?.[l]).map((l) => `<xhtml:link rel="alternate" hreflang="${META[l].html}" href="${abs(site, p.alt[l])}"/>`).join('');
+write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${indexable.map((p) => `  <url><loc>${abs(site, p.path)}</loc><lastmod>${lastmod(p)}</lastmod>${smAlt(p)}</url>`).join('\n')}\n</urlset>\n`);
 
 // robots
 const AI = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Google-Extended', 'Applebot-Extended', 'Bingbot', 'Googlebot'];
@@ -118,7 +136,7 @@ const text = (html) => html.replace(/<form[\s\S]*?<\/form>/g, ' ').replace(/<(sc
 const line = (p) => `- [${plain(p.title)}](${abs(site, p.path)}): ${plain(p.description)}`;
 const sect = (title, arr) => `## ${title}\n${arr.map(line).join('\n')}\n`;
 const by = (re) => indexable.filter((p) => re.test(p.path));
-write('llms.txt', `# ${site.name}\n\n> ${site.description}\n\nEmpresa: ${site.legalName}, desde ${site.foundingYear}. Contato comercial: WhatsApp ${site.whatsappDisplay}, telefone ${site.phoneDisplay}, ${site.email}. Endereço: ${site.address.street}, ${site.address.city}, ${site.address.region}.\n\n${sect('Empresa', indexable.filter((p) => ['/', '/sobre/', '/contato/'].includes(p.path)))}\n${sect('Famílias de produto', by(/^\/produtos\/[^/]+\/$/))}\n${sect('Segmentos', by(/^\/segmentos\/[^/]+\/$/))}\n${ctx.hasArticles ? sect('Conteúdo técnico', by(/^\/conteudo-tecnico\//)) : ''}`);
+write('llms.txt', `# ${site.name}\n\n> ${site.description}\n\nEmpresa: ${site.legalName}, desde ${site.foundingYear}. Contato comercial: WhatsApp ${site.whatsappDisplay}, telefone ${site.phoneDisplay}, ${site.email}. Endereço: ${site.address.street}, ${site.address.city}, ${site.address.region}.\n\n${sect('Empresa', indexable.filter((p) => ['/', '/sobre/', '/contato/'].includes(p.path)))}\n${sect('Famílias de produto', by(/^\/produtos\/[^/]+\/$/))}\n${sect('Segmentos', by(/^\/segmentos\/[^/]+\/$/))}\n${base.hasArticles ? sect('Conteúdo técnico', by(/^\/conteudo-tecnico\//)) : ''}\n${sect('Español', by(/^\/es\//))}\n${sect('English', by(/^\/en\//))}`);
 write('llms-full.txt', `# ${site.name}: conteúdo completo\n\n` + indexable.map((p) => `\n---\n# ${plain(p.title)}\nURL: ${abs(site, p.path)}\n\n${text(p.body)}`).join('\n') + '\n');
 
 // redirecionamentos do site antigo
