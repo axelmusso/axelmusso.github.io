@@ -41,3 +41,25 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('DOMContentLoaded', onScroll);
 })();
+
+// Segmentos da home: a foto troca ao passar o mouse e mantém o último segmento até o próximo (sem voltar à foto geral).
+document.addEventListener('DOMContentLoaded', function () {
+  var fig = document.querySelector('#segmentos figure.swapper');
+  if (!fig) return;
+  var current = null;
+  var show = function (key) {
+    var next = fig.querySelector('.swap[data-seg="' + key + '"]');
+    if (!next || next === current) return;
+    if (current) {
+      var old = current;
+      old.classList.remove('on'); old.classList.add('prev');
+      setTimeout(function () { old.classList.remove('prev'); }, 400);
+    }
+    next.classList.remove('prev'); next.classList.add('on');
+    current = next;
+  };
+  document.querySelectorAll('#segmentos .row[data-seg]').forEach(function (row) {
+    row.addEventListener('mouseenter', function () { show(row.dataset.seg); });
+    row.addEventListener('focus', function () { show(row.dataset.seg); });
+  });
+});
