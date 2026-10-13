@@ -650,3 +650,46 @@ footer.site{background:#0A0A3C}
 #sobre .core p.big b{font-weight:500}
 #sobre .rule{margin-top:26px}
 #sobre .essence-text .lead{font-size:16px}
+
+/* =====================================================================
+   DESIGN v2.2 (13/10/2026): azul em todas as páginas, cabeçalho fixo com
+   transição na home e linhas retas (sem tracejado).
+   ===================================================================== */
+
+/* cabeçalho fixo em todas as páginas; na home começa transparente sobre o banner */
+header.site,body.home header.site{position:sticky;top:0;z-index:40}
+body.home header.site{margin-bottom:-77px;background:transparent;border-bottom:1px solid transparent;backdrop-filter:none;color:#fff;transition:background .35s ease,color .35s ease,border-color .35s ease,box-shadow .35s ease}
+body.home header.site.scrolled{background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(12px);color:var(--ink);border-bottom-color:var(--line);box-shadow:0 6px 24px #0A0A3C14}
+body.home header.site.scrolled .langs{border-left-color:var(--line)}
+body.home header.site.scrolled .theme-toggle{border-color:var(--line)}
+body.home header.site.scrolled .langs a[aria-current] .flag{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--blue)}
+@media (max-width:980px){header.site,body.home header.site{position:sticky}}
+
+/* linhas retas no lugar do tracejado, com um trecho curto em azul no início */
+.frgrid .fr,.fr,.mc.sand,.step,.sq,.sq:nth-child(even),.plan,.plan.hi,.how,.prgrid .pr,.pr,.card{
+  border-top:1px solid var(--dash) !important;
+  background-image:linear-gradient(var(--blue),var(--blue)) !important;background-repeat:no-repeat !important;background-size:36px 2px !important;background-position:0 0 !important;background-color:transparent !important}
+.flow li:not(:last-child)::after{border-top-style:solid;border-top-width:1px}
+@media (max-width:820px){.flow li:not(:last-child)::after{border-left-style:solid;border-left-width:1px}}
+
+/* números e destaques em azul nas páginas internas */
+.step b{color:var(--blue)}
+.tbl{border-top:2px solid var(--blue)}
+th{color:var(--blue)}
+.tags a{border-color:var(--dash);color:var(--ink)}
+.tags a:hover{background:var(--navy);border-color:var(--navy);color:#fff}
+.chip{border-color:var(--dash);color:var(--blue)}
+.contact-list b{color:var(--blue)}
+.card .more,.card .more .arr{color:var(--blue)}
+form.sample{border-color:var(--dash);border-top:2px solid var(--blue)}
+form.sample h3{color:var(--ink)}
+
+/* "Fale com o comercial" das páginas de produto e segmento: bloco azul-marinho, como o banner */
+.sec.dark:has(>.wrap.two),.sec.tint:has(>.wrap.two){background:linear-gradient(135deg,#0A0A3C 0%,#16166E 100%);color:#fff;--on-dark-mut:#C9D3F0}
+.sec.dark:has(>.wrap.two) .label,.sec.tint:has(>.wrap.two) .label{color:#9EC2FF}
+.sec.tint:has(>.wrap.two) .lead{color:#C9D3F0}
+.sec.dark:has(>.wrap.two) a,.sec.tint:has(>.wrap.two) .lead a{color:#fff}
+.sec.dark:has(>.wrap.two) form.sample a{color:var(--blue)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sec:is(.dark,.tint):has(>.wrap.two){background:linear-gradient(135deg,#0E1A52,#1A2C7A)}}
+:root[data-theme="dark"] .sec:is(.dark,.tint):has(>.wrap.two){background:linear-gradient(135deg,#0E1A52,#1A2C7A)}
+@media (max-width:980px){.dd .panel{border:0;box-shadow:none;padding:0 0 6px 14px}}

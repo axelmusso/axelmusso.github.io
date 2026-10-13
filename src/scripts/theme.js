@@ -31,3 +31,13 @@
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sync);
   });
 })();
+
+// Cabeçalho fixo: na home ele fica transparente sobre o banner e ganha fundo ao rolar a página.
+(function () {
+  var onScroll = function () {
+    var h = document.querySelector('header.site');
+    if (h) h.classList.toggle('scrolled', window.scrollY > 40);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('DOMContentLoaded', onScroll);
+})();
