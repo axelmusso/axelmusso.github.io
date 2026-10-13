@@ -25,6 +25,21 @@ export const pb = (label, href, cls = '', external = false) =>
   `<a class="pb ${cls}" href="${esc(href)}"${external ? ' target="_blank" rel="noopener"' : ''}>${label} <i>${AR}</i></a>`;
 export const waBtn = (ctx, label, msg, cls = '') => pb(label, waUrl(ctx.site, msg), `wa ${cls}`, true);
 
+// Alterna o fundo das seções entre dois tons (branco e azul bem claro) para marcar a troca de assunto.
+// O banner e os blocos azul-marinho ficam como estão e não entram na alternância.
+// A primeira seção (depois do banner da home ou do topo branco das páginas internas) começa no tom azul-claro.
+function toneSections(body, startAlt = true) {
+  let alt = startAlt;
+  return body.replace(/<section class="sec([^"]*)"([^>]*)>(\s*<div class="(wrap two|wrap"><div class="cta2)")?/g, (m, cls, rest, inner) => {
+    if (/\bhero\b/.test(cls)) return m;
+    if (inner && inner.includes('wrap two')) return m; // bloco azul-marinho do formulário
+    if (inner && inner.includes('cta2')) return m.replace('class="sec' + cls + '"', 'class="sec' + cls + ' tone-end"'); // "Vamos conversar"
+    const tone = alt ? ' tone-alt' : ' tone-base';
+    alt = !alt;
+    return m.replace('class="sec' + cls + '"', 'class="sec' + cls + tone + '"');
+  });
+}
+
 export function layout(ctx, page) {
   const { site, families, segments, hasArticles, t, r, lang } = ctx;
   const showArticles = hasArticles && lang === 'pt';
@@ -64,7 +79,7 @@ ${state.mode === 'staging' ? `<div class="stagingbar">${esc(state.awaitingDomain
   ${langSwitch(lang, page.alt || {})}
 </div></header>
 <main id="conteudo">
-${page.body}
+${toneSections(page.body, true)}
 </main>
 <footer class="site"><div class="wrap"><div class="fg">
   <div><a class="logo" href="${r.home}" style="font-size:24px">${LOGO}<span>Corquímica</span></a>

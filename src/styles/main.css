@@ -699,3 +699,13 @@ footer.site a.ci:hover .cic{opacity:1}
 /* sem o traço abaixo dos títulos: as listas já têm a sua linha logo em seguida */
 .sec h2:not(.label)::after,.ph2 h1::after,.head h1::after{content:none}
 .ph2 h1,.head h1{margin-bottom:22px}
+
+/* =====================================================================
+   DESIGN v2.3: seções alternando entre dois tons para separar os assuntos.
+   ===================================================================== */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--alt:#0E1642}}
+:root[data-theme="dark"]{--alt:#0E1642}
+section.sec.tone-base{background:var(--bg)}
+section.sec.tone-alt{background:var(--alt)}
+section.sec:is(.tone-base,.tone-alt){padding-block:clamp(52px,6vw,84px) !important}
+section.sec.tone-end{padding-block:clamp(52px,6vw,84px) !important}
