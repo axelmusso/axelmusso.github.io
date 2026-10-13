@@ -604,3 +604,49 @@ footer.site .col b{font-size:12px;text-transform:uppercase;letter-spacing:.2em;f
 .row b{color:var(--ink)}
 .core p.big b{font-weight:400}
 @media (max-width:560px){.pb{letter-spacing:.1em;padding:13px 20px}}
+
+/* =====================================================================
+   DESIGN v2.1 (13/10/2026): mais azul da marca, menos preto.
+   Azul-marinho do hero em botões, números, CTA e rodapé; azul nos detalhes;
+   modo escuro em azul-marinho profundo.
+   ===================================================================== */
+:root{--navy:#0A0A3C;--navy2:#16166E;--ink:#111A3C;--muted:#55607A;--line:#DCE3EF;--dash:#BCCBE6;--alt:#F3F6FB;--sand:#F3F6FB}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#080C26;--alt:#0D1335;--ink:#EAF0FF;--muted:#A7B3D6;--line:#1F2A55;--dash:#2E3F78;--sand:#111842;--card:#080C26;--blue:#5B9BF0;--navy:#1A3F8F;--navy2:#2456B8}}
+:root[data-theme="dark"]{--bg:#080C26;--alt:#0D1335;--ink:#EAF0FF;--muted:#A7B3D6;--line:#1F2A55;--dash:#2E3F78;--sand:#111842;--card:#080C26;--blue:#5B9BF0;--navy:#1A3F8F;--navy2:#2456B8}
+
+/* detalhes em azul */
+.sec h2:not(.label)::after,.ph2 h1::after,.head h1::after{background:var(--blue);height:2px;opacity:1}
+.label{color:var(--blue)}
+.on-dark .label{color:var(--blue)}
+.cta2 .label{color:#9EC2FF}
+.sq b{color:var(--blue)}
+details.faq summary::after{color:var(--blue) !important}
+.plan li::before{border-color:var(--blue)}
+.row .ic svg{stroke:var(--blue)}
+.fr:hover b,.card:hover h3,.row:hover b,.row:focus-visible b{color:var(--blue)}
+
+/* botões secundários em azul-marinho (ex.: "Conheça a Corquímica") */
+.pb.sand,.pb:not(.wa):not(.out){background:var(--navy);color:#fff;border:0}
+.pb.sand:hover,.pb:not(.wa):not(.out):hover{background:var(--navy2);filter:none}
+
+/* sistema em 4 etapas: números em círculos azul-marinho */
+.flow .n{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:400}
+.flow li:not(:last-child)::after{border-top-color:var(--dash)}
+@media (max-width:820px){.flow li:not(:last-child)::after{border-left-color:var(--dash)}}
+
+/* blocos escuros em azul-marinho, como o hero */
+.cta2{background:linear-gradient(135deg,#0A0A3C 0%,#16166E 100%)}
+footer.site{background:#0A0A3C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cta2{background:linear-gradient(135deg,#0E1A52,#1A2C7A)}:root:not([data-theme="light"]) footer.site{background:#050820}}
+:root[data-theme="dark"] .cta2{background:linear-gradient(135deg,#0E1A52,#1A2C7A)}
+:root[data-theme="dark"] footer.site{background:#050820}
+
+/* links e marca do idioma atual */
+.crumbs a,.contact-list a,.prose a{color:var(--blue)}
+
+/* Nossa essência: rótulo acima da seção, texto alinhado ao topo da foto e menor */
+#sobre .core.essence{margin-top:24px;align-items:start}
+#sobre .core p.big{font-size:clamp(18px,1.7vw,23px);line-height:1.5;font-weight:300}
+#sobre .core p.big b{font-weight:500}
+#sobre .rule{margin-top:26px}
+#sobre .essence-text .lead{font-size:16px}

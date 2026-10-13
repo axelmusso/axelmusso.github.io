@@ -67,7 +67,7 @@ export function home(ctx) {
   </div></div>
 </section>
 
-<section class="sec" id="sobre"><div class="wrap"><div class="core essence"><div class="essence-side"><span class="label">${esc(t.essenceLabel)}</span>${photo('home-sobre')}</div><div>
+<section class="sec" id="sobre"><div class="wrap"><span class="label">${esc(t.essenceLabel)}</span><div class="core essence"><div class="essence-side">${photo('home-sobre')}</div><div class="essence-text">
   <p class="big">${t.essenceBig(site.foundingYear, site.clients)}</p>
   <hr class="rule">
   <p class="lead" style="margin-top:22px">${esc(t.essenceLead)}</p>
