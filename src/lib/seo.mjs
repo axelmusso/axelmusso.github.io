@@ -15,7 +15,7 @@ export function orgNode(ctx) {
     name: site.name,
     legalName: site.legalName,
     url: abs(site, '/'),
-    logo: abs(site, '/favicon.svg'),
+    logo: abs(site, '/icon-512.png'),
     description: site.description,
     foundingDate: String(site.foundingYear),
     email: site.email,
@@ -103,6 +103,9 @@ ${ogAlt}
 <meta name="twitter:description" content="${esc(plain(p.description))}">
 <meta name="twitter:image" content="${esc(image)}">
 <meta name="theme-color" content="#0A0A3C">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico?v=2" sizes="48x48">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 ${ld({ '@context': 'https://schema.org', '@graph': graph })}`;
 }
