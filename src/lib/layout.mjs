@@ -31,7 +31,7 @@ export function layout(ctx, page) {
 ${head(ctx, { ...page, noindex })}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap">
 <link rel="stylesheet" href="/assets/main.css?v=${ctx.cssHash}">
 <script src="/assets/theme.js?v=${ctx.themeHash}"></script>
 ${page.withForm ? `<meta name="cq-wa" content="${site.whatsapp}">${sb.url ? `<meta name="cq-supabase-url" content="${esc(sb.url)}"><meta name="cq-supabase-key" content="${esc(sb.key)}">` : ''}

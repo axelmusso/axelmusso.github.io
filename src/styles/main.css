@@ -428,3 +428,179 @@ body.home .theme-toggle:hover{background:#ffffff1f}
 }
 @media (max-width:380px){.logo{font-size:17px;gap:7px}.logo svg{height:22px}.langs a{padding:4px}}
 @media (max-width:330px){.logo span{display:none}}
+
+/* =====================================================================
+   DESIGN v2 (13/10/2026), inspirado em opayoma.com.br:
+   Inter leve, títulos em maiúsculas espaçadas, linhas finas e tracejadas
+   no lugar de caixas arredondadas, fotos com cantos retos, menos espaço
+   entre seções. Para voltar ao design anterior: tag "design-v1".
+   ===================================================================== */
+:root{--bg:#FFFFFF;--alt:#F7F6F4;--ink:#0D0D1F;--muted:#5B6070;--line:#DDE0E5;--dash:#CBD0D7;--sand:#F7F6F4;--card:#FFFFFF;--shadow:0 12px 30px #0D0D1F14;--sans:'Inter','Segoe UI',Arial,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B0C14;--alt:#11131D;--ink:#EDEDF2;--muted:#9EA3B3;--line:#262A37;--dash:#3A3F50;--sand:#151826;--card:#0B0C14;--shadow:0 12px 30px #0008}}
+:root[data-theme="dark"]{--bg:#0B0C14;--alt:#11131D;--ink:#EDEDF2;--muted:#9EA3B3;--line:#262A37;--dash:#3A3F50;--sand:#151826;--card:#0B0C14;--shadow:0 12px 30px #0008}
+
+/* tipografia */
+body{font-weight:300;letter-spacing:.005em}
+b,strong,th{font-weight:500}
+h1,h2{font-weight:300;text-transform:uppercase;letter-spacing:.06em;line-height:1.12}
+h2{font-size:clamp(26px,3.2vw,40px)}
+h3{font-weight:500;font-size:14px;line-height:1.45;text-transform:uppercase;letter-spacing:.14em}
+.lead,.def,.ph2 .def,.head .def{font-weight:300}
+.label{font-size:12px;font-weight:500;letter-spacing:.3em;color:var(--muted);gap:0}
+.label::before{display:none}
+/* traço curto sob os títulos de seção */
+.sec h2:not(.label)::after,.ph2 h1::after,.head h1::after{content:"";display:block;width:56px;height:1px;background:currentColor;margin-top:26px;opacity:.9}
+.faq-wrap>div:first-child>h2::after{margin-bottom:0}
+
+/* menos espaço entre seções */
+.sec{padding-block:clamp(44px,5.2vw,72px)}
+.sec+.sec:not(.dark):not(.tint){padding-top:clamp(20px,2.5vw,36px)}
+.mos,.cards3,.flow{margin-top:36px}
+
+/* botões: pílula fina, texto em maiúsculas, seta simples */
+.pb{gap:12px;padding:14px 26px;font-size:12.5px;font-weight:500;text-transform:uppercase;letter-spacing:.14em}
+.pb i{width:auto;height:auto;background:none !important;color:inherit !important}
+.pb.sm{padding:11px 20px;font-size:12px}
+.pb.sand{background:transparent;color:var(--ink);border:1px solid currentColor}
+.pb.out{padding:13px 25px}
+.wa-float{box-shadow:0 6px 18px #0003}
+
+/* cabeçalho */
+nav.main a.l{font-size:12.5px;font-weight:400;text-transform:uppercase;letter-spacing:.14em;border-radius:0;padding:8px 12px}
+nav.main a.l:hover,nav.main a[aria-current]{background:none;text-decoration:underline;text-underline-offset:7px;text-decoration-thickness:1px}
+body.home nav.main a.l:hover,body.home nav.main a[aria-current]{background:none}
+.logo{font-weight:500;letter-spacing:.01em}
+.dd .panel{border-radius:0;border:1px solid var(--line);box-shadow:var(--shadow);padding:6px}
+.dd .panel a{border-radius:0;font-weight:300}
+.dd .panel a:hover{background:var(--alt)}
+.theme-toggle:hover{background:var(--alt)}
+header.site{border-bottom-color:var(--line)}
+
+/* hero */
+.hero h1{font-weight:300;letter-spacing:.05em;font-size:clamp(34px,5vw,58px)}
+.hero p.lead{font-weight:300}
+
+/* fotos com cantos retos */
+figure.phimg,.ph,.ph span{border-radius:0}
+
+/* essência */
+.core p.big{font-weight:300;letter-spacing:0}
+.core p.big b{font-weight:500}
+
+/* famílias da home: sem moldura, separadas por linhas tracejadas */
+.sol{background:none;border-radius:0;padding:0;overflow:visible}
+.sol .glass{background:none;backdrop-filter:none;border-radius:0;padding:0}
+.sol h2{font-size:clamp(26px,3.2vw,40px);margin:16px 0 0}
+.frgrid{gap:0 40px;margin-top:36px}
+.frgrid .fr,.fr{display:block;border:0;border-top:2px dashed var(--dash);padding:22px 0 26px}
+.fr .dash{display:none}
+.fr b{display:block;font-size:14px;text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px}
+.fr span{font-size:15px;font-weight:300}
+.fr:hover b{color:var(--blue)}
+
+/* segmentos da home: lista com linhas, sem caixa nem círculos */
+.float2{background:none;border-radius:0;padding:0;box-shadow:none;gap:56px}
+#segmentos .float2{margin-top:30px}
+.rows{gap:0}
+.row{border-radius:0;padding:18px 0;border-top:1px solid var(--line);gap:18px}
+.row:last-child{border-bottom:1px solid var(--line)}
+.row .ic{width:28px;height:28px;background:none !important}
+.row .ic svg{width:26px;height:26px;stroke-width:1.3}
+.row b{font-size:14px;text-transform:uppercase;letter-spacing:.14em;margin-bottom:4px}
+.row span{font-weight:300}
+.row:hover,.row:focus-visible{background:none}
+.row:hover b,.row:focus-visible b{color:var(--blue)}
+
+/* "A diferença que fazemos": blocos retos; os sem foto viram texto com linha tracejada */
+.mos{gap:28px}
+.mc{border-radius:0;min-height:240px}
+.mc.sand{background:none;padding:22px 0 0;border-top:2px dashed var(--dash);min-height:0}
+.mc b{font-weight:300;text-transform:uppercase;letter-spacing:.06em}
+.mc span{font-weight:300}
+
+/* seções escuras passam a cinza bem claro, como no site de referência */
+.dark{background:var(--alt);color:var(--ink);--on-dark:var(--ink);--on-dark-mut:var(--muted)}
+.on-dark .label{color:var(--muted)}
+.dark .tags a{background:none}
+/* sistema em 4 etapas: números em círculos finos ligados por tracejado */
+.flow .n{background:none;border:1px solid currentColor;color:var(--ink);font-weight:300;font-size:16px}
+.flow li:not(:last-child)::after{background:none;height:0;border-top:2px dashed var(--dash)}
+.flow li:not(:last-child)::before{display:none}
+.flow h3{margin-top:22px}
+.flow p{font-weight:300}
+@media (max-width:820px){.flow li:not(:last-child)::after{border-top:0;border-left:2px dashed var(--dash);width:0}}
+.alignbar{background:none;border-radius:0;padding:24px 0 0;margin-top:40px;border-top:1px solid var(--line)}
+/* benefícios e características do segmento */
+.step{background:none !important;border-radius:0;padding:22px 0 0;border-top:2px dashed var(--dash);gap:10px}
+.step b{font-size:28px;font-weight:300}
+.step p{font-weight:300;color:var(--muted)}
+.cards3{gap:28px 40px}
+.cards3 .step h3{font-size:14px !important}
+/* números (página Sobre) */
+.sc{gap:0 32px}
+.sq,.sq:nth-child(even){background:none;border:0;border-top:2px dashed var(--dash);border-radius:0;box-shadow:none;padding:22px 0 0;min-height:0;gap:10px}
+.sq b{font-weight:300;color:var(--ink)}
+.sq span{color:var(--muted);font-weight:500;font-size:11.5px;letter-spacing:.18em}
+
+/* como trabalhamos */
+.plan{border-top:2px dashed var(--dash)}
+.plan.hi{border-color:var(--dash)}
+.plan p{font-weight:300}
+.plan li::before{border-color:var(--ink)}
+
+/* FAQ: lista com linhas */
+details.faq{background:none;border-radius:0;padding:20px 0;margin:0;border-bottom:1px solid var(--line)}
+.faq-cols>div{border-top:1px solid var(--line)}
+.faq-cols{gap:0 48px}
+details.faq summary{font-weight:400;font-size:16px;letter-spacing:.01em}
+details.faq summary::after{content:"+";width:auto;height:auto;background:none !important;color:var(--ink) !important;font-weight:300;font-size:22px;line-height:1}
+details.faq[open] summary::after{content:"−"}
+details.faq p{font-weight:300}
+
+/* CTA final: bloco escuro reto */
+.cta2{border-radius:0;background:#0B0C14}
+.cta2 h2{font-weight:300}
+.cta2 p{font-weight:300}
+
+/* páginas internas */
+.how{background:none;border-radius:0;padding:20px 0 0;border-top:2px dashed var(--dash);margin:28px 0}
+.how b{font-size:12px;text-transform:uppercase;letter-spacing:.2em;font-weight:500;margin-bottom:8px}
+.prgrid{gap:0 40px}
+.prgrid .pr,.pr{background:none;border-radius:0;padding:20px 0 22px;margin:0;border-top:2px dashed var(--dash);font-weight:300}
+.pr i{display:none}
+.pr b{font-weight:500}
+.tbl{background:none;border-radius:0;border-top:1px solid var(--ink)}
+th,td{padding:16px 18px 16px 0}
+td{font-weight:300}
+.tags a{background:none;border:1px solid var(--line);border-radius:0;padding:10px 16px;font-size:11.5px;font-weight:500;text-transform:uppercase;letter-spacing:.16em}
+.tags a:hover{background:none;color:var(--blue);border-color:currentColor}
+.chip{background:none;border:1px solid var(--line);border-radius:0;font-size:11px;text-transform:uppercase;letter-spacing:.14em}
+.card{background:none;border-radius:0;padding:24px 0 0;border-top:2px dashed var(--dash)}
+.card:hover{transform:none;box-shadow:none}
+.card:hover h3{color:var(--blue)}
+.card p{font-weight:300}
+.card .more{font-size:12px;text-transform:uppercase;letter-spacing:.14em}
+.cards{gap:36px 40px}
+.tint{background:var(--alt)}
+form.sample{border-radius:0;box-shadow:none;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+form.sample h3{font-size:15px}
+form.sample input,form.sample select,form.sample textarea{border-radius:0;background:transparent;font-weight:300}
+.contact-list b{font-size:11.5px;letter-spacing:.2em}
+
+/* rodapé */
+footer.site{background:#0B0C14}
+footer.site .col{font-weight:300}
+footer.site .col b{font-size:12px;text-transform:uppercase;letter-spacing:.2em;font-weight:500;margin-bottom:4px}
+
+@media (min-width:981px){.plans{grid-template-columns:1.1fr 1fr 1fr;gap:40px}}
+.plans .lft h2{font-size:clamp(24px,2.4vw,32px)}
+#segmentos .float2{align-items:start}
+#segmentos .rows{align-content:start}
+.ph2{padding-bottom:clamp(36px,5vw,64px)}
+.head{padding-bottom:clamp(30px,4vw,52px)}
+.ph2 h1,.head h1{font-size:clamp(28px,3.4vw,44px);letter-spacing:.05em}
+.prose h1{font-size:clamp(28px,3.4vw,44px)}
+.how a,.def a{text-decoration:underline;text-underline-offset:3px}
+.row b{color:var(--ink)}
+.core p.big b{font-weight:400}
+@media (max-width:560px){.pb{letter-spacing:.1em;padding:13px 20px}}
