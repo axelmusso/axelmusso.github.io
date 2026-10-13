@@ -693,3 +693,8 @@ form.sample h3{color:var(--ink)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sec:is(.dark,.tint):has(>.wrap.two){background:linear-gradient(135deg,#0E1A52,#1A2C7A)}}
 :root[data-theme="dark"] .sec:is(.dark,.tint):has(>.wrap.two){background:linear-gradient(135deg,#0E1A52,#1A2C7A)}
 @media (max-width:980px){.dd .panel{border:0;box-shadow:none;padding:0 0 6px 14px}}
+
+/* rodapé: contatos com ícones brancos em contorno */
+footer.site a.ci{display:inline-flex;align-items:center;gap:12px}
+footer.site .cic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+footer.site a.ci:hover .cic{opacity:1}

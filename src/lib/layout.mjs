@@ -9,6 +9,15 @@ export const LOGO = '<svg viewBox="121 32 683 408" aria-hidden="true"><path fill
 
 export const igUrl = (site) => `https://www.instagram.com/${site.instagram}/`;
 
+// Ícones de contato do rodapé (contorno, na cor do texto).
+const ic = (d) => `<svg class="cic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  wa: ic('<path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.3z"/><path d="M9 8.6c.3-.6.6-.6.9-.6h.6c.2 0 .4.1.5.4l.7 1.7c.1.2 0 .4-.1.6l-.5.6c-.1.2-.1.4 0 .5.6 1 1.5 1.9 2.5 2.4.2.1.4.1.5-.1l.6-.7c.1-.2.4-.2.6-.1l1.6.8c.2.1.3.3.3.5 0 .6-.3 1.3-.9 1.6-.6.3-1.5.4-2.6 0-1.6-.6-3.3-2.1-4.2-3.8-.6-1.1-.8-2.2-.5-2.8z" fill="currentColor" stroke="none"/>'),
+  tel: ic('<path d="M5 4h3.2l1.6 4-2 1.3a11 11 0 0 0 4.9 4.9l1.3-2 4 1.6V17a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/>'),
+  mail: ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6l8.5 7 8.5-7"/>'),
+  ig: ic('<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/>'),
+};
+
 export const waUrl = (site, msg) =>
   `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(msg || 'Olá! Vim pelo site da Corquímica e gostaria de falar com o comercial.')}`;
 
@@ -62,10 +71,10 @@ ${page.body}
     <p class="fsmall">${esc(site.description)}</p>
     <address class="fsmall">${esc(site.address.street)}, ${esc(site.address.district)}<br>${esc(site.address.city)}, ${esc(site.address.region)}${country}</address></div>
   <div class="col"><b>${esc(t.fContact)}</b>
-    <a href="${esc(waUrl(site, t.waDefault))}" target="_blank" rel="noopener">WhatsApp: ${esc(site.whatsappDisplay)}</a>
-    <a href="tel:${site.phone}">${esc(t.fPhone)}: ${esc(site.phoneDisplay)}</a>
-    <a href="mailto:${site.email}">${esc(site.email)}</a>
-    <a href="${igUrl(site)}" target="_blank" rel="noopener" aria-label="${esc(t.igFollow)}: @${esc(site.instagram)}">Instagram: @${esc(site.instagram)}</a>
+    <a class="ci" href="${esc(waUrl(site, t.waDefault))}" target="_blank" rel="noopener" aria-label="WhatsApp: ${esc(site.whatsappDisplay)}">${ICON.wa}${esc(site.whatsappDisplay)}</a>
+    <a class="ci" href="tel:${site.phone}" aria-label="${esc(t.fPhone)}: ${esc(site.phoneDisplay)}">${ICON.tel}${esc(site.phoneDisplay)}</a>
+    <a class="ci" href="mailto:${site.email}" aria-label="${esc(t.emailLbl)}: ${esc(site.email)}">${ICON.mail}${esc(site.email)}</a>
+    <a class="ci" href="${igUrl(site)}" target="_blank" rel="noopener" aria-label="${esc(t.igFollow)}: @${esc(site.instagram)}">${ICON.ig}@${esc(site.instagram)}</a>
     <a href="${r.contact}">${esc(t.fAllContacts)}</a></div>
   <div class="col"><b>${esc(t.fProducts)}</b>${prodLinks}</div>
   <div class="col"><b>${esc(t.fIndustries)}</b>${segLinks}<b style="margin-top:14px">${esc(t.fCompany)}</b><a href="${r.about}">${esc(t.fAbout)}</a>${showArticles ? `<a href="${r.articles}">${esc(t.navArticles)}</a>` : ''}<a href="${r.privacy}">${esc(t.fPrivacy)}</a></div>
