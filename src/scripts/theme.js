@@ -37,6 +37,9 @@
   var onScroll = function () {
     var h = document.querySelector('header.site');
     if (h) h.classList.toggle('scrolled', window.scrollY > 40);
+    // Home: marca enquanto o banner está na tela, para o WhatsApp flutuante só aparecer depois dele (no mobile).
+    var hero = document.querySelector('.hero');
+    if (hero) document.body.classList.toggle('hero-on', hero.getBoundingClientRect().bottom > 80);
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('DOMContentLoaded', onScroll);
