@@ -27,3 +27,12 @@ Nameservers: ns10/ns11.webstorage.com.br e ns10/ns11.webstorage.net.br. TTL de t
 ## Para desfazer a Fase 1
 - mail.corquimica.com.br: voltar de A 138.186.228.40 para CNAME corquimica.com.br
 - MX prioridade 0: voltar o destino de mail.corquimica.com.br para corquimica.com.br
+
+## Fase 2 (14/10/2026): site apontado para o GitHub Pages
+
+Alterado no Editor de Zona:
+- `corquimica.com.br` A: `138.186.228.40` → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (3 registros novos)
+- `www` CNAME: `corquimica.com.br` → `axelmusso.github.io`
+- `_caldav._tcp`, `_caldavs._tcp`, `_carddav._tcp`, `_carddavs._tcp` SRV: destino `corquimica.com.br` → `mail.corquimica.com.br`
+
+Para desfazer (voltar ao site antigo da Webstorage): apagar 3 dos 4 registros A `185.199.x.153`, editar o restante para `138.186.228.40` e voltar o `www` para CNAME `corquimica.com.br`. Os SRV podem ficar como estão.
