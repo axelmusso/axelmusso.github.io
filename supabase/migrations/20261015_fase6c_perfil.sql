@@ -14,3 +14,8 @@ update public.empresas set
     else 'geral' end,
   perfil_fonte = 'grupo de cadastro ' || coalesce(grupo, '(vazio)')
 where origem = 'base_clientes';
+
+-- Ajuste (15/10/2026): metalizadoras (MET) têm perfil próprio. Podem ouvir só de Verniz UV, Solventes e Tintas para ABS.
+alter table public.empresas drop constraint if exists empresas_perfil_produto_check;
+alter table public.empresas add constraint empresas_perfil_produto_check check (perfil_produto in ('verniz', 'metalizacao', 'resina3d', 'geral'));
+update public.empresas set perfil_produto = 'metalizacao' where origem = 'base_clientes' and upper(replace(grupo, ' ', '')) = 'MET';

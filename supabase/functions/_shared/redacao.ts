@@ -4,17 +4,29 @@ import { buscarMemoria } from './memoria.ts';
 import { jsonDe } from './web.ts';
 
 export const SOBRE_A_CORQUIMICA = `Corquímica Ind. e Com. Ltda, fabricante desde 1997 em Estância Velha (RS), mais de 100 clientes no Brasil.
-Linha: Verniz UV Base, Verniz UV Top Coat, Lacas, Corantes UV, Resinas 3D, Solventes.
+Linha: Verniz UV Base, Verniz UV Top Coat, Lacas, Corantes UV, Tintas para ABS/PS, Resinas 3D, Solventes.
 Atende moda e calçados (saltos, solados, acessórios), moveleiro, metalização, automotivo, cosméticos (frascos, tampas), linha branca e plástico em geral.
-Quando o cliente procura a Corquímica: problema de qualidade no acabamento (aderência, brilho, trinca, cura) ou homologação de um novo fornecedor.
+Ganhos que a Corquímica entrega: acabamento consistente (aderência, brilho, cura), suporte técnico próximo e homologação ágil como fornecedor.
 Não invente números, prazos, certificações nem casos de clientes: use só o que está aqui ou no dado da empresa.`;
 
 // O que se pode dizer de produto, conforme o que se sabe da empresa (perfil_produto).
 export const PERFIS: Record<string, string> = {
-  verniz: 'A empresa USA vernizes/lacas na linha (confirmado). Pode falar de Verniz UV Base, Verniz UV Top Coat, Lacas, Corantes UV e Solventes, e de problemas de acabamento (aderência, brilho, trinca, cura).',
-  resina3d: 'A empresa usa SÓ resinas para impressão 3D. Fale apenas de Resinas 3D. NÃO fale de verniz, laca, corante nem acabamento de peças.',
-  geral: 'NÃO se sabe se a empresa usa algum produto da Corquímica. NÃO afirme nem suponha que ela usa verniz, laca ou resina, e não cite problema de acabamento como se fosse dela. Mensagem mais geral: para dizer o que a Corquímica faz, use só algo como "indústria química de Estância Velha (RS), desde 1997", sem citar verniz, laca, corante nem resina; e pergunte, sem pressupor, se faz sentido conversar.',
+  verniz: 'A empresa USA vernizes na linha (confirmado). Fale com segurança, sem perguntar se usa. Pode citar Verniz UV Base, Verniz UV Top Coat, Lacas, Corantes UV e Solventes, e ganhos de acabamento (aderência, brilho, cura).',
+  metalizacao: 'A empresa é METALIZADORA e usa verniz UV (confirmado). Fale com segurança, sem perguntar se usa. Cite SÓ Verniz UV (Base e Top Coat), Solventes e Tintas para ABS. NÃO fale de laca, corante nem resina.',
+  resina3d: 'A empresa usa resinas para impressão 3D (confirmado). Fale com segurança, sem perguntar se usa. Fale apenas de Resinas 3D. NÃO fale de verniz, laca, corante, tinta nem acabamento de peças.',
+  geral: 'NÃO se sabe se a empresa usa algum produto da Corquímica. NÃO afirme nem suponha que ela usa verniz, laca, tinta ou resina. Mensagem mais geral: para dizer o que a Corquímica faz, use só algo como "indústria química de Estância Velha (RS), desde 1997", sem citar produtos; e pergunte, sem pressupor, se faz sentido conversar.',
 };
+
+// Palavras de produto que cada perfil NÃO pode usar (a máquina confere).
+const FORA_DO_PERFIL: Record<string, RegExp> = {
+  verniz: /\b(resinas?)\b/i,
+  metalizacao: /\b(lacas?|corantes?|resinas?)\b/i,
+  resina3d: /\b(verniz|vernizes|lacas?|corantes?|tintas?)\b/i,
+  geral: /\b(verniz|vernizes|lacas?|corantes?|resinas?|tintas?)\b/i,
+};
+// Dúvida sobre o que o cliente usa (perfil confirmado) e insinuação de problema: passam insegurança.
+const DUVIDA = /\bse (a |o )?(linha|produção|fábrica|operação|voc[êe]s|empresa)\b[^.?!]{0,40}\b(ainda|segue|seguem|continua|continuam|usa|usam|trabalha|trabalham|imprime|imprimem|aplica|aplicam)\b/i;
+const PROBLEMA = /n[ãa]o (tenha|tenham|tiver) atendido|problema|defeito|falha|reclama|insatisf|ajust|corrig|feito diferente/i;
 
 const PROIBIDO = /espero que (esteja|estejam|você esteja) bem|tudo bem\?|venho por meio|gostaria de apresentar|soluç(ão|ões) inovador|líder (de|no) mercado|qualidade incompar|excelência/i;
 export type Rascunho = { sem_gancho?: boolean; motivo?: string; assunto: string; corpo: string; angulo: string };
@@ -28,7 +40,9 @@ export function problemas(t: Rascunho, perfil = 'geral') {
   if (!/celular|whats/i.test(ultima)) p.push('a pergunta final deve ser sobre seguir pelo WhatsApp');
   if (/qual (é |e )?(o )?seu (celular|n[úu]mero|whats)/i.test(ultima)) p.push('a pergunta do celular está direta demais: pergunte se seria possível compartilhar');
   if (!/fernando/i.test(corpo)) p.push('falta a apresentação breve do Fernando');
-  if (perfil !== 'verniz' && /\b(verniz|vernizes|lacas?|corantes?)\b/i.test(corpo + ' ' + (t.assunto ?? ''))) p.push('fala de verniz/laca/corante sem saber se a empresa usa');
+  if ((FORA_DO_PERFIL[perfil] ?? FORA_DO_PERFIL.geral).test(corpo + ' ' + (t.assunto ?? ''))) p.push('cita produto fora do perfil desta empresa');
+  if (perfil !== 'geral' && DUVIDA.test(corpo)) p.push('mostra dúvida sobre o que a empresa usa (o perfil é confirmado: fale com segurança)');
+  if (PROBLEMA.test(corpo + ' ' + (t.assunto ?? ''))) p.push('sugere problema (com o produto, o fornecimento ou o acabamento do cliente): transmita confiança');
   if (PROIBIDO.test(corpo) || PROIBIDO.test(t.assunto ?? '')) p.push('tem frase de vendedor proibida');
   if (corpo.split(/\s+/).length > 130) p.push('passou de 130 palavras');
   if ((t.assunto ?? '').length > 70) p.push('assunto com mais de 70 caracteres');
@@ -57,7 +71,7 @@ function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null) {
   ][passo - 1];
 }
 
-const REGRAS = `Regras do texto: português do Brasil, tom de conversa entre profissionais, até 110 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura nem despedida (a assinatura é colocada depois). Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação; o assunto também respeita o perfil de produto.
+const REGRAS = `Regras do texto: português do Brasil com acentuação correta, inclusive no nome da empresa (ex.: "Parobe" → "Parobé", "Metalurgica" → "Metalúrgica"), sem trocar o nome; tom de conversa entre profissionais, confiante: nunca insinue que houve ou há problema, algo a ajustar ou a corrigir (no produto, no fornecimento anterior ou no acabamento do cliente), e nunca condicione a conversa a "se a linha ainda usa/segue" o que o perfil já confirma: fale do que a Corquímica oferece para a operação dele; até 110 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura nem despedida (a assinatura é colocada depois). Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação; o assunto também respeita o perfil de produto.
 Responda só com JSON: {"assunto":"","corpo":"","angulo":"nome curto da abordagem"}`;
 
 // Escreve o e-mail do passo. Devolve o rascunho conferido (ou "sem gancho"), as memórias usadas e o custo.
@@ -109,7 +123,7 @@ RESPOSTA RECEBIDA (assunto: ${o.assunto}; só o texto novo, sem a parte citada d
 
 Classifique em: "interessado" (quer conversar, mandou telefone ou celular, inclusive na assinatura, pediu amostra/preço), "pergunta" (fez pergunta antes de decidir), "nao_agora" (sem interesse agora, mas educado), "nao" (não quer), "descadastro" (pediu para parar de receber), "automatica" (gerada por sistema: aviso de férias/ausência, confirmação automática de recebimento, ticket).
 Uma resposta curta escrita por uma pessoa ("recebi", "obrigado", "pode mandar") NÃO é automática: se trouxer celular, é "interessado"; senão, "pergunta".
-Para interessado, pergunta e nao_agora, escreva o rascunho da resposta: curto, responde o que foi perguntado sem inventar dado técnico (se não souber, diga que confirma por WhatsApp), e se ainda não tiver o celular, pergunte com gentileza se seria possível compartilhar um para seguirem pelo WhatsApp. Sem despedida nem assinatura no rascunho (a assinatura completa é colocada depois). Para nao, descadastro e automatica, rascunho vazio.
+Para interessado, pergunta e nao_agora, escreva o rascunho da resposta: curto, confiante (sem insinuar problema), com acentuação correta, responde o que foi perguntado sem inventar dado técnico (se não souber, diga que confirma por WhatsApp), e se ainda não tiver o celular, pergunte com gentileza se seria possível compartilhar um para seguirem pelo WhatsApp. Sem despedida nem assinatura no rascunho (a assinatura completa é colocada depois). Para nao, descadastro e automatica, rascunho vazio.
 Devolva {"classificacao":"","rascunho":"","motivo":"uma frase"}`,
   });
   const v = jsonDe<{ classificacao: string; rascunho: string; motivo: string }>(r.texto);

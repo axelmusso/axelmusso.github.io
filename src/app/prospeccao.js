@@ -3,9 +3,9 @@
 (function () {
   var api, perfil, tela;
   var DATA_ATIVO = '2026-06-01'; // comprou desta data em diante = cliente ativo, não recebe contato
-  // Grupo de cadastro → o que a empresa usa. MOV (moveleiro) e MET (metalizadoras) usam vernizes; 3D só resinas 3D; o resto, mensagem geral.
-  var PERFIL_DO_GRUPO = { MOV: 'verniz', MET: 'verniz', '3D': 'resina3d' };
-  var NOME_PERFIL = { verniz: 'usa verniz', resina3d: 'só resina 3D', geral: 'perfil geral' };
+  // Grupo de cadastro → o que a empresa usa. MOV (moveleiro) usa vernizes; MET (metalizadoras) verniz UV, solventes e tintas ABS; 3D só resinas 3D; o resto, mensagem geral.
+  var PERFIL_DO_GRUPO = { MOV: 'verniz', MET: 'metalizacao', '3D': 'resina3d' };
+  var NOME_PERFIL = { verniz: 'usa verniz', metalizacao: 'metalizadora', resina3d: 'só resina 3D', geral: 'perfil geral' };
   var GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
   var q = encodeURIComponent;
