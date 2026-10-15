@@ -117,6 +117,11 @@ write('assets/lead.js', fs.readFileSync(R('src/scripts/lead.js')));
 write('assets/theme.js', fs.readFileSync(R('src/scripts/theme.js')));
 if (fs.existsSync(R('public'))) for (const f of fs.readdirSync(R('public'))) fs.copyFileSync(R('public', f), path.join(OUT, f));
 for (const [, file] of photoFiles) write('img/' + file, fs.readFileSync(R('src/assets/photos', file)));
+// área logada (/app): página própria, fora do layout do site e do sitemap
+const appH = { CSS_HASH: hash('src/app/app.css'), JS_HASH: hash('src/app/app.js'), SB_URL: esc(SB_URL), SB_KEY: esc(SB_KEY) };
+write('app/index.html', fs.readFileSync(R('src/app/index.html'), 'utf8').replace(/\{\{(\w+)\}\}/g, (_, k) => appH[k] ?? ''));
+write('app/app.js', fs.readFileSync(R('src/app/app.js')));
+write('app/app.css', fs.readFileSync(R('src/app/app.css')));
 write('.nojekyll', '');
 if (process.env.CUSTOM_DOMAIN) write('CNAME', process.env.CUSTOM_DOMAIN + '\n');
 
@@ -130,7 +135,7 @@ write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="htt
 const AI = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Google-Extended', 'Applebot-Extended', 'Bingbot', 'Googlebot'];
 write('robots.txt', mode === 'staging'
   ? '# RASCUNHO: não indexar\nUser-agent: *\nDisallow: /\n'
-  : `User-agent: *\nAllow: /\n\n${AI.map((b) => `User-agent: ${b}\nAllow: /\n`).join('\n')}\nSitemap: ${abs(site, '/sitemap.xml')}\n`);
+  : `User-agent: *\nAllow: /\nDisallow: /app/\n\n${AI.map((b) => `User-agent: ${b}\nAllow: /\nDisallow: /app/\n`).join('\n')}\nSitemap: ${abs(site, '/sitemap.xml')}\n`);
 
 // llms.txt / llms-full.txt
 const text = (html) => html.replace(/<form[\s\S]*?<\/form>/g, ' ').replace(/<(script|style)[\s\S]*?<\/\1>/g, ' ').replace(/<\/(p|h\d|li|tr|div|summary|details)>/g, '\n').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();

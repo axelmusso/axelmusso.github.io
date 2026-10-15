@@ -59,6 +59,13 @@ Como nada muda no ar sem uma publicação, a última versão guardada é sempre 
 
 **Espaço:** cada versão ocupa cerca de 4 MB. O plano gratuito do Supabase tem 1 GB de armazenamento (cerca de 200 versões). Apague versões antigas pela pasta `site-versoes` quando necessário.
 
+## Área interna (/app)
+Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Supabase (sem biblioteca). Código em `src/app/`, regras do banco em `supabase/migrations/`.
+- A página `/app/` é pública mas vazia: os dados só saem do banco para quem entrou **e** tem papel em `perfis` (`dono`, `operador` ou `leitura`). Quem bate na URL sem login vê só a tela de entrada.
+- O primeiro usuário criado vira `dono`. Os seguintes nascem sem papel (sem acesso) até o dono liberar em `perfis`.
+- Fica fora do Google: `noindex` e `Disallow: /app/` no robots.txt.
+- Configuração no painel do Supabase (Authentication → URL Configuration): *Site URL* `https://corquimica.com.br/app/` e, em *Redirect URLs*, `https://corquimica.com.br/app/` e `http://localhost:4173/app/`. Depois de criar a conta do dono, desligue *Allow new users to sign up* (Authentication → Sign In / Providers).
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.
