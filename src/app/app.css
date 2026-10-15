@@ -96,3 +96,7 @@ summary{cursor:pointer;color:var(--blue)}
 .concorda{display:block;margin-top:6px}
 .decisao{background:var(--card);border:2px solid var(--blue);border-radius:8px;padding:12px 14px;margin:16px 0}
 .decisao h2{margin-top:0}
+.item .item{border:0;padding:0;margin:4px 0 0}
+.mem-confirmado{border-left:4px solid var(--ok)}
+.mem-proposta{border-left:4px solid var(--blue)}
+.mem-refutado{opacity:.6}

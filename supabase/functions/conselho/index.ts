@@ -7,13 +7,14 @@
 //   { acao: 'intervir', sessao_id, texto } → orientação do dono, que os dois passam a seguir
 import { banco, chamarIA, ErroIA, type Nivel, type Provedor } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
+import { buscarMemoria, gravarAprendizado, idCurto } from '../_shared/memoria.ts';
 
 type Msg = { rodada: number; provedor: string; papel: string; conteudo: string };
 type Passo = { rodada: number; provedor: Provedor; papel: 'estrategista' | 'cetico' | 'relator'; pedido: string; maxTokens: number };
 
 const REGRAS = `Você faz parte do Conselho comercial da Corquímica, fabricante de vernizes UV, lacas, tintas para plásticos (ABS/PS) e metais, tintas para piso, corantes e solventes, em Estância Velha (RS), com mais de 100 clientes no Brasil.
 Regras do Conselho:
-1. Use apenas o DOSSIÊ e a conversa. Toda afirmação com número ou fato termina com [fonte: <bloco do dossiê ou tabela e filtro>].
+1. Use apenas o DOSSIÊ e a conversa. Toda afirmação com número ou fato termina com [fonte: <bloco do dossiê ou tabela e filtro>]. Para usar um aprendizado da memória, cite [fonte: memória #<id>].
 2. O que não tiver fonte começa com "HIPÓTESE:" e não pode virar decisão.
 3. Se faltam dados para responder, diga exatamente quais dados faltam e como obtê-los. Não invente números.
 4. Orientação do DONO na conversa tem prioridade sobre o plano.
@@ -66,6 +67,13 @@ Deno.serve(async (req) => {
       if (tema.length < 3) return json(req, 400, { erro: 'Escreva o tema ou a pergunta.' });
       const nivel = c.nivel === 'dificil' ? 'dificil' : 'rotina';
       const dossie = await banco('/rest/v1/rpc/dossie_conselho', { metodo: 'POST', corpo: {} });
+      // Aprendizados parecidos com o tema (confiança > 0,6, não refutados) entram no dossiê dos dois.
+      const mem = await buscarMemoria(tema, 5);
+      dossie.memoria = {
+        fonte: 'memoria_aprendizados parecidos com o tema (confiança > 0,6, não refutados)',
+        ids: mem.map((m) => m.id),
+        itens: mem.map((m: Record<string, unknown>) => ({ id: idCurto(m.id as string), hipotese: m.hipotese, confianca: m.confianca, status: m.status, visto_vezes: m.visto_vezes, evidencia: m.evidencia })),
+      };
       const [s] = await banco('/rest/v1/conselho_sessoes', { metodo: 'POST', corpo: { tema: tema.slice(0, 1000), nivel, dossie, gatilho: 'manual' } });
       return json(req, 200, { sessao_id: s.id });
     }
@@ -97,6 +105,7 @@ Deno.serve(async (req) => {
     const aviso = forcado ? `\n\nATENÇÃO: o teto de ${teto} tokens da sessão foi atingido. Feche agora com o que já se sustentou e registre o que ficou em aberto.` : '';
     const r = await chamarIA({
       provedor: passo.provedor, papel: 'conselho_' + passo.papel, nivel: s.nivel as Nivel, manual: s.gatilho === 'manual', maxTokens: passo.maxTokens,
+      memorias: s.dossie.memoria?.ids ?? [],
       instrucoes: REGRAS + '\n\n' + passo.pedido,
       contexto: `TEMA: ${s.tema}\n\nDOSSIÊ (dados do banco em ${s.dossie.gerado_em}):\n${JSON.stringify(s.dossie)}\n\nCONVERSA ATÉ AGORA:\n${conversa}${aviso}\n\nSua vez: ${NOMES[passo.papel]}.`,
     });
@@ -105,6 +114,20 @@ Deno.serve(async (req) => {
       metodo: 'POST', corpo: { sessao_id: id, rodada: passo.rodada, provedor: passo.provedor, papel: passo.papel, conteudo, fontes: fontesDe(conteudo) },
     });
     const fechou = passo.papel === 'relator';
+    // Decisão fechada vira memória com status "proposta"; volta a ser tocada quando houver resultado medido.
+    let aprendizado: string | null = null;
+    if (fechou) {
+      const secao = (titulo: string) => (conteudo.split(/^##\s*/m).find((x) => x.toLowerCase().startsWith(titulo)) ?? '').replace(/^[^\n]*\n/, '').trim();
+      const decisao = secao('decisão') || conteudo;
+      try {
+        const g = await gravarAprendizado({
+          hipotese: ('Decisão do Conselho: ' + decisao.replace(/\s+/g, ' ')).slice(0, 600),
+          evidencia: [{ tipo: 'decisao_conselho', sessao_id: id, proximo_passo: secao('próximo passo').slice(0, 800) }],
+          status: 'proposta', tags: ['conselho'], origem: 'conselho', origem_id: id,
+        }, s.gatilho === 'manual');
+        aprendizado = g.id;
+      } catch (e) { console.error('Não gravou a decisão na memória:', (e as Error).message); }
+    }
     await banco('/rest/v1/conselho_sessoes?id=eq.' + encodeURIComponent(id), {
       metodo: 'PATCH',
       corpo: {
@@ -113,7 +136,7 @@ Deno.serve(async (req) => {
         ...(fechou ? { status: 'fechada', decisao: conteudo } : {}),
       },
     });
-    return json(req, 200, { status: fechou ? 'fechada' : 'em_andamento', papel: passo.papel, rodada: passo.rodada, forcado });
+    return json(req, 200, { status: fechou ? 'fechada' : 'em_andamento', papel: passo.papel, rodada: passo.rodada, forcado, aprendizado });
   } catch (e) {
     const codigo = e instanceof ErroIA ? e.codigo : 'http';
     // A sessão continua aberta: dá para tentar de novo quando o problema (teto, rede) passar.

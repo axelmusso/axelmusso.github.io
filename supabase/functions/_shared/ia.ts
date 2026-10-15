@@ -15,6 +15,7 @@ export interface PedidoIA {
   nivel?: Nivel;            // barato | rotina (padrão) | dificil
   jobId?: string | null;
   manual?: boolean;         // pedido feito por uma pessoa na tela: não depende do botão de parada
+  memorias?: string[];      // ids de memoria_aprendizados que entraram no contexto (fica no log)
 }
 
 export interface RespostaIA {
@@ -49,6 +50,7 @@ const PRECOS: Record<string, [number, number, number]> = {
   'gpt-6-luna': [0.10, 0.50, 0.01],
   'gpt-6.1-sol': [2, 10, 0.10],
   'gpt-6-astra': [10, 50, 1],
+  'text-embedding-3-small': [0.02, 0, 0],
 };
 // Modelo sem preço conhecido (ex.: substituto automático): conta pelo mais caro, para nunca subestimar.
 const PRECO_DESCONHECIDO: [number, number, number] = [10, 50, 1];
@@ -74,7 +76,7 @@ async function registrar(linha: Record<string, unknown>) {
   catch (e) { console.error('Falha ao gravar execucoes_agente', e); }
 }
 
-async function conferirLiberacao(p: PedidoIA) {
+async function conferirLiberacao(p: Pick<PedidoIA, 'manual'>) {
   if (!p.manual) {
     const cfg = await banco('/rest/v1/config?select=valor&chave=eq.sistema_ativo');
     if (cfg?.[0]?.valor !== true) throw new ErroIA('parado', 'Sistema parado (sistema_ativo = false).');
@@ -178,7 +180,7 @@ export async function chamarIA(p: PedidoIA): Promise<RespostaIA> {
   const nivel = p.nivel ?? 'rotina';
   const modelo = MODELOS[p.provedor]?.[nivel];
   if (!modelo) throw new ErroIA('config', `Provedor ou nível inválido: ${p.provedor}/${nivel}`);
-  const linha = { job_id: p.jobId ?? null, provedor: p.provedor, modelo, papel: p.papel };
+  const linha = { job_id: p.jobId ?? null, provedor: p.provedor, modelo, papel: p.papel, memorias: p.memorias?.length ? p.memorias : null };
   const inicio = Date.now();
 
   try { await conferirLiberacao(p); }
@@ -199,6 +201,32 @@ export async function chamarIA(p: PedidoIA): Promise<RespostaIA> {
     return { texto: r.texto as string, modelo: r.modelo, tokensEntrada: r.tokensEntrada, tokensSaida: r.tokensSaida, custoUsd: r.custoUsd, duracaoMs, truncado: !!r.truncado };
   } catch (e) {
     if (e instanceof ErroIA && e.codigo === 'recusa') throw e; // já registrado acima
+    await registrar({ ...linha, sucesso: false, erro: (e as Error).message.slice(0, 500), duracao_ms: Date.now() - inicio });
+    throw e instanceof ErroIA ? e : new ErroIA('http', (e as Error).message);
+  }
+}
+
+// ---------- embedding (para a memória) ----------
+// Vetor de 1536 números que representa o sentido do texto. Também passa pelo teto e fica no log.
+const MODELO_EMBEDDING = 'text-embedding-3-small';
+export async function gerarEmbedding(texto: string, papel = 'memoria', manual = true): Promise<number[]> {
+  const linha = { provedor: 'openai', modelo: MODELO_EMBEDDING, papel };
+  const inicio = Date.now();
+  try { await conferirLiberacao({ manual }); }
+  catch (e) { await registrar({ ...linha, sucesso: false, erro: (e as Error).message, duracao_ms: 0 }); throw e; }
+  const chave = Deno.env.get('OPENAI_API_KEY');
+  if (!chave) throw new ErroIA('config', 'Falta o segredo OPENAI_API_KEY no Supabase.');
+  try {
+    const res = await comRepeticao(() => fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + chave, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODELO_EMBEDDING, input: texto.slice(0, 8000) }), signal: AbortSignal.timeout(30_000),
+    }));
+    const r = await res.json();
+    if (!res.ok) throw new ErroIA('http', `OpenAI ${res.status}: ${r?.error?.message ?? ''}`);
+    const tokens = r.usage?.prompt_tokens ?? r.usage?.total_tokens ?? 0;
+    await registrar({ ...linha, tokens_entrada: tokens, custo_usd: Number(((tokens * PRECOS[MODELO_EMBEDDING][0]) / 1e6).toFixed(6)), duracao_ms: Date.now() - inicio, sucesso: true });
+    return r.data[0].embedding;
+  } catch (e) {
     await registrar({ ...linha, sucesso: false, erro: (e as Error).message.slice(0, 500), duracao_ms: Date.now() - inicio });
     throw e instanceof ErroIA ? e : new ErroIA('http', (e as Error).message);
   }
