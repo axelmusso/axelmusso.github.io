@@ -53,13 +53,5 @@ drop trigger if exists criar_perfil on auth.users;
 create trigger criar_perfil after insert on auth.users
   for each row execute function privado.criar_perfil();
 
--- 5) Regra padrão das tabelas do CRM (usada a partir da Fase 2). Modelo:
---    alter table public.X enable row level security;
---    revoke all on public.X from anon, authenticated;
---    grant select, insert, update, delete on public.X to authenticated;
---    create policy "le_quem_tem_papel" on public.X for select to authenticated
---      using (public.papel_do_usuario() is not null);
---    create policy "escreve_dono_operador" on public.X for all to authenticated
---      using (public.papel_do_usuario() in ('dono', 'operador'))
---      with check (public.papel_do_usuario() in ('dono', 'operador'));
---    Anônimo: nada (sem grant e sem política).
+-- 5) Regra padrão das tabelas do CRM: veja supabase/migrations/20261015_fase2_ajustes.sql
+--    (lê quem tem papel; insere, altera e apaga 'dono' e 'operador'; anônimo nada).
