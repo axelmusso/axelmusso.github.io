@@ -3,6 +3,9 @@
 (function () {
   var api, perfil, tela;
   var DATA_ATIVO = '2026-06-01'; // comprou desta data em diante = cliente ativo, não recebe contato
+  // Grupo de cadastro → o que a empresa usa. MOV (moveleiro) e MET (metalizadoras) usam vernizes; 3D só resinas 3D; o resto, mensagem geral.
+  var PERFIL_DO_GRUPO = { MOV: 'verniz', MET: 'verniz', '3D': 'resina3d' };
+  var NOME_PERFIL = { verniz: 'usa verniz', resina3d: 'só resina 3D', geral: 'perfil geral' };
   var GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
   var q = encodeURIComponent;
@@ -86,8 +89,10 @@
     linhas.forEach(function (l) {
       var doc = String(l[C.doc] || '').replace(/\D/g, '');
       if (doc.length !== 11 && doc.length !== 14) return;
-      var e = porDoc[doc] || (porDoc[doc] = { doc: doc, nome: '', uf: '', grupo: '', data: null, emails: [], fones: [] });
+      var e = porDoc[doc] || (porDoc[doc] = { doc: doc, nome: '', razao: '', fantasia: '', uf: '', grupo: '', data: null, emails: [], fones: [] });
       e.nome = e.nome || l[C.fantasia] || l[C.razao];
+      e.razao = e.razao || (C.razao ? l[C.razao] : '');
+      e.fantasia = e.fantasia || (C.fantasia ? l[C.fantasia] : '');
       e.uf = e.uf || String(l[C.uf] || '').toUpperCase().trim();
       e.grupo = e.grupo || (C.grupo ? l[C.grupo] : '');
       var d = dataExcel(l[C.data]); if (d && (!e.data || d > e.data)) e.data = d;
@@ -95,17 +100,32 @@
       [C.f1, C.f2, C.cel].forEach(function (c) { var f = c && String(l[c] || '').trim(); if (f && e.fones.indexOf(f) < 0) e.fones.push(f); });
     });
     var lista = Object.keys(porDoc).map(function (k) { return porDoc[k]; });
+    // Mesma empresa com outro CNPJ (mesma razão social ou mesmo nome fantasia): vale a compra mais recente do grupo.
+    // Se qualquer CNPJ dela comprou a partir de DATA_ATIVO, todos ficam como cliente ativo.
+    var pai = {}, raiz = function (d) { while (pai[d] !== d) d = pai[d] = pai[pai[d]]; return d; };
+    lista.forEach(function (e) { pai[e.doc] = e.doc; });
+    var porNome = {};
+    lista.forEach(function (e) {
+      [e.razao, e.fantasia].forEach(function (n) {
+        var k = norm(n || ''); if (k.length < 4) return;
+        if (porNome[k]) pai[raiz(e.doc)] = raiz(porNome[k]); else porNome[k] = e.doc;
+      });
+    });
+    var maisRecente = {};
+    lista.forEach(function (e) { var r = raiz(e.doc); if (e.data && (!maisRecente[r] || e.data > maisRecente[r])) maisRecente[r] = e.data; });
+    lista.forEach(function (e) { e.ativo = !!(maisRecente[raiz(e.doc)] && maisRecente[raiz(e.doc)] >= DATA_ATIVO); });
     var semDoc = linhas.length - linhas.filter(function (l) { var d = String(l[C.doc] || '').replace(/\D/g, ''); return d.length === 11 || d.length === 14; }).length;
-    var ativos = lista.filter(function (e) { return e.data && e.data >= DATA_ATIVO; });
+    var ativos = lista.filter(function (e) { return e.ativo; });
     saida.textContent = 'Gravando ' + lista.length + ' empresas…';
 
     // 1) Empresas: grava ou atualiza pelo CNPJ (reimportar não duplica).
     var ids = {};
     for (var i = 0; i < lista.length; i += 100) {
       var lote = lista.slice(i, i + 100).map(function (e) {
-        var ativo = e.data && e.data >= DATA_ATIVO;
+        var ativo = e.ativo, g = String(e.grupo || '').toUpperCase().replace(/\s/g, '');
         return { cnpj: e.doc, nome: String(e.nome).slice(0, 200), uf: /^[A-Z]{2}$/.test(e.uf) ? e.uf : null, grupo: e.grupo || null, telefone: e.fones[0] || null,
-          ultima_compra: e.data, relacao: ativo ? 'cliente_ativo' : 'ex_cliente', status: ativo ? 'cliente' : 'prospect', origem: 'base_clientes' };
+          ultima_compra: e.data, relacao: ativo ? 'cliente_ativo' : 'ex_cliente', status: ativo ? 'cliente' : 'prospect', origem: 'base_clientes',
+          perfil_produto: PERFIL_DO_GRUPO[g] || 'geral', perfil_fonte: 'grupo de cadastro ' + (e.grupo || '(vazio)') };
       });
       var r = await api('/rest/v1/empresas?on_conflict=cnpj&select=id,cnpj', { metodo: 'POST', corpo: lote, prefer: 'resolution=merge-duplicates,return=representation' });
       r.forEach(function (x) { ids[x.cnpj] = x.id; });
@@ -118,7 +138,7 @@
     }
     var contatos = [];
     lista.forEach(function (e) {
-      var ativo = e.data && e.data >= DATA_ATIVO;
+      var ativo = e.ativo;
       var base = ativo ? 'Cliente atual (execução de contrato)' : 'Legítimo interesse (relação comercial anterior)';
       var itens = e.emails.length ? e.emails : [null];
       itens.forEach(function (m, n) {
@@ -146,7 +166,7 @@
   function render() {
     var w = podeEscrever();
     return Promise.all([
-      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,empresas(nome,relacao)&status=in.(rascunho,aprovado)&order=criado_em'),
+      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,empresas(nome,relacao,perfil_produto,perfil_fonte)&status=in.(rascunho,aprovado)&order=criado_em'),
       api('/rest/v1/config?select=chave,valor&chave=in.(icp,email_assinatura)'),
       api('/rest/v1/empresas?select=relacao,icp_score,qualificado_em,sem_gancho&limit=5000'),
       api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em.desc'),
@@ -165,18 +185,19 @@
         '<div><b>' + rasc.length + '</b>e-mails aguardando você</div></div>' +
         '<h2>Envio</h2>' + (st.erro ? '<p class="ruim">' + esc(st.erro) + '</p>' :
           '<p>Hoje: <b>' + esc(st.enviados) + ' de ' + esc(st.limite) + '</b> e-mails de prospecção (aquecimento: dia ' + esc(st.dias_de_aquecimento + 1) + ', teto ' + esc(st.teto) + '/dia). ' +
-          (st.horario_comercial ? '<span>Dentro do horário comercial.</span>' : '<span class="ruim">Fora do horário comercial (dias úteis, 8h–18h): nada sai agora.</span>') + '</p>') +
+          (st.dia_de_iniciais ? '<span>Pode sair tudo agora.</span>' : st.horario_comercial ? '<span class="ruim">Hoje só saem respostas; prospecção e retomada saem de terça a quinta.</span>' : '<span class="ruim">Fora do horário comercial: nada sai agora.</span>') + '</p>' +
+          '<p class="mut">Regra: e-mails de prospecção e retomada de terça a quinta; respostas de segunda a sexta; sempre das 8h às 18h (Brasília).</p>') +
         (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button>' + (perfil.papel === 'dono' && !st.erro && !st.horario_comercial ? '<button type="button" id="enviar-teste">Enviar aprovados agora (teste fora do horário)</button>' : '') + '<button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
 
         '<h2>Caixa de respostas <small class="mut">' + resps.length + '</small></h2>' + (resps.map(function (x) {
           return '<div class="item resposta"><small class="mut">' + esc(dataHoraBR(x.recebido_em)) + ' · de ' + esc(x.de) + (x.empresas ? ' · <a href="#empresa/' + esc(x.empresa_id) + '">' + esc(x.empresas.nome) + '</a>' : ' · não ligada a envio') +
-            ' · <b>' + esc(CLASSE[x.classificacao] || 'sem classificação') + '</b></small><p><b>' + esc(x.assunto) + '</b></p><div class="texto">' + esc(x.texto.slice(0, 3000)) + '</div>' +
+            ' · <b>' + esc(CLASSE[x.classificacao] || 'sem classificação') + '</b>' + (x.status === 'aprovada' ? ' · <b>aprovada, sai no próximo horário</b>' : '') + '</small><p><b>' + esc(x.assunto) + '</b></p><div class="texto">' + esc(x.texto.slice(0, 3000)) + '</div>' +
             (w ? '<form class="grade" data-resposta="' + esc(x.id) + '"><label class="largo">Resposta sugerida (edite à vontade)<textarea name="texto" rows="5">' + esc(x.rascunho || '') + '</textarea></label>' +
               '<div class="largo linha"><button type="submit" name="acao" value="enviar" class="prim">Aprovar e enviar</button>' + (x.classificacao ? '' : '<button type="submit" name="acao" value="classificar">Classificar e rascunhar</button>') + '<button type="submit" name="acao" value="descartar">Descartar</button></div></form>' : '') + '</div>';
         }).join('') || '<p class="mut">Nenhuma resposta esperando.</p>') +
 
         '<h2>E-mails para aprovar</h2>' + (rasc.map(function (m) {
-          return '<div class="item email-rasc"><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · para ' + esc(m.para) + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
+          return '<div class="item email-rasc"><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
             (m.erro ? '<p class="ruim">' + esc(m.erro) + '</p>' : '') +
             '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
             '<label class="largo">Corpo<textarea name="corpo" rows="6"' + (w ? '' : ' disabled') + '>' + esc(m.corpo) + '</textarea></label>' +
@@ -212,7 +233,7 @@
   }
 
   function listaEmpresas() {
-    var base = '/rest/v1/empresas?select=id,nome,setor,cidade,uf,site,relacao,icp_score,icp_motivo,icp_criterios,gancho,sem_gancho,ultima_compra,qualificado_em&limit=100';
+    var base = '/rest/v1/empresas?select=id,nome,setor,cidade,uf,site,relacao,icp_score,icp_motivo,icp_criterios,gancho,sem_gancho,ultima_compra,qualificado_em,perfil_produto,perfil_fonte&limit=100';
     var filtros = {
       fila: '&relacao=eq.prospect&qualificado_em=is.null&order=criado_em',
       qualificadas: '&relacao=eq.prospect&icp_score=gte.50&sem_gancho=is.false&order=icp_score.desc',
@@ -227,7 +248,7 @@
         '<table class="tab"><thead><tr><th>Empresa</th><th class="num">Nota</th><th>Motivo e gancho</th><th></th></tr></thead><tbody>' +
         (lista.map(function (e) {
           return '<tr><td><a href="#empresa/' + esc(e.id) + '">' + esc(e.nome) + '</a><br><small class="mut">' + esc([e.setor, [e.cidade, e.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ')) +
-            (e.ultima_compra ? ' · última compra ' + esc(e.ultima_compra.split('-').reverse().join('/')) : '') + '</small></td>' +
+            (e.ultima_compra ? ' · última compra ' + esc(e.ultima_compra.split('-').reverse().join('/')) : '') + ' · <span title="' + esc(e.perfil_fonte) + '">' + esc(NOME_PERFIL[e.perfil_produto] || '') + '</span></small></td>' +
             '<td class="num">' + (e.icp_score == null ? '—' : esc(e.icp_score)) + '</td>' +
             '<td><small>' + esc(e.icp_motivo || '') + '</small>' + (e.gancho ? '<br><small><b>Gancho:</b> ' + esc(e.gancho) + '</small>' : '') + (e.sem_gancho && e.qualificado_em ? '<br><small class="ruim">sem gancho</small>' : '') + '</td>' +
             '<td>' + (w ? '<button type="button" data-um="' + acao[0] + '" data-id="' + esc(e.id) + '">' + acao[1] + '</button>' : '') + '</td></tr>';
@@ -308,7 +329,7 @@
         if (acao === 'enviar') {
           if (!confirm('Enviar esta resposta agora?')) return;
           b.disabled = true; b.textContent = 'Enviando…';
-          feito = envio({ acao: 'responder', resposta_id: id, texto: f.texto.value }).then(function () { aviso('Resposta enviada.'); });
+          feito = envio({ acao: 'responder', resposta_id: id, texto: f.texto.value }).then(function (r) { aviso(r.aviso || 'Resposta enviada.'); });
         } else if (acao === 'classificar') {
           b.disabled = true; b.textContent = 'Lendo…';
           feito = envio({ acao: 'classificar', resposta_id: id }).then(function (r) { aviso('Classificada como ' + (CLASSE[r.classificacao] || r.classificacao) + '.'); });

@@ -51,7 +51,7 @@ async function descobrirUrl(url: string) {
 }
 
 // ---------- qualificar: nota de 0 a 100, motivo e gancho ----------
-type Qualif = { criterios: Record<string, number>; motivo: string; segmento: string; gancho: string; gancho_fonte: string; cidade: string; uf: string };
+type Qualif = { criterios: Record<string, number>; motivo: string; segmento: string; gancho: string; gancho_fonte: string; perfil?: string; perfil_evidencia?: string; cidade: string; uf: string };
 async function qualificar(id: string) {
   const [e] = await banco('/rest/v1/empresas?select=*&id=eq.' + q(id));
   if (!e) throw new Error('Empresa não encontrada.');
@@ -74,7 +74,8 @@ async function qualificar(id: string) {
     contexto: `EMPRESA: ${JSON.stringify({ nome: e.nome, site: e.site, cidade: e.cidade, uf: e.uf, setor: e.setor, origem: e.origem, relacao: e.relacao })}
 ${avisos.length ? 'AVISO: ' + avisos.join('; ') + '\n' : ''}${paginas.length ? paginas.map((p) => `--- ${p.url}\n${p.texto}`).join('\n') : '(sem site para ler)'}
 
-Devolva {"criterios":{"setor":0,"processo":0,"regiao":0,"porte":0,"momento":0},"motivo":"2 a 3 frases dizendo por que deu a nota, citando o que viu","segmento":"um dos segmentos alvo ou outro","gancho":"um fato verdadeiro e específico desta empresa visto no texto, útil para abrir um e-mail; vazio se não houver","gancho_fonte":"URL onde viu o gancho","cidade":"","uf":""}`,
+Devolva {"criterios":{"setor":0,"processo":0,"regiao":0,"porte":0,"momento":0},"motivo":"2 a 3 frases dizendo por que deu a nota, citando o que viu","segmento":"um dos segmentos alvo ou outro","gancho":"um fato verdadeiro e específico desta empresa visto no texto, útil para abrir um e-mail; vazio se não houver","gancho_fonte":"URL onde viu o gancho","perfil":"verniz | resina3d | geral","perfil_evidencia":"frase do texto que prova o uso; vazio se geral","cidade":"","uf":""}
+Perfil: "verniz" só se o texto mostrar que a empresa aplica verniz, laca, pintura ou acabamento em peças na própria produção; "resina3d" só se mostrar impressão 3D com resina; sem prova clara, "geral".`,
   });
   const v = jsonDe<Qualif>(r.texto);
   const maximos = Object.fromEntries((icp.criterios as { id: string; pontos: number }[]).map((c) => [c.id, c.pontos]));
@@ -91,6 +92,8 @@ Devolva {"criterios":{"setor":0,"processo":0,"regiao":0,"porte":0,"momento":0},"
       icp_score: nota, icp_criterios: crit, icp_motivo: (v.motivo || '').slice(0, 1000) + (avisos.length ? ` (${avisos.join('; ')})` : ''),
       setor: e.setor || v.segmento || null, gancho: v.gancho?.trim() || null, gancho_fonte: v.gancho_fonte || null,
       sem_gancho: !v.gancho?.trim(), qualificado_em: new Date().toISOString(),
+      // Perfil de produto: o da base de clientes (grupo de cadastro) vale mais que o site.
+      ...(e.origem === 'base_clientes' ? {} : { perfil_produto: ['verniz', 'resina3d'].includes(v.perfil ?? '') && v.perfil_evidencia?.trim() ? v.perfil : 'geral', perfil_fonte: v.perfil_evidencia?.trim() ? 'site: ' + v.perfil_evidencia.trim().slice(0, 300) : 'sem evidência no site' }),
       cidade: e.cidade || v.cidade || null, uf: e.uf || (/^[A-Z]{2}$/.test(uf) ? uf : null), dominio,
     },
   });
