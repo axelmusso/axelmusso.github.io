@@ -166,7 +166,7 @@
         '<h2>Envio</h2>' + (st.erro ? '<p class="ruim">' + esc(st.erro) + '</p>' :
           '<p>Hoje: <b>' + esc(st.enviados) + ' de ' + esc(st.limite) + '</b> e-mails de prospecção (aquecimento: dia ' + esc(st.dias_de_aquecimento + 1) + ', teto ' + esc(st.teto) + '/dia). ' +
           (st.horario_comercial ? '<span>Dentro do horário comercial.</span>' : '<span class="ruim">Fora do horário comercial (dias úteis, 8h–18h): nada sai agora.</span>') + '</p>') +
-        (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button><button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
+        (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button>' + (perfil.papel === 'dono' && !st.erro && !st.horario_comercial ? '<button type="button" id="enviar-teste">Enviar aprovados agora (teste fora do horário)</button>' : '') + '<button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
 
         '<h2>Caixa de respostas <small class="mut">' + resps.length + '</small></h2>' + (resps.map(function (x) {
           return '<div class="item resposta"><small class="mut">' + esc(dataHoraBR(x.recebido_em)) + ' · de ' + esc(x.de) + (x.empresas ? ' · <a href="#empresa/' + esc(x.empresa_id) + '">' + esc(x.empresas.nome) + '</a>' : ' · não ligada a envio') +
@@ -282,6 +282,15 @@
         aviso(r.aviso || (r.enviados + ' enviado(s).' + (r.problemas && r.problemas.length ? ' Problemas: ' + r.problemas.join(' | ') : '')), !!(r.problemas && r.problemas.length));
         return render();
       }).catch(function (e) { aviso(e.message, true); be.disabled = false; be.textContent = 'Enviar aprovados agora'; });
+    });
+    var bt = document.getElementById('enviar-teste');
+    if (bt) bt.addEventListener('click', function () {
+      if (!confirm('TESTE: enviar agora, fora do horário, os e-mails aprovados? Use só com endereços seus.')) return;
+      bt.disabled = true; bt.textContent = 'Enviando…';
+      envio({ acao: 'enviar_aprovados', teste: true }).then(function (r) {
+        aviso(r.aviso || (r.enviados + ' enviado(s).' + (r.problemas && r.problemas.length ? ' Problemas: ' + r.problemas.join(' | ') : '')), !!(r.problemas && r.problemas.length));
+        return render();
+      }).catch(function (e) { aviso(e.message, true); bt.disabled = false; });
     });
     var bp = document.getElementById('preparar');
     if (bp) bp.addEventListener('click', function () {

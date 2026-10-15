@@ -44,8 +44,10 @@ async function respostaRecebida(d: Record<string, any>) {
   if ((await banco(`/rest/v1/respostas?select=id&resend_id=eq.${q(d.email_id)}`)).length) return; // já processada
   const cheio = await lerRecebido(d.email_id);
   const de = enderecoDe(cheio.from ?? d.from);
-  // Mensagem vinda da própria Corquímica (ex.: resposta automática de férias à cópia): ignora, senão vira um loop de cópias.
-  if (/@([\w-]+\.)*corquimica\.com\.br$/.test(de)) return;
+  // Mensagem da caixa que recebe as cópias ou do próprio subdomínio de envio (ex.: resposta automática de férias à cópia):
+  // ignora, senão vira um loop de cópias.
+  const c0 = await config(['email_copia_respostas']);
+  if (de === String(c0.email_copia_respostas ?? '').toLowerCase() || /@comercial\.corquimica\.com\.br$/.test(de)) return;
   const texto = (cheio.text || (cheio.html ?? '').replace(/<[^>]+>/g, ' ')).trim().slice(0, 20000) || '(sem texto)';
   // De qual e-mail nosso é a resposta: o último enviado para este endereço (ou para o mesmo domínio).
   let [orig] = await banco(`/rest/v1/emails?select=id,empresa_id,contato_id,cadencia_id,assunto&status=eq.enviado&para=ilike.${q(de)}&order=enviado_em.desc&limit=1`);
