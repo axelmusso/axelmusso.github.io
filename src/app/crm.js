@@ -53,7 +53,8 @@
       if (alvo === partes[0] || (alvo === 'empresas' && partes[0] === 'empresa')) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     tela.innerHTML = '<p class="mut">Carregando…</p>';
-    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao, conselho: conselho, memoria: memoria };
+    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao, conselho: conselho, memoria: memoria,
+      prospeccao: function () { return window.CQ_PROSP.abrir({ api: api, perfil: perfil, tela: tela }); } };
     (telas[partes[0]] || dashboard)(partes[1]).catch(function (e) { tela.innerHTML = ''; erro(e); });
   }
 

@@ -30,6 +30,7 @@
     opcoes = opcoes || {};
     var h = { apikey: KEY, 'Content-Type': 'application/json' };
     if (opcoes.retorno) h.Prefer = 'return=representation';
+    if (opcoes.prefer) h.Prefer = opcoes.prefer;
     h.Authorization = 'Bearer ' + (sessao && !opcoes.anonimo ? sessao.access_token : KEY);
     return fetch(SB + caminho, { method: opcoes.metodo || 'GET', headers: h, body: opcoes.corpo ? JSON.stringify(opcoes.corpo) : undefined })
       .then(function (res) {

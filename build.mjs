@@ -118,9 +118,9 @@ write('assets/theme.js', fs.readFileSync(R('src/scripts/theme.js')));
 if (fs.existsSync(R('public'))) for (const f of fs.readdirSync(R('public'))) fs.copyFileSync(R('public', f), path.join(OUT, f));
 for (const [, file] of photoFiles) write('img/' + file, fs.readFileSync(R('src/assets/photos', file)));
 // área logada (/app): página própria, fora do layout do site e do sitemap
-const appH = { CSS_HASH: hash('src/app/app.css'), JS_HASH: hash('src/app/app.js'), CRM_HASH: hash('src/app/crm.js'), SB_URL: esc(SB_URL), SB_KEY: esc(SB_KEY) };
+const appH = { CSS_HASH: hash('src/app/app.css'), JS_HASH: hash('src/app/app.js'), CRM_HASH: hash('src/app/crm.js'), PROSP_HASH: hash('src/app/prospeccao.js'), SB_URL: esc(SB_URL), SB_KEY: esc(SB_KEY) };
 write('app/index.html', fs.readFileSync(R('src/app/index.html'), 'utf8').replace(/\{\{(\w+)\}\}/g, (_, k) => appH[k] ?? ''));
-for (const f of ['app.js', 'crm.js', 'app.css']) write('app/' + f, fs.readFileSync(R('src/app', f)));
+for (const f of ['app.js', 'crm.js', 'prospeccao.js', 'app.css']) write('app/' + f, fs.readFileSync(R('src/app', f)));
 write('.nojekyll', '');
 if (process.env.CUSTOM_DOMAIN) write('CNAME', process.env.CUSTOM_DOMAIN + '\n');
 
