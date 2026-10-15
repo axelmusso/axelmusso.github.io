@@ -48,7 +48,7 @@ for (const p of real) {
   if (!staging && !noindex && /noindex/.test(h)) err(`${u}: noindex em produção`);
   if (staging && !/noindex/.test(h)) err(`${u}: rascunho sem noindex`);
   if (!staging && /\[VALIDAR|class="pend"|FOTO REAL/.test(h)) err(`${u}: marca de pendência em produção`);
-  for (const [, j] of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) { try { const o = JSON.parse(j); if (!o['@graph']) err(`${u}: JSON-LD sem @graph`); } catch (e) { err(`${u}: JSON-LD inválido`); } }
+  for (const [, j] of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) { try { const o = JSON.parse(j); if (!o['@graph']) err(`${u}: JSON-LD sem @graph`); if (/"@type":"Product"/.test(j) && !/"(offers|review|aggregateRating)"/.test(j)) err(`${u}: Product sem offers/review/aggregateRating (o Google rejeita)`); } catch (e) { err(`${u}: JSON-LD inválido`); } }
   if (!/"@type":"Organization"/.test(h)) err(`${u}: sem Organization`);
   if (!/<meta http-equiv="Content-Security-Policy" content="[^"]*script-src 'self'/.test(h)) err(`${u}: sem política de segurança (CSP)`);
   if (!['/', '/es/', '/en/', '/404.html'].includes(u) && !/"@type":"BreadcrumbList"/.test(h)) err(`${u}: sem BreadcrumbList`);

@@ -199,7 +199,7 @@ ${waBtn(ctx, t.btnProject, t.famMsg(f.n))}${updated(ctx)}</div>${photo('familia-
 <section class="sec"><div class="wrap"><span class="label">${esc(t.seeAlso)}</span><div class="cards" style="margin-top:22px">${related.map((x) => `<a class="card" href="${r.fam(x)}"><h3>${esc(x.n)}</h3><p>${txt(x.short)}</p><span class="more">${esc(t.viewDetails)} ${AR}</span></a>`).join('')}</div></div></section>`;
   const description = plain(f.meta);
   return { key: 'fam:' + f.id, path, title: f.title, description, body, withForm: true, image: '/og-default.png',
-    graph: [pageNode(ctx, { type: 'WebPage', name: f.title, description, path, about: { '@type': 'Product', name: f.n, description: plain(f.def), category: t.productCategory, brand: { '@type': 'Brand', name: site.name }, manufacturer: { '@id': abs(site, '/#organizacao') } } }),
+    graph: [pageNode(ctx, { type: 'WebPage', name: f.title, description, path, about: { '@type': 'Thing', name: f.n, description: plain(f.def) } }),
       breadcrumbNode(site, bc), faqNode(f.faq)] };
 }
 
