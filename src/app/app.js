@@ -29,6 +29,7 @@
   function api(caminho, opcoes) {
     opcoes = opcoes || {};
     var h = { apikey: KEY, 'Content-Type': 'application/json' };
+    if (opcoes.retorno) h.Prefer = 'return=representation';
     h.Authorization = 'Bearer ' + (sessao && !opcoes.anonimo ? sessao.access_token : KEY);
     return fetch(SB + caminho, { method: opcoes.metodo || 'GET', headers: h, body: opcoes.corpo ? JSON.stringify(opcoes.corpo) : undefined })
       .then(function (res) {
@@ -47,6 +48,9 @@
     if (/signups? not allowed|signup is disabled/i.test(m)) return 'Novos cadastros estão desligados.';
     if (/rate limit|too many/i.test(m) || status === 429) return 'Muitas tentativas. Espere alguns minutos.';
     if (/password/i.test(m)) return 'Senha fraca: use pelo menos 8 caracteres.';
+    if (/duplicate key/i.test(m)) return 'Já existe um registro igual (mesmo domínio ou e-mail).';
+    if (/check constraint/i.test(m)) return 'Algum campo tem valor inválido (ex.: UF com 2 letras maiúsculas, nota de 0 a 100).';
+    if (/row-level security|permission denied/i.test(m)) return 'Seu papel não permite essa alteração.';
     return m || 'Erro ' + status + '. Tente de novo.';
   }
 
@@ -62,14 +66,14 @@
     var pronto = sessao.expires_at - agora() < 60 ? renovar() : Promise.resolve();
     return pronto
       .then(function () { return api('/auth/v1/user'); })
-      .then(function (u) { return api('/rest/v1/perfis?select=nome,papel,email&id=eq.' + encodeURIComponent(u.id)); })
+      .then(function (u) { return api('/rest/v1/perfis?select=id,nome,papel,email&id=eq.' + encodeURIComponent(u.id)); })
       .then(function (linhas) {
         var p = linhas && linhas[0];
         if (!p || !p.papel) { mostrar('sem-acesso'); return; }
         $('quem').textContent = p.email;
-        $('nome').textContent = p.nome || p.email;
-        $('papel').textContent = p.papel;
         mostrar('app');
+        // Telas do CRM (crm.js) usam a mesma chamada autenticada.
+        if (window.CQ_CRM) window.CQ_CRM.iniciar({ api: api, perfil: p });
       })
       .catch(function (e) {
         if (e.status === 401 || e.status === 403) { guardar(null); mostrar('entrar'); aviso('Sessão encerrada. Entre de novo.'); }
