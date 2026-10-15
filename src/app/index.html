@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src {{SB_URL}}; form-action 'none'; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>Área interna | Corquímica</title>
+<!-- Área logada. Esta página é pública, mas vazia: os dados só vêm do Supabase para quem entrou e tem papel (regras RLS no banco). -->
+<meta name="cq-supabase-url" content="{{SB_URL}}">
+<meta name="cq-supabase-key" content="{{SB_KEY}}">
+<link rel="icon" href="/favicon.svg">
+<link rel="stylesheet" href="/app/app.css?v={{CSS_HASH}}">
+<script src="/app/app.js?v={{JS_HASH}}" defer></script>
+</head>
+<body>
+<main id="carregando" class="centro"><p class="mut">Carregando…</p></main>
+
+<main id="entrar" class="centro" hidden>
+  <form class="cartao" id="form-entrar" novalidate>
+    <h1>Área interna</h1>
+    <p class="mut" id="entrar-sub">Entre com seu e-mail e senha.</p>
+    <label>E-mail <input type="email" name="email" autocomplete="email" required></label>
+    <label id="campo-nome" hidden>Nome <input type="text" name="nome" autocomplete="name" maxlength="80"></label>
+    <label id="campo-senha">Senha <input type="password" name="senha" autocomplete="current-password" minlength="8"></label>
+    <button type="submit" class="prim" id="btn-principal">Entrar</button>
+    <button type="button" class="link" id="btn-link">Receber link de acesso por e-mail</button>
+    <button type="button" class="link" id="btn-modo">Criar conta</button>
+    <p class="msg" id="msg-entrar" role="status"></p>
+  </form>
+</main>
+
+<main id="sem-acesso" class="centro" hidden>
+  <div class="cartao">
+    <h1>Conta sem acesso</h1>
+    <p class="mut">Sua conta existe, mas ainda não foi liberada pelo dono do sistema.</p>
+    <button type="button" class="prim" data-sair>Sair</button>
+  </div>
+</main>
+
+<div id="app" class="app" hidden>
+  <header class="topo">
+    <b>Corquímica</b>
+    <span class="mut" id="quem"></span>
+    <button type="button" class="link" data-sair>Sair</button>
+  </header>
+  <nav class="menu" aria-label="Seções">
+    <a href="#dashboard" aria-current="page">Dashboard</a>
+    <span title="Fase 2">CRM</span>
+    <span title="Fase 6">Prospecção</span>
+    <span title="Fase 4">Conselho</span>
+    <span title="Fase 7">Concorrência</span>
+    <span title="Fase 8">Conteúdo e SEO</span>
+    <span title="Fase 5">Memória</span>
+    <span title="Fase 9">Operação</span>
+  </nav>
+  <section class="conteudo" id="dashboard">
+    <h1>Dashboard</h1>
+    <p>Olá, <span id="nome"></span>. Você entrou como <b id="papel"></b>.</p>
+    <p class="mut">As outras seções aparecem conforme as fases forem entregues.</p>
+  </section>
+</div>
+</body>
+</html>
