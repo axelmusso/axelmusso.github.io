@@ -67,6 +67,14 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - CRM (Fase 2): empresas, contatos, negócios no funil (8 etapas), linha do tempo de interações e tarefas. Mudar a etapa de um negócio grava sozinho na linha do tempo da empresa. Tabela `config` guarda o botão de parada (`sistema_ativo`, começa desligado) e os tetos de gasto (US$ 1,30/dia, US$ 40/mês).
 - Configuração no painel do Supabase (Authentication → URL Configuration): *Site URL* `https://corquimica.com.br/app/` e, em *Redirect URLs*, `https://corquimica.com.br/app/` e `http://localhost:4173/app/`. Depois de criar a conta do dono, desligue *Allow new users to sign up* (Authentication → Sign In / Providers).
 
+## Camada de IA (Fase 3)
+- Toda chamada a Claude ou ChatGPT passa por `chamarIA()` em `supabase/functions/_shared/ia.ts`. Nenhum outro arquivo fala com as APIs.
+- Modelos: Claude Haiku 5.5 (barato), Sonnet 5.5 (rotina), Opus 5.5 (difícil); OpenAI gpt-6-luna (barato) e gpt-6.1-sol (rotina e difícil). Preços na tabela `PRECOS` do mesmo arquivo; revise quando os fornecedores mudarem.
+- Antes de cada chamada: confere `sistema_ativo` (exceto testes manuais do dono) e o gasto do dia e do mês contra os tetos em `config`. Acima do teto, não chama e grava o motivo.
+- Cada chamada (ou recusa) vira uma linha em `execucoes_agente` com tokens, custo, duração e erro. Veja na tela Operação do /app.
+- Chaves: segredos `ANTHROPIC_API_KEY` e `OPENAI_API_KEY` em Supabase → Edge Functions → Secrets. Nunca no código.
+- Publicar uma função: `supabase functions deploy ia-teste` (ou pelo Claude Code, que usa a integração do Supabase).
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.

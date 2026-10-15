@@ -78,3 +78,9 @@ summary{cursor:pointer;color:var(--blue)}
 .cartao-neg select{font-size:12px;padding:4px}
 @media (max-width:900px){.colunas{grid-template-columns:1fr}}
 .app>*{min-width:0}
+.numeros>div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--muted);font-size:13px}
+.barra{height:6px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}
+.barra span{display:block;height:100%;background:var(--ok)}
+.barra.alto span{background:var(--err)}
+.resultado{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace}
+.linha label{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:14px}

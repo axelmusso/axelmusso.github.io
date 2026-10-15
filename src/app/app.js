@@ -41,6 +41,7 @@
       });
   }
   function traduzir(d, status) {
+    if (d && d.erro) return d.erro; // mensagem já em português, vinda das nossas Edge Functions
     var m = (d && (d.msg || d.error_description || d.message || d.error)) || '';
     if (/invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
     if (/email not confirmed/i.test(m)) return 'Confirme o e-mail antes de entrar (veja a caixa de entrada).';
