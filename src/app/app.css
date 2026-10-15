@@ -84,3 +84,15 @@ summary{cursor:pointer;color:var(--blue)}
 .barra.alto span{background:var(--err)}
 .resultado{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace}
 .linha label{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:14px}
+.conversa{list-style:none;padding:0;margin:16px 0;display:grid;gap:10px}
+.conversa li{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:10px 12px}
+.conversa .msg-estrategista,.conversa .msg-relator{border-left-color:#C2703D}
+.conversa .msg-cetico{border-left-color:#10A37F}
+.conversa .msg-dono{border-left-color:var(--blue)}
+.texto{white-space:pre-wrap;margin:6px 0}
+.texto .tit{display:block;margin-top:10px}
+.fonte{font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--muted)}
+.hipotese{color:var(--err)}
+.concorda{display:block;margin-top:6px}
+.decisao{background:var(--card);border:2px solid var(--blue);border-radius:8px;padding:12px 14px;margin:16px 0}
+.decisao h2{margin-top:0}

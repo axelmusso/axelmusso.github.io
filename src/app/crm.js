@@ -53,7 +53,7 @@
       if (alvo === partes[0] || (alvo === 'empresas' && partes[0] === 'empresa')) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     tela.innerHTML = '<p class="mut">Carregando…</p>';
-    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao };
+    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao, conselho: conselho };
     (telas[partes[0]] || dashboard)(partes[1]).catch(function (e) { tela.innerHTML = ''; erro(e); });
   }
 
@@ -311,6 +311,74 @@
       });
       enviar('form-tarefa', function (d) { d.responsavel = perfil.id; return inserir('tarefas', d); }, rota);
     });
+  }
+
+  // ---------- conselho: Claude (estrategista) x ChatGPT (cético) ----------
+  var NOME_PAPEL = { estrategista: 'Claude · estrategista', cetico: 'ChatGPT · cético', relator: 'Claude · relator', dono: 'Você · orientação' };
+  var conversando = {}; // sessões com o laço de "avançar" rodando nesta aba
+  // Texto do modelo: escapa tudo e só depois destaca fontes, hipóteses e títulos.
+  function marcar(t) {
+    return esc(t)
+      .replace(/\[fonte:\s*([^\]]+)\]/gi, '<span class="fonte" title="fonte">$1</span>')
+      .replace(/HIP[ÓO]TESE:/g, '<b class="hipotese">HIPÓTESE:</b>')
+      .replace(/^##\s*(.+)\n+/gm, '<b class="tit">$1</b>')
+      .replace(/^CONCORDA:\s*(sim|não|nao)\s*$/gim, '<b class="concorda">CONCORDA: $1</b>');
+  }
+  function conselho(id) { return id ? sessaoConselho(id) : listaConselho(); }
+  function listaConselho() {
+    return api('/rest/v1/conselho_sessoes?select=id,tema,status,custo_usd,criado_em&order=criado_em.desc&limit=50').then(function (lista) {
+      tela.innerHTML = '<h1>Conselho</h1><p class="mut">Claude propõe, ChatGPT ataca, e um relator fecha com decisão, riscos e próximo passo mensurável. Os dois recebem o mesmo dossiê com números reais do banco.</p>' +
+        (podeEscrever() ? '<form class="grade" id="form-conselho"><label class="largo">Tema ou pergunta<textarea name="tema" rows="2" required maxlength="1000" placeholder="Ex.: Por que o funil está parado na etapa contatado?"></textarea></label>' +
+          '<label>Profundidade<select name="nivel"><option value="rotina">Rotina (Sonnet + gpt-6.1-sol, ~US$ 0,05–0,15)</option><option value="dificil">Difícil (Opus + gpt-6.1-sol, ~US$ 0,10–0,30)</option></select></label>' +
+          '<button type="submit" class="prim">Abrir sessão</button></form>' : '') +
+        '<table class="tab"><thead><tr><th>Tema</th><th>Status</th><th class="num">Custo</th><th>Quando</th></tr></thead><tbody>' +
+        (lista.map(function (x) {
+          return '<tr><td><a href="#conselho/' + esc(x.id) + '">' + esc(x.tema) + '</a></td><td>' + esc(x.status.replace('_', ' ')) + '</td><td class="num">' + esc(usd(x.custo_usd, 4)) + '</td><td>' + esc(dataHora(x.criado_em)) + '</td></tr>';
+        }).join('') || '<tr><td colspan="4" class="mut">Nenhuma sessão ainda.</td></tr>') + '</tbody></table>';
+      enviar('form-conselho', function (d) {
+        return api('/functions/v1/conselho', { metodo: 'POST', corpo: { acao: 'abrir', tema: d.tema, nivel: d.nivel } })
+          .then(function (r) { conversando[r.sessao_id] = 'iniciar'; location.hash = 'conselho/' + r.sessao_id; });
+      }, function () {});
+    });
+  }
+  function sessaoConselho(id) {
+    return Promise.all([
+      api('/rest/v1/conselho_sessoes?select=*&id=eq.' + q(id)),
+      api('/rest/v1/conselho_mensagens?select=*&order=criado_em&sessao_id=eq.' + q(id)),
+    ]).then(function (r) {
+      var s = r[0][0], msgs = r[1];
+      if (!s) { tela.innerHTML = '<h1>Sessão não encontrada</h1><p><a href="#conselho">Voltar</a></p>'; return; }
+      var aberta = s.status === 'em_andamento', rodando = conversando[id] === true;
+      tela.innerHTML = '<p><a href="#conselho">← Conselho</a></p><h1>' + esc(s.tema) + '</h1>' +
+        '<p class="mut">' + esc(s.status.replace('_', ' ')) + ' · ' + esc(s.nivel) + ' · ' + esc(s.tokens) + ' tokens · ' + esc(usd(s.custo_usd, 4)) + ' · ' + esc(dataHora(s.criado_em)) + '</p>' +
+        '<details><summary>Dossiê que os dois receberam</summary><pre class="resultado">' + esc(JSON.stringify(s.dossie, null, 2)) + '</pre></details>' +
+        (s.decisao ? '<section class="decisao"><h2>Fechamento</h2><div class="texto">' + marcar(s.decisao) + '</div></section>' : '') +
+        '<ol class="conversa">' + msgs.map(function (m) {
+          return '<li class="msg-' + esc(m.papel) + '"><small class="mut">Rodada ' + esc(m.rodada) + ' · ' + esc(NOME_PAPEL[m.papel] || m.papel) + ' · ' + esc(dataHora(m.criado_em)) + '</small>' +
+            '<div class="texto">' + marcar(m.conteudo) + '</div>' +
+            (m.fontes && m.fontes.length ? '<small class="mut">' + m.fontes.length + ' fonte(s) citada(s)</small>' : (m.provedor !== 'humano' ? '<small class="ruim">nenhuma fonte citada</small>' : '')) + '</li>';
+        }).join('') + '</ol>' +
+        (aberta ? '<p id="andamento" class="mut">' + (rodando ? 'Conversando… (cada fala leva de 10 a 60 s)' : '') + '</p>' : '') +
+        (aberta && podeEscrever() ? (rodando ? '' : '<p><button type="button" class="prim" id="continuar">Continuar conversa</button></p>') +
+          '<form class="grade" id="form-intervir"><label class="largo">Mudar o rumo (os dois leem antes da próxima fala)<textarea name="texto" rows="2" required maxlength="2000"></textarea></label><button type="submit">Enviar orientação</button></form>' : '');
+      if (!aberta || !podeEscrever()) return;
+      enviar('form-intervir', function (d) { return api('/functions/v1/conselho', { metodo: 'POST', corpo: { acao: 'intervir', sessao_id: id, texto: d.texto } }); }, function () { aviso('Orientação registrada. Entra na próxima fala.'); sessaoConselho(id); });
+      var b = document.getElementById('continuar');
+      if (b) b.addEventListener('click', function () { conversar(id); });
+      if (conversando[id] === 'iniciar') conversar(id);
+    });
+  }
+  // Roda um passo por vez até fechar; para se sair da tela, der erro ou bater no teto.
+  function conversar(id) {
+    conversando[id] = true;
+    var passo = function () {
+      if (location.hash !== '#conselho/' + id) { conversando[id] = false; return; }
+      return sessaoConselho(id)
+        .then(function () { return api('/functions/v1/conselho', { metodo: 'POST', corpo: { acao: 'avancar', sessao_id: id } }); })
+        .then(function (r) { if (r.status === 'fechada') { conversando[id] = false; return sessaoConselho(id); } return passo(); })
+        .catch(function (e) { conversando[id] = false; sessaoConselho(id).then(function () { erro(e); }); });
+    };
+    passo();
   }
 
   // ---------- operação: gasto de IA, teste de conexão e últimas execuções ----------
