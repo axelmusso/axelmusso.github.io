@@ -2,18 +2,13 @@
 // Nada sai daqui para o mundo: os e-mails nascem como rascunho e esperam aprovação humana.
 //   { acao: 'descobrir_url', url }       → lista de expositores/associados vira empresas novas (sem duplicar)
 //   { acao: 'qualificar', empresa_id }   → lê o site público, dá a nota de 0 a 100 com motivo e acha o gancho
-//   { acao: 'redigir', empresa_id }      → escreve o 1º e-mail (ou a retomada, para ex-cliente) como rascunho
+//   { acao: 'redigir', empresa_id }      → escreve o 1º e-mail (prospecção ou retomada de ex-cliente) como rascunho
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
-import { buscarMemoria } from '../_shared/memoria.ts';
+import { redigirEmail, SOBRE_A_CORQUIMICA } from '../_shared/redacao.ts';
 import { dominioDe, ErroWeb, jsonDe, lerPagina, type Pagina } from '../_shared/web.ts';
 
 const q = encodeURIComponent;
-const SOBRE_A_CORQUIMICA = `Corquímica Ind. e Com. Ltda, fabricante desde 1997 em Estância Velha (RS), mais de 100 clientes no Brasil.
-Produtos em foco: Verniz UV Base, Verniz UV Top Coat, Lacas, Corantes UV, Resinas 3D, Solventes.
-Atende moda e calçados (saltos, solados, acessórios), moveleiro, automotivo, cosméticos (frascos, tampas), linha branca e plástico em geral.
-Quando o cliente procura a Corquímica: problema de qualidade no acabamento (aderência, brilho, trinca, cura) ou homologação de um novo fornecedor.
-Não invente números, prazos, certificações nem casos de clientes: use só o que está aqui ou no dado da empresa.`;
 
 const GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
 
@@ -113,20 +108,7 @@ Devolva {"criterios":{"setor":0,"processo":0,"regiao":0,"porte":0,"momento":0},"
   return { nota, criterios: crit, motivo: v.motivo, gancho: v.gancho || null, contatos, custo: r.custoUsd };
 }
 
-// ---------- redigir: 1º e-mail (prospecção) ou retomada (ex-cliente), como rascunho ----------
-type Rascunho = { sem_gancho?: boolean; motivo?: string; assunto: string; corpo: string; angulo: string };
-const PROIBIDO = /espero que (esteja|estejam|você esteja) bem|tudo bem\?|venho por meio|gostaria de apresentar|soluç(ão|ões) inovador|líder (de|no) mercado|qualidade incompar|excelência/i;
-function problemas(t: Rascunho) {
-  const p: string[] = [];
-  const corpo = t.corpo.trim();
-  if ((corpo.match(/\?/g) ?? []).length !== 1 || !corpo.endsWith('?')) p.push('o corpo deve ter uma pergunta só, na última frase');
-  if (!/celular|whats/i.test(corpo.split(/[.!]\s/).pop() ?? '')) p.push('a pergunta final deve pedir o celular para seguir pelo WhatsApp');
-  if (PROIBIDO.test(corpo) || PROIBIDO.test(t.assunto)) p.push('tem frase de vendedor proibida');
-  if (corpo.split(/\s+/).length > 120) p.push('passou de 120 palavras');
-  if (t.assunto.length > 70) p.push('assunto com mais de 70 caracteres');
-  return p;
-}
-
+// ---------- redigir: 1º e-mail (prospecção) ou 1º da retomada (ex-cliente), como rascunho ----------
 async function redigir(id: string, quem: string) {
   const [e] = await banco('/rest/v1/empresas?select=*&id=eq.' + q(id));
   if (!e) throw new Error('Empresa não encontrada.');
@@ -141,45 +123,24 @@ async function redigir(id: string, quem: string) {
   const pend = await banco(`/rest/v1/emails?select=id&empresa_id=eq.${q(id)}&status=in.(rascunho,aprovado)&limit=1`);
   if (pend.length) throw new Error('Já existe um rascunho esperando aprovação para esta empresa.');
   const ativa = await banco(`/rest/v1/cadencias?select=id&empresa_id=eq.${q(id)}&status=in.(ativa,pausada)&limit=1`);
-  if (ativa.length) throw new Error('Esta empresa já está numa cadência; os próximos e-mails saem pela cadência (parte B).');
+  if (ativa.length) throw new Error('Esta empresa já está numa cadência; os próximos e-mails saem por ela.');
   // Contato com e-mail, liberado e fora da lista de supressão.
   const contatos = await banco(`/rest/v1/contatos?select=id,nome,cargo,email&empresa_id=eq.${q(id)}&pode_contatar=is.true&email=not.is.null`);
   let contato = null;
   for (const c of contatos) if (!(await suprimido(c.email))) { contato = c; break; }
   if (!contato) throw new Error('Nenhum e-mail liberado para esta empresa (sem contato ou todos na lista de não contatar).');
 
-  const tipo = retomada ? 'retomada' : 'prospeccao';
-  const mem = await buscarMemoria(`e-mail de ${tipo} (primeiro contato) para empresa de ${e.setor ?? 'indústria'}: assunto, ângulo e resposta`, 3);
-  const meses = e.ultima_compra ? Math.max(1, Math.round((Date.now() - new Date(e.ultima_compra).getTime()) / (30.4 * 864e5))) : null;
-  const pedido = retomada
-    ? `Escreva um e-mail de RETOMADA para um ex-cliente: comprou da Corquímica pela última vez há cerca de ${meses} meses. Não finja que é o primeiro contato. Reconheça o tempo sem pedidos sem cobrar nem culpar, traga um motivo concreto para voltar a conversar (um dos produtos em foco) e termine com UMA pergunta pedindo o celular para seguir pelo WhatsApp e mostrar o produto na prática.`
-    : `Escreva o PRIMEIRO e-mail de prospecção. Abra com o gancho (fato verdadeiro e específico desta empresa) em uma frase, ligue a uma situação em que a Corquímica ajuda (qualidade no acabamento ou homologação de fornecedor) e termine com UMA pergunta pedindo o celular para seguir pelo WhatsApp e mostrar o produto na prática. Se o gancho não permitir um e-mail honesto e específico, devolva {"sem_gancho": true, "motivo": "..."}.`;
-  const regras = `Regras do texto: português do Brasil, tom de conversa entre profissionais, até 90 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura (ela é colocada depois). Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação.
-Responda só com JSON: {"assunto":"","corpo":"","angulo":"nome curto da abordagem, ex.: gancho-lancamento, retomada-tempo"}`;
-  const contexto = `${SOBRE_A_CORQUIMICA}\n\nEMPRESA: ${JSON.stringify({ nome: e.nome, setor: e.setor, cidade: e.cidade, uf: e.uf, gancho: e.gancho, gancho_fonte: e.gancho_fonte, icp_motivo: e.icp_motivo })}
-CONTATO: ${JSON.stringify({ nome: contato.nome, cargo: contato.cargo })}
-${mem.length ? 'APRENDIZADOS DA MEMÓRIA (use se ajudarem; cite o id no ângulo se usar):\n' + mem.map((m: Record<string, unknown>) => `#${String(m.id).slice(0, 8)} ${m.hipotese}`).join('\n') : ''}
-
-${pedido}\n${regras}`;
-  let r = await chamarIA({ provedor: 'anthropic', papel: 'prospeccao_redigir', nivel: 'rotina', manual: true, maxTokens: 2000, memorias: mem.map((m) => m.id), instrucoes: 'Você escreve e-mails comerciais B2B curtos, honestos e específicos para a Corquímica, assinados por Fernando Gutierrez.', contexto });
-  let t = jsonDe<Rascunho>(r.texto);
-  let custo = r.custoUsd;
-  if (t.sem_gancho) {
-    await banco('/rest/v1/empresas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { sem_gancho: true, icp_motivo: (e.icp_motivo ?? '') + ' | Sem gancho: ' + (t.motivo ?? '') } });
-    return { sem_gancho: true, motivo: t.motivo, custo };
+  const r = await redigirEmail({ empresa: e, contato, passo: 1, tipo: retomada ? 'retomada' : 'prospeccao', manual: true });
+  if (r.sem_gancho) {
+    await banco('/rest/v1/empresas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { sem_gancho: true, icp_motivo: (e.icp_motivo ?? '') + ' | Sem gancho: ' + r.motivo } });
+    return { sem_gancho: true, motivo: r.motivo, custo: r.custo };
   }
-  const p = problemas(t);
-  if (p.length) { // uma revisão com o que falhou
-    r = await chamarIA({ provedor: 'anthropic', papel: 'prospeccao_redigir', nivel: 'rotina', manual: true, maxTokens: 2000, memorias: mem.map((m) => m.id), instrucoes: 'Você escreve e-mails comerciais B2B curtos, honestos e específicos para a Corquímica, assinados por Fernando Gutierrez.', contexto: contexto + `\n\nSua versão anterior:\n${JSON.stringify(t)}\nCorrija: ${p.join('; ')}.` });
-    t = jsonDe<Rascunho>(r.texto); custo += r.custoUsd;
-  }
-  const restantes = problemas(t);
   const [em] = await banco('/rest/v1/emails', {
     metodo: 'POST',
-    corpo: { empresa_id: id, contato_id: contato.id, para: contato.email, passo: retomada ? 5 : 1, angulo: t.angulo || tipo, assunto: t.assunto.trim(), corpo: t.corpo.trim(), status: 'rascunho', memorias: mem.map((m) => m.id), erro: restantes.length ? 'Revisar: ' + restantes.join('; ') : null },
+    corpo: { empresa_id: id, contato_id: contato.id, para: contato.email, passo: 1, angulo: r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
   });
-  await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: id, contato_id: contato.id, tipo: 'email', direcao: 'interna', assunto: 'Rascunho criado: ' + t.assunto.trim(), conteudo: `Rascunho do ${retomada ? 'e-mail de retomada' : '1º e-mail'} aguardando aprovação.`, agente_id: 'redator' } });
-  return { email_id: em.id, assunto: t.assunto, revisar: restantes, custo, pedido_por: quem };
+  await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: id, contato_id: contato.id, tipo: 'email', direcao: 'interna', assunto: 'Rascunho criado: ' + r.assunto, conteudo: `Rascunho do ${retomada ? '1º e-mail de retomada' : '1º e-mail'} aguardando aprovação.`, agente_id: 'redator' } });
+  return { email_id: em.id, assunto: r.assunto, revisar: r.revisar, custo: r.custo, pedido_por: quem };
 }
 
 Deno.serve(async (req) => {
