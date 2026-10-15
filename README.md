@@ -75,6 +75,13 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Chaves: segredos `ANTHROPIC_API_KEY` e `OPENAI_API_KEY` em Supabase → Edge Functions → Secrets. Nunca no código.
 - Publicar uma função: `supabase functions deploy ia-teste` (ou pelo Claude Code, que usa a integração do Supabase).
 
+## Conselho (Fase 4)
+- Aba Conselho do /app: Claude (estrategista) propõe, ChatGPT (cético) ataca, e Claude (relator) fecha com decisão, três riscos, próximo passo com número e o que precisa de aprovação humana.
+- Os dois recebem o mesmo dossiê, montado por `dossie_conselho()` só com dados do banco; cada bloco traz a fonte. Afirmação sem `[fonte: ...]` tem de vir como HIPÓTESE.
+- Máximo de 3 rodadas; se o cético concordar na primeira, fecha ali. Teto de tokens por sessão em `config.teto_tokens_conselho` (60 mil) força o fechamento.
+- Edge Function `conselho` roda um passo por chamada; entre passos o dono pode mandar uma orientação, que os dois passam a seguir.
+- Pendente para a Fase 5: gravar cada decisão fechada na memória com status "proposta".
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.
