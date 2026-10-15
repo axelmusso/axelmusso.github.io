@@ -12,7 +12,7 @@ const exists = (u) => { const p = u.split('#')[0].split('?')[0]; if (!p) return 
 const urlOf = (f) => '/' + path.relative(DIST, f).replace(/index\.html$/, '').replace(/\\/g, '/');
 const pages = files.filter((f) => f.endsWith('.html')).map((f) => ({ f, url: urlOf(f), html: fs.readFileSync(f, 'utf8') }));
 const isStub = (p) => /http-equiv="refresh"/.test(p.html);
-const isApp = (p) => p.url.startsWith('/app/');
+const isApp = (p) => p.url.startsWith('/app/') || p.url.startsWith('/descadastro/'); // páginas internas: fora do Google
 const real = pages.filter((p) => !isStub(p) && !isApp(p));
 // Área logada: fora do Google, com CSP, só a chave pública e sem nenhum segredo.
 for (const p of pages.filter(isApp)) {
@@ -20,6 +20,7 @@ for (const p of pages.filter(isApp)) {
   if (!/http-equiv="Content-Security-Policy" content="[^"]*script-src 'self'/.test(p.html)) err(`${p.url}: área logada sem CSP`);
 }
 if (!staging && !/Disallow: \/app\//.test(robots)) err('robots.txt não bloqueia /app/');
+if (!staging && !/Disallow: \/descadastro\//.test(robots)) err('robots.txt não bloqueia /descadastro/');
 for (const f of files.filter((f) => /\.(html|js)$/.test(f))) {
   const s = fs.readFileSync(f, 'utf8');
   if (/service_role|sb_secret_|sk-ant-|sk-proj-/.test(s)) err(`${urlOf(f)}: possível chave secreta no site`);

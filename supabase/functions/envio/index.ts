@@ -1,0 +1,140 @@
+// Envio e cadência (Fase 6, parte B). Só sai e-mail APROVADO por uma pessoa.
+//   { acao: 'status' }                      → limite de hoje (aquecimento), enviados e se está no horário
+//   { acao: 'enviar_aprovados' }            → manda os aprovados, dentro do limite e do horário comercial
+//   { acao: 'enviar_aprovados', teste: true } → só o dono: o mesmo, fora do horário (para testar), sem iniciar o aquecimento
+//   { acao: 'preparar' }                    → escreve (como rascunho) o próximo e-mail das cadências vencidas
+//   { acao: 'classificar', resposta_id }    → classifica uma resposta recebida e rascunha a continuação
+//   { acao: 'responder', resposta_id, texto } → envia a resposta aprovada, na mesma conversa
+import { banco, ErroIA } from '../_shared/ia.ts';
+import { cors, json, usuario } from '../_shared/http.ts';
+import { classificarResposta, redigirEmail } from '../_shared/redacao.ts';
+import { agoraBrasilia, config, enviarResend, ErroEnvio, horarioComercial, limiteDeHoje, montar, proximoEm, suprimido } from '../_shared/envio.ts';
+
+const q = encodeURIComponent;
+const POR_CHAMADA = 10; // limite por clique, para caber no tempo da função
+
+async function registrar(empresa_id: string, contato_id: string | null, assunto: string, conteudo: string, direcao: 'saida' | 'entrada' | 'interna', agente = 'envio') {
+  await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id, contato_id, tipo: 'email', direcao, assunto, conteudo: conteudo.slice(0, 4000), agente_id: agente } });
+}
+
+// Negócio da empresa avança para "contatado" no primeiro envio (ou nasce nessa etapa).
+async function marcarContatado(empresa: Record<string, any>) {
+  const [n] = await banco(`/rest/v1/negocios?select=id,etapa&empresa_id=eq.${empresa.id}&etapa=not.in.(ganho,perdido)&limit=1`);
+  if (!n) await banco('/rest/v1/negocios', { metodo: 'POST', corpo: { empresa_id: empresa.id, titulo: (empresa.relacao === 'ex_cliente' ? 'Retomada: ' : 'Prospecção: ') + empresa.nome, etapa: 'contatado' } });
+  else if (['novo', 'qualificado'].includes(n.etapa)) await banco('/rest/v1/negocios?id=eq.' + n.id, { metodo: 'PATCH', corpo: { etapa: 'contatado' } });
+}
+
+// teste = botão do dono para conferir o envio fora do horário: ignora o horário e não inicia o aquecimento.
+async function enviarAprovados(teste = false) {
+  if (!teste && !horarioComercial()) return { enviados: 0, aviso: 'Fora do horário comercial (dias úteis, 8h às 18h de Brasília). Os aprovados saem no próximo horário.' };
+  const lim = await limiteDeHoje();
+  if (lim.restante <= 0) return { enviados: 0, aviso: `Limite de hoje atingido (${lim.enviados} de ${lim.limite}, aquecimento dia ${lim.dias_de_aquecimento + 1}).` };
+  const c = await config(['email_remetente', 'email_assinatura', 'email_aquecimento']);
+  const fila = await banco(`/rest/v1/emails?select=*,empresas(*)&status=eq.aprovado&order=aprovado_em&limit=${Math.min(lim.restante, POR_CHAMADA)}`);
+  let enviados = 0; const problemas: string[] = [];
+  for (const m of fila) {
+    const e = m.empresas;
+    if (e.relacao === 'cliente_ativo' || (await suprimido(m.para))) {
+      await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'Na lista de não contatar ou cliente ativo: não enviado.' } });
+      problemas.push(`${e.nome}: na lista de não contatar`); continue;
+    }
+    const { text, html, link } = montar(m.corpo, c.email_assinatura, m.id);
+    try {
+      const resendId = await enviarResend({
+        from: c.email_remetente, to: m.para, subject: m.assunto, text, html, chave: m.id,
+        headers: { 'List-Unsubscribe': `<${link}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+      });
+      const agora = new Date();
+      // Cadência: nasce no 1º envio; nos seguintes, avança o passo e marca o próximo vencimento.
+      let cad = m.cadencia_id ? (await banco('/rest/v1/cadencias?select=*&id=eq.' + m.cadencia_id))[0] : null;
+      if (!cad) {
+        [cad] = await banco('/rest/v1/cadencias', { metodo: 'POST', corpo: { empresa_id: e.id, contato_id: m.contato_id, tipo: e.relacao === 'ex_cliente' ? 'retomada' : 'prospeccao', passo: 0, iniciada_em: agora.toISOString() } });
+      }
+      const fim = m.passo >= 7; // 3ª retomada de 60 dias: encerra
+      await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { passo: m.passo, retomadas: Math.max(0, m.passo - 4), proximo_em: fim ? null : proximoEm(m.passo, new Date(cad.iniciada_em)).toISOString(), status: fim ? 'encerrada' : 'ativa' } });
+      await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { status: 'enviado', enviado_em: agora.toISOString(), resend_id: resendId, cadencia_id: cad.id, erro: null } });
+      await registrar(e.id, m.contato_id, m.assunto, m.corpo, 'saida');
+      if (m.passo === 1) await marcarContatado(e);
+      enviados++;
+    } catch (err) {
+      await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { erro: (err as Error).message.slice(0, 500) } });
+      problemas.push(`${e.nome}: ${(err as Error).message}`);
+      if (err instanceof ErroEnvio && /401|403|RESEND_API_KEY/.test(err.message)) break; // chave errada: não insiste
+    }
+  }
+  if (enviados && !teste && !c.email_aquecimento?.primeiro_envio) {
+    await banco('/rest/v1/config?chave=eq.email_aquecimento', { metodo: 'PATCH', corpo: { valor: { ...c.email_aquecimento, primeiro_envio: agoraBrasilia().dia } } });
+  }
+  return { enviados, problemas, na_fila: fila.length };
+}
+
+async function preparar(manual: boolean) {
+  const vencidas = await banco(`/rest/v1/cadencias?select=*,empresas(*),contatos(*)&status=eq.ativa&proximo_em=lte.${q(new Date().toISOString())}&order=proximo_em&limit=3`);
+  let criados = 0; const avisos: string[] = [];
+  for (const cad of vencidas) {
+    const e = cad.empresas, contato = cad.contatos;
+    const pend = await banco(`/rest/v1/emails?select=id&empresa_id=eq.${e.id}&status=in.(rascunho,aprovado)&limit=1`);
+    if (pend.length) continue;
+    if (!contato?.email || !contato.pode_contatar || (await suprimido(contato.email)) || e.relacao === 'cliente_ativo') {
+      await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { status: 'suprimida' } });
+      avisos.push(`${e.nome}: contato bloqueado, cadência encerrada`); continue;
+    }
+    const passo = cad.passo + 1;
+    if (passo > 7) { await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { status: 'encerrada' } }); continue; }
+    const r = await redigirEmail({ empresa: e, contato, passo, tipo: cad.tipo, manual });
+    if (r.sem_gancho) { avisos.push(`${e.nome}: sem motivo honesto para o passo ${passo}`); continue; }
+    await banco('/rest/v1/emails', { metodo: 'POST', corpo: { cadencia_id: cad.id, empresa_id: e.id, contato_id: contato.id, para: contato.email, passo, angulo: r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null } });
+    criados++;
+  }
+  return { criados, avisos, vencidas: vencidas.length };
+}
+
+async function classificar(id: string, manual: boolean) {
+  const [r] = await banco('/rest/v1/respostas?select=*,empresas(*)&id=eq.' + q(id));
+  if (!r) throw new Error('Resposta não encontrada.');
+  const enviados = r.empresa_id ? await banco(`/rest/v1/emails?select=assunto,corpo&empresa_id=eq.${r.empresa_id}&status=eq.enviado&order=enviado_em`) : [];
+  const v = await classificarResposta({ texto: r.texto, assunto: r.assunto ?? '', empresa: r.empresas, enviados, manual });
+  await banco('/rest/v1/respostas?id=eq.' + r.id, { metodo: 'PATCH', corpo: { classificacao: v.classificacao, rascunho: v.rascunho || null } });
+  return v;
+}
+
+async function responder(id: string, texto: string) {
+  const [r] = await banco('/rest/v1/respostas?select=*,emails(contato_id)&id=eq.' + q(id));
+  if (!r) throw new Error('Resposta não encontrada.');
+  if (!['nova', 'aprovada'].includes(r.status)) throw new Error('Esta resposta já foi tratada.');
+  if (!texto.trim()) throw new Error('Escreva a resposta.');
+  if (await suprimido(r.de)) throw new Error('Este endereço está na lista de não contatar.');
+  const c = await config(['email_remetente', 'email_assinatura']);
+  const { text, html, link } = montar(texto, c.email_assinatura, r.email_id ?? r.id);
+  const assunto = /^re:/i.test(r.assunto ?? '') ? r.assunto : 'Re: ' + (r.assunto ?? '');
+  const cab: Record<string, string> = { 'List-Unsubscribe': `<${link}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' };
+  if (r.message_id) { cab['In-Reply-To'] = r.message_id; cab['References'] = r.message_id; }
+  await enviarResend({ from: c.email_remetente, to: r.de, subject: assunto, text, html, headers: cab, chave: 'resposta-' + r.id });
+  await banco('/rest/v1/respostas?id=eq.' + r.id, { metodo: 'PATCH', corpo: { status: 'enviada', rascunho: texto } });
+  if (r.empresa_id) await registrar(r.empresa_id, r.emails?.contato_id ?? null, assunto, texto, 'saida', 'fernando');
+  return { ok: true };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors(req) });
+  if (req.method !== 'POST') return json(req, 405, { erro: 'Use POST.' });
+  const quem = await usuario(req);
+  if (!quem) return json(req, 401, { erro: 'Faça login de novo.' });
+  if (quem.papel !== 'dono' && quem.papel !== 'operador') return json(req, 403, { erro: 'Seu papel não pode enviar e-mails.' });
+  let c: Record<string, unknown>;
+  try { c = await req.json(); } catch { return json(req, 400, { erro: 'Corpo inválido.' }); }
+  try {
+    if (c.acao === 'status') return json(req, 200, { ...(await limiteDeHoje()), horario_comercial: horarioComercial() });
+    if (c.acao === 'enviar_aprovados') {
+      if (c.teste && quem.papel !== 'dono') return json(req, 403, { erro: 'Só o dono pode enviar fora do horário.' });
+      return json(req, 200, await enviarAprovados(c.teste === true));
+    }
+    if (c.acao === 'preparar') return json(req, 200, await preparar(true));
+    if (c.acao === 'classificar') return json(req, 200, await classificar(String(c.resposta_id ?? ''), true));
+    if (c.acao === 'responder') return json(req, 200, await responder(String(c.resposta_id ?? ''), String(c.texto ?? '')));
+    return json(req, 400, { erro: 'Ação desconhecida.' });
+  } catch (e) {
+    const codigo = e instanceof ErroIA ? e.codigo : 'http';
+    return json(req, codigo === 'teto' || codigo === 'parado' ? 429 : e instanceof ErroEnvio ? 502 : 400, { erro: (e as Error).message, codigo });
+  }
+});

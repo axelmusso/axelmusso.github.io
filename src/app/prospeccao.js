@@ -6,7 +6,10 @@
   var GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
   var q = encodeURIComponent;
+  var dataHoraBR = function (s) { return s ? new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''; };
   var fn = function (corpo) { return api('/functions/v1/prospeccao', { metodo: 'POST', corpo: corpo }); };
+  var envio = function (corpo) { return api('/functions/v1/envio', { metodo: 'POST', corpo: corpo }); };
+  var CLASSE = { interessado: 'Interessado', pergunta: 'Pergunta', nao_agora: 'Não agora', nao: 'Não', descadastro: 'Descadastro', automatica: 'Resposta automática' };
   var podeEscrever = function () { return perfil.papel === 'dono' || perfil.papel === 'operador'; };
   var pendente = null; // mensagem que precisa sobreviver ao redesenho da tela
   function aviso(texto, ruim) {
@@ -146,8 +149,11 @@
       api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,empresas(nome,relacao)&status=in.(rascunho,aprovado)&order=criado_em'),
       api('/rest/v1/config?select=chave,valor&chave=in.(icp,email_assinatura)'),
       api('/rest/v1/empresas?select=relacao,icp_score,qualificado_em,sem_gancho&limit=5000'),
+      api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em.desc'),
+      api('/rest/v1/emails?select=id,para,assunto,passo,enviado_em,eventos,empresa_id,empresas(nome)&status=eq.enviado&order=enviado_em.desc&limit=15'),
+      envio({ acao: 'status' }).catch(function (e) { return { erro: e.message }; }),
     ]).then(function (r) {
-      var rasc = r[0], cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), emp = r[2];
+      var rasc = r[0], cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), emp = r[2], resps = r[3], enviados = r[4], st = r[5];
       var icp = cfg.icp || { criterios: [], nota_minima: 50 };
       var conta = function (f) { return emp.filter(f).length; };
       tela.innerHTML = '<h1>Prospecção</h1><p id="aviso-prosp" class="aviso" hidden></p>' +
@@ -157,7 +163,17 @@
         '<div><b>' + conta(function (e) { return e.relacao === 'ex_cliente'; }) + '</b>ex-clientes (retomada)</div>' +
         '<div><b>' + conta(function (e) { return e.relacao === 'cliente_ativo'; }) + '</b>clientes ativos (protegidos)</div>' +
         '<div><b>' + rasc.length + '</b>e-mails aguardando você</div></div>' +
-        '<p class="mut">Nada é enviado nesta etapa: o envio pelo Resend entra quando o domínio estiver verificado (parte B).</p>' +
+        '<h2>Envio</h2>' + (st.erro ? '<p class="ruim">' + esc(st.erro) + '</p>' :
+          '<p>Hoje: <b>' + esc(st.enviados) + ' de ' + esc(st.limite) + '</b> e-mails de prospecção (aquecimento: dia ' + esc(st.dias_de_aquecimento + 1) + ', teto ' + esc(st.teto) + '/dia). ' +
+          (st.horario_comercial ? '<span>Dentro do horário comercial.</span>' : '<span class="ruim">Fora do horário comercial (dias úteis, 8h–18h): nada sai agora.</span>') + '</p>') +
+        (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button>' + (perfil.papel === 'dono' && !st.erro && !st.horario_comercial ? '<button type="button" id="enviar-teste">Enviar aprovados agora (teste fora do horário)</button>' : '') + '<button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
+
+        '<h2>Caixa de respostas <small class="mut">' + resps.length + '</small></h2>' + (resps.map(function (x) {
+          return '<div class="item resposta"><small class="mut">' + esc(dataHoraBR(x.recebido_em)) + ' · de ' + esc(x.de) + (x.empresas ? ' · <a href="#empresa/' + esc(x.empresa_id) + '">' + esc(x.empresas.nome) + '</a>' : ' · não ligada a envio') +
+            ' · <b>' + esc(CLASSE[x.classificacao] || 'sem classificação') + '</b></small><p><b>' + esc(x.assunto) + '</b></p><div class="texto">' + esc(x.texto.slice(0, 3000)) + '</div>' +
+            (w ? '<form class="grade" data-resposta="' + esc(x.id) + '"><label class="largo">Resposta sugerida (edite à vontade)<textarea name="texto" rows="5">' + esc(x.rascunho || '') + '</textarea></label>' +
+              '<div class="largo linha"><button type="submit" name="acao" value="enviar" class="prim">Aprovar e enviar</button>' + (x.classificacao ? '' : '<button type="submit" name="acao" value="classificar">Classificar e rascunhar</button>') + '<button type="submit" name="acao" value="descartar">Descartar</button></div></form>' : '') + '</div>';
+        }).join('') || '<p class="mut">Nenhuma resposta esperando.</p>') +
 
         '<h2>E-mails para aprovar</h2>' + (rasc.map(function (m) {
           return '<div class="item email-rasc"><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · para ' + esc(m.para) + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
@@ -179,6 +195,12 @@
 
         (perfil.papel === 'dono' ? '<h2>Importar a base de clientes</h2><p class="mut">Escolha a planilha (.xlsx) exportada do seu sistema. Ela é lida aqui no navegador e vai direto para o banco protegido; não passa por mais nenhum lugar. Quem comprou a partir de ' + DATA_ATIVO.split('-').reverse().join('/') + ' vira <b>cliente ativo</b> (nunca recebe e-mail); os demais entram como <b>ex-cliente</b> para retomada. Reimportar atualiza sem duplicar.</p>' +
           '<form class="linha" id="form-importar"><input type="file" name="arquivo" accept=".xlsx" required><button type="submit">Importar</button></form><pre id="saida-importar" class="resultado" hidden></pre>' : '') +
+
+        '<h2>Últimos enviados</h2><table class="tab"><thead><tr><th>Quando</th><th>Empresa</th><th>Assunto</th><th>Situação</th></tr></thead><tbody>' + (enviados.map(function (m) {
+          var ev = (m.eventos || []).map(function (e) { return e.tipo; });
+          var sit = ev.indexOf('complained') >= 0 ? '<span class="ruim">marcado como spam</span>' : ev.indexOf('bounced') >= 0 ? '<span class="ruim">voltou (bounce)</span>' : ev.indexOf('delivered') >= 0 ? 'entregue' : ev.indexOf('sent') >= 0 ? 'enviado' : 'aguardando confirmação';
+          return '<tr><td>' + esc(dataHoraBR(m.enviado_em)) + '</td><td><a href="#empresa/' + esc(m.empresa_id) + '">' + esc(m.empresas && m.empresas.nome) + '</a><br><small class="mut">' + esc(m.para) + ' · passo ' + esc(m.passo) + '</small></td><td>' + esc(m.assunto) + '</td><td>' + sit + '</td></tr>';
+        }).join('') || '<tr><td colspan="4" class="mut">Nada enviado ainda.</td></tr>') + '</tbody></table>' +
 
         '<details><summary>Como a nota de cliente ideal é calculada</summary><table class="tab"><tbody>' + (icp.criterios || []).map(function (c) { return '<tr><td>' + esc(c.descricao) + '</td><td class="num">' + esc(c.pontos) + '</td></tr>'; }).join('') +
         '<tr><td><b>Abaixo de ' + esc(icp.nota_minima) + ' não recebe e-mail</b></td><td></td></tr></tbody></table></details>';
@@ -247,11 +269,55 @@
         if (acao === 'aprovar') { corpo.status = 'aprovado'; corpo.aprovado_por = perfil.id; corpo.aprovado_em = new Date().toISOString(); }
         if (acao === 'descartar') { if (!confirm('Descartar este rascunho?')) return; corpo = { status: 'descartado' }; }
         api('/rest/v1/emails?id=eq.' + q(f.dataset.email), { metodo: 'PATCH', corpo: corpo, retorno: true })
-          .then(function () { aviso(acao === 'aprovar' ? 'Aprovado. Sai quando o envio for ligado (parte B).' : acao === 'descartar' ? 'Rascunho descartado.' : 'Salvo.'); return render(); })
+          .then(function () { aviso(acao === 'aprovar' ? 'Aprovado. Sai no próximo "Enviar aprovados", dentro do limite e do horário.' : acao === 'descartar' ? 'Rascunho descartado.' : 'Salvo.'); return render(); })
           .catch(function (e) { aviso(e.message, true); });
       });
     });
     if (!w) return;
+    var be = document.getElementById('enviar-agora');
+    if (be) be.addEventListener('click', function () {
+      if (!confirm('Enviar agora os e-mails aprovados (dentro do limite de hoje)?')) return;
+      be.disabled = true; be.textContent = 'Enviando…';
+      envio({ acao: 'enviar_aprovados' }).then(function (r) {
+        aviso(r.aviso || (r.enviados + ' enviado(s).' + (r.problemas && r.problemas.length ? ' Problemas: ' + r.problemas.join(' | ') : '')), !!(r.problemas && r.problemas.length));
+        return render();
+      }).catch(function (e) { aviso(e.message, true); be.disabled = false; be.textContent = 'Enviar aprovados agora'; });
+    });
+    var bt = document.getElementById('enviar-teste');
+    if (bt) bt.addEventListener('click', function () {
+      if (!confirm('TESTE: enviar agora, fora do horário, os e-mails aprovados? Use só com endereços seus.')) return;
+      bt.disabled = true; bt.textContent = 'Enviando…';
+      envio({ acao: 'enviar_aprovados', teste: true }).then(function (r) {
+        aviso(r.aviso || (r.enviados + ' enviado(s).' + (r.problemas && r.problemas.length ? ' Problemas: ' + r.problemas.join(' | ') : '')), !!(r.problemas && r.problemas.length));
+        return render();
+      }).catch(function (e) { aviso(e.message, true); bt.disabled = false; });
+    });
+    var bp = document.getElementById('preparar');
+    if (bp) bp.addEventListener('click', function () {
+      bp.disabled = true; bp.textContent = 'Escrevendo…';
+      envio({ acao: 'preparar' }).then(function (r) {
+        aviso(r.vencidas ? r.criados + ' rascunho(s) de continuação criado(s).' + (r.avisos.length ? ' ' + r.avisos.join(' | ') : '') : 'Nenhuma cadência com passo vencido agora.');
+        return render();
+      }).catch(function (e) { aviso(e.message, true); bp.disabled = false; bp.textContent = 'Preparar próximos e-mails da cadência'; });
+    });
+    document.querySelectorAll('[data-resposta]').forEach(function (f) {
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var acao = ev.submitter && ev.submitter.value, id = f.dataset.resposta, b = ev.submitter;
+        var feito;
+        if (acao === 'enviar') {
+          if (!confirm('Enviar esta resposta agora?')) return;
+          b.disabled = true; b.textContent = 'Enviando…';
+          feito = envio({ acao: 'responder', resposta_id: id, texto: f.texto.value }).then(function () { aviso('Resposta enviada.'); });
+        } else if (acao === 'classificar') {
+          b.disabled = true; b.textContent = 'Lendo…';
+          feito = envio({ acao: 'classificar', resposta_id: id }).then(function (r) { aviso('Classificada como ' + (CLASSE[r.classificacao] || r.classificacao) + '.'); });
+        } else {
+          feito = api('/rest/v1/respostas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { status: 'descartada' }, retorno: true }).then(function () { aviso('Resposta descartada.'); });
+        }
+        feito.then(render).catch(function (e) { aviso(e.message, true); b.disabled = false; });
+      });
+    });
     var fd = document.getElementById('form-descobrir');
     if (fd) fd.addEventListener('submit', function (ev) {
       ev.preventDefault(); var b = fd.querySelector('button'); b.disabled = true; b.textContent = 'Lendo a página…';
