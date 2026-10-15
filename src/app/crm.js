@@ -53,7 +53,7 @@
       if (alvo === partes[0] || (alvo === 'empresas' && partes[0] === 'empresa')) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     tela.innerHTML = '<p class="mut">Carregando…</p>';
-    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao, conselho: conselho };
+    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao, conselho: conselho, memoria: memoria };
     (telas[partes[0]] || dashboard)(partes[1]).catch(function (e) { tela.innerHTML = ''; erro(e); });
   }
 
@@ -381,6 +381,68 @@
     passo();
   }
 
+  // ---------- memória: o que os robôs aprenderam ----------
+  var NOME_STATUS = { proposta: 'Proposta (aguarda resultado)', hipotese: 'Hipótese', testando: 'Testando', confirmado: 'Confirmado', refutado: 'Refutado' };
+  var memFn = function (corpo) { return api('/functions/v1/memoria', { metodo: 'POST', corpo: corpo }); };
+  function cartaoMemoria(m, w) {
+    var ev = (m.evidencia || []).filter(function (e) { return e.amostra; });
+    return '<div class="item mem-' + esc(m.status) + '"><small class="mut">#' + esc(m.id.slice(0, 8)) + ' · ' + esc(NOME_STATUS[m.status] || m.status) + ' · confiança ' + Number(m.confianca).toFixed(2) +
+      ' · visto ' + esc(m.visto_vezes) + 'x' + (m.tags && m.tags.length ? ' · ' + esc(m.tags.join(', ')) : '') + '</small>' +
+      '<div>' + esc(m.hipotese) + '</div>' +
+      (ev.length ? '<small class="mut">' + ev.map(function (e) { return esc(e.metrica) + ': ' + esc(e.valor) + ' (n=' + esc(e.amostra) + ')' + (e.contraria ? ' <span class="ruim">contraria</span>' : ''); }).join(' · ') + '</small>' : '') +
+      (m.origem === 'conselho' && m.origem_id ? '<br><small><a href="#conselho/' + esc(m.origem_id) + '">ver sessão do Conselho</a></small>' : '') +
+      (w && m.status !== 'refutado' ? '<details><summary>Registrar resultado medido</summary><form class="linha" data-resultado="' + esc(m.id) + '">' +
+        '<input name="metrica" placeholder="Métrica (ex.: taxa de resposta)" required><input name="valor" placeholder="Valor (ex.: 18%)" required class="curto"><input name="amostra" type="number" min="1" placeholder="Amostra" required class="curto">' +
+        '<label class="chk"><input type="checkbox" name="contraria"> Contraria</label><input name="resultado" placeholder="O que aconteceu (opcional)"><button type="submit">Salvar</button></form></details>' : '') + '</div>';
+  }
+  function memoria() {
+    return Promise.all([
+      api('/rest/v1/memoria_aprendizados?select=id,hipotese,evidencia,resultado,confianca,status,tags,visto_vezes,origem,origem_id,atualizado_em&order=confianca.desc,atualizado_em.desc&limit=200'),
+      api('/rest/v1/memoria_consolidacoes?select=*&order=criado_em.desc&limit=5'),
+    ]).then(function (r) {
+      var lista = r[0], cons = r[1], w = podeEscrever();
+      var grupo = function (titulo, itens) { return '<h2>' + titulo + ' <small class="mut">' + itens.length + '</small></h2>' + (itens.map(function (m) { return cartaoMemoria(m, w); }).join('') || '<p class="mut">Nada.</p>'); };
+      tela.innerHTML = '<h1>Memória</h1><p class="mut">O que os agentes aprenderam, sempre com o número que sustenta. Antes de agir, eles leem os parecidos com a tarefa, com confiança acima de 0,6 e não refutados. Nunca guarda dado de pessoa.</p>' +
+        '<form class="linha" id="form-buscar-mem"><input type="search" name="texto" required placeholder="Testar: o que os agentes leriam sobre… (ex.: assunto de e-mail para calçados)" style="flex:1 1 300px"><button type="submit">Buscar</button></form><div id="resultado-mem"></div>' +
+        (w ? '<details><summary>Registrar aprendizado</summary><form class="grade" id="form-mem">' +
+          '<label class="largo">Aprendizado, com o número<textarea name="hipotese" rows="2" required placeholder="Ex.: assunto com o nome da cidade teve 31% de resposta contra 12% do genérico, em 84 envios"></textarea></label>' +
+          '<label>Métrica<input name="metrica" required placeholder="taxa de resposta"></label><label>Valor<input name="valor" required placeholder="31% x 12%"></label>' +
+          '<label>Amostra<input name="amostra" type="number" min="1" required></label><label>Fonte<input name="fonte" placeholder="campanha de outubro"></label>' +
+          '<label>Tags<input name="tags" placeholder="email, assunto"></label><button type="submit" class="prim">Gravar</button></form></details>' : '') +
+        grupo('Propostas aguardando resultado', lista.filter(function (m) { return m.status === 'proposta'; })) +
+        grupo('Aprendizados ativos', lista.filter(function (m) { return ['hipotese', 'testando', 'confirmado'].indexOf(m.status) >= 0; })) +
+        grupo('Refutados (somem na próxima consolidação)', lista.filter(function (m) { return m.status === 'refutado'; })) +
+        '<h2>Consolidações semanais</h2>' + (perfil.papel === 'dono' ? '<p><button type="button" id="consolidar">Consolidar agora</button> <small class="mut">funde duplicados, sobe o que se repetiu, derruba o contrariado e apaga o refutado</small></p>' : '') +
+        (cons.map(function (c) { return '<div class="item"><small class="mut">' + esc(dataHora(c.criado_em)) + ' · ' + (c.mudancas || []).length + ' mudança(s)</small><div class="texto">' + esc(c.resumo) + '</div></div>'; }).join('') || '<p class="mut">Nenhuma ainda.</p>');
+
+      document.getElementById('form-buscar-mem').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var saida = document.getElementById('resultado-mem'); saida.innerHTML = '<p class="mut">Buscando…</p>';
+        memFn({ acao: 'buscar', texto: ev.target.texto.value }).then(function (r) {
+          saida.innerHTML = r.itens.length ? r.itens.map(function (m) { return '<div class="item"><small class="mut">semelhança ' + Number(m.similaridade).toFixed(2) + '</small>' + cartaoMemoria(m, false) + '</div>'; }).join('')
+            : '<p class="mut">Nenhum aprendizado com confiança acima de 0,6 parecido com isso. Os agentes agiriam sem memória.</p>';
+        }).catch(erro);
+      });
+      if (!w) return;
+      enviar('form-mem', function (d) {
+        return memFn({ acao: 'gravar', hipotese: d.hipotese, tags: (d.tags || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean),
+          evidencia: [{ metrica: d.metrica, valor: d.valor, amostra: d.amostra, fonte: d.fonte || 'informado na tela' }] })
+          .then(function (r) { aviso(r.acao === 'fundido' ? 'Já existia um parecido: a medição foi somada a ele.' : 'Aprendizado gravado.'); });
+      }, rota);
+      tela.querySelectorAll('[data-resultado]').forEach(function (f) {
+        f.addEventListener('submit', function (ev) {
+          ev.preventDefault(); var d = dados(f); d.acao = 'resultado'; d.id = f.dataset.resultado;
+          memFn(d).then(function (r) { aviso('Resultado salvo: ' + r.status + ', confiança ' + Number(r.confianca).toFixed(2) + '.'); return memoria(); }).catch(erro);
+        });
+      });
+      var bc = document.getElementById('consolidar');
+      if (bc) bc.addEventListener('click', function () {
+        bc.disabled = true; bc.textContent = 'Consolidando…';
+        memFn({ acao: 'consolidar' }).then(function () { return rota(); }).catch(function (e) { bc.disabled = false; bc.textContent = 'Consolidar agora'; erro(e); });
+      });
+    });
+  }
+
   // ---------- operação: gasto de IA, teste de conexão e últimas execuções ----------
   var usd = function (v, casas) { return 'US$ ' + Number(v || 0).toFixed(casas == null ? 2 : casas); };
   function operacao() {
@@ -405,7 +467,8 @@
         (ex.map(function (e) {
           return '<tr><td>' + esc(dataHora(e.criado_em)) + '</td><td>' + esc(e.provedor) + '<br><small class="mut">' + esc(e.modelo) + '</small></td><td>' + esc(e.papel) + '</td>' +
             '<td class="num">' + esc(e.tokens_entrada) + ' / ' + esc(e.tokens_saida) + '</td><td class="num">' + esc(usd(e.custo_usd, 5)) + '</td><td class="num">' + (e.duracao_ms != null ? (e.duracao_ms / 1000).toFixed(1) + ' s' : '') + '</td>' +
-            '<td>' + (e.sucesso ? 'ok' : '<span class="ruim">' + esc(e.erro) + '</span>') + '</td></tr>';
+            '<td>' + (e.sucesso ? 'ok' : '<span class="ruim">' + esc(e.erro) + '</span>') +
+            (e.memorias && e.memorias.length ? '<br><small class="mut">usou memória ' + e.memorias.map(function (m) { return '#' + esc(m.slice(0, 8)); }).join(', ') + '</small>' : '') + '</td></tr>';
         }).join('') || '<tr><td colspan="7" class="mut">Nenhuma execução ainda.</td></tr>') + '</tbody></table>';
       if (!dono) return;
       enviar('form-tetos', function (d) {

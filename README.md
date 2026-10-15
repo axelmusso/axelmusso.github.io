@@ -80,7 +80,14 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Os dois recebem o mesmo dossiê, montado por `dossie_conselho()` só com dados do banco; cada bloco traz a fonte. Afirmação sem `[fonte: ...]` tem de vir como HIPÓTESE.
 - Máximo de 3 rodadas; se o cético concordar na primeira, fecha ali. Teto de tokens por sessão em `config.teto_tokens_conselho` (60 mil) força o fechamento.
 - Edge Function `conselho` roda um passo por chamada; entre passos o dono pode mandar uma orientação, que os dois passam a seguir.
-- Pendente para a Fase 5: gravar cada decisão fechada na memória com status "proposta".
+- Cada decisão fechada vira memória com status "proposta" (Fase 5).
+
+## Memória (Fase 5)
+- `memoria_aprendizados` guarda padrões com o número que os sustenta e um embedding (pgvector, `text-embedding-3-small`). `memoria_fatos` guarda fatos com fonte e validade.
+- Gravação recusa aprendizado sem número ("personalizar funciona melhor") e qualquer coisa parecida com e-mail, telefone, CPF ou CNPJ. Quase igual (semelhança ≥ 0,92) é fundido no existente, somando a amostra.
+- Confiança pela amostra somada: 30 envios ≈ 0,38; 150 ou mais ≈ 0,70; +0,05 cada vez que se repete; −0,2 quando um resultado contraria.
+- Antes de agir, os agentes leem os parecidos com a tarefa com confiança > 0,6 e não refutados; o id usado fica em `execucoes_agente.memorias` (visível na tela Operação).
+- Consolidação (botão na tela Memória; semanal automática na Fase 9): apaga refutados, funde duplicados, confirma o que se repetiu 3 vezes e resume o que mudou em `memoria_consolidacoes`.
 
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
