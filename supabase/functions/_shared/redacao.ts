@@ -72,6 +72,13 @@ ${REGRAS}`;
   return { sem_gancho: false as const, assunto: t.assunto.trim(), corpo: t.corpo.trim(), angulo: t.angulo || `${tipo}-${passo}`, revisar: problemas(t), custo, memorias };
 }
 
+// Tira do texto a parte citada do e-mail anterior ("> ..." e o que vem depois de "Em ..., escreveu:" / "On ... wrote:").
+export function semCitacao(texto: string) {
+  const linhas = texto.split(/\r?\n/);
+  const corte = linhas.findIndex((l) => /^\s*(Em .+escreveu:|On .+wrote:|-+ ?Mensagem original|-+ ?Original Message|De: .+)\s*$/i.test(l) || /^\s*>/.test(l));
+  return (corte >= 0 ? linhas.slice(0, corte) : linhas).join('\n').trim() || texto.trim();
+}
+
 // Lê uma resposta recebida, classifica e rascunha a continuação (que espera aprovação).
 export async function classificarResposta(o: { texto: string; assunto: string; empresa: Record<string, any> | null; enviados: { assunto: string; corpo: string }[]; manual: boolean }) {
   const r = await chamarIA({
@@ -80,10 +87,11 @@ export async function classificarResposta(o: { texto: string; assunto: string; e
     contexto: `EMPRESA: ${JSON.stringify(o.empresa ? { nome: o.empresa.nome, setor: o.empresa.setor, cidade: o.empresa.cidade } : null)}
 O QUE ENVIAMOS:\n${o.enviados.map((e) => e.assunto + '\n' + e.corpo).join('\n---\n') || '(não identificado)'}
 
-RESPOSTA RECEBIDA (assunto: ${o.assunto}):\n${o.texto.slice(0, 6000)}
+RESPOSTA RECEBIDA (assunto: ${o.assunto}; só o texto novo, sem a parte citada do nosso e-mail):\n${semCitacao(o.texto).slice(0, 6000)}
 
-Classifique em: "interessado" (quer conversar, mandou telefone, pediu amostra/preço), "pergunta" (fez pergunta antes de decidir), "nao_agora" (sem interesse agora, mas educado), "nao" (não quer), "descadastro" (pediu para parar de receber), "automatica" (resposta automática, férias, ausência).
-Para interessado, pergunta e nao_agora, escreva o rascunho da resposta: curto, responde o que foi perguntado sem inventar dado técnico (se não souber, diga que confirma por WhatsApp), e se ainda não tiver o celular, peça para seguir pelo WhatsApp. Para nao, descadastro e automatica, rascunho vazio.
+Classifique em: "interessado" (quer conversar, mandou telefone ou celular, inclusive na assinatura, pediu amostra/preço), "pergunta" (fez pergunta antes de decidir), "nao_agora" (sem interesse agora, mas educado), "nao" (não quer), "descadastro" (pediu para parar de receber), "automatica" (gerada por sistema: aviso de férias/ausência, confirmação automática de recebimento, ticket).
+Uma resposta curta escrita por uma pessoa ("recebi", "obrigado", "pode mandar") NÃO é automática: se trouxer celular, é "interessado"; senão, "pergunta".
+Para interessado, pergunta e nao_agora, escreva o rascunho da resposta: curto, responde o que foi perguntado sem inventar dado técnico (se não souber, diga que confirma por WhatsApp), e se ainda não tiver o celular, peça para seguir pelo WhatsApp. Sem despedida nem assinatura no rascunho (a assinatura completa é colocada depois). Para nao, descadastro e automatica, rascunho vazio.
 Devolva {"classificacao":"","rascunho":"","motivo":"uma frase"}`,
   });
   const v = jsonDe<{ classificacao: string; rascunho: string; motivo: string }>(r.texto);

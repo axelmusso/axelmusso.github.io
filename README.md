@@ -97,7 +97,12 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - **Redação:** 1º e-mail (ou retomada para ex-cliente) como rascunho, usando a memória. Uma pergunta só no fim, pedindo o celular para seguir pelo WhatsApp. Sem gancho honesto, não escreve.
 - **Aprovação:** todo e-mail espera "Aprovar" na tela. A assinatura de Fernando Gutierrez e o link de descadastro entram no envio.
 
-**Parte B (próxima):** envio pelo Resend (`comercial.corquimica.com.br`, já verificado), aquecimento, horário comercial, cadência de 14 dias com retomadas, webhook de entrega/bounce/reclamação, descadastro em um clique, caixa de respostas e medição.
+**Parte B (envio):** pelo Resend, de `Fernando - Corquímica <fernando@comercial.corquimica.com.br>`. Só sai e-mail aprovado na tela, em dia útil das 8h às 18h (Brasília), dentro do aquecimento (10/dia, +20% ao dia, teto 50) e fora da lista de não contatar. Cadência: dia 0, +3 dias úteis, dia 7, dia 14 e até 3 retomadas a cada 60 dias; para quando a empresa responde.
+- Função `envio`: status, enviar aprovados (com botão de teste fora do horário, só para o dono, que não inicia o aquecimento), preparar próximos passos, classificar e responder.
+- Função `resend-webhook` (pública, assinada com `RESEND_WEBHOOK_SECRET`): entrega, bounce, spam e respostas recebidas. Resposta vira item na caixa de respostas e uma cópia vai para `email_copia_respostas`. Mensagens da própria caixa de cópias são ignoradas (evita loop).
+- Função `descadastro` (pública): link de cada e-mail e o botão "cancelar inscrição" do Gmail/Outlook; grava na hora.
+- Segredos no Supabase: `RESEND_API_KEY` (acesso completo, para ler as respostas recebidas) e `RESEND_WEBHOOK_SECRET`.
+- Testado de ponta a ponta em 15/10/2026 com um endereço interno (dados de teste apagados).
 
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
