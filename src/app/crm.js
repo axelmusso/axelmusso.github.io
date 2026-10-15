@@ -53,7 +53,7 @@
       if (alvo === partes[0] || (alvo === 'empresas' && partes[0] === 'empresa')) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     tela.innerHTML = '<p class="mut">Carregando…</p>';
-    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas };
+    var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao };
     (telas[partes[0]] || dashboard)(partes[1]).catch(function (e) { tela.innerHTML = ''; erro(e); });
   }
 
@@ -310,6 +310,52 @@
         c.addEventListener('change', function () { alterar('tarefas', c.dataset.tarefa, { concluida: true }).then(rota).catch(erro); });
       });
       enviar('form-tarefa', function (d) { d.responsavel = perfil.id; return inserir('tarefas', d); }, rota);
+    });
+  }
+
+  // ---------- operação: gasto de IA, teste de conexão e últimas execuções ----------
+  var usd = function (v, casas) { return 'US$ ' + Number(v || 0).toFixed(casas == null ? 2 : casas); };
+  function operacao() {
+    return Promise.all([
+      api('/rest/v1/rpc/gasto_ia', { metodo: 'POST', corpo: {} }),
+      api('/rest/v1/config?select=chave,valor'),
+      api('/rest/v1/execucoes_agente?select=*&order=criado_em.desc&limit=50'),
+    ]).then(function (r) {
+      var g = r[0][0] || {}, cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), ex = r[2];
+      var dono = perfil.papel === 'dono';
+      var barra = function (v, t) { var pct = t > 0 ? Math.min(100, (v / t) * 100) : 100; return '<div class="barra' + (pct >= 80 ? ' alto' : '') + '"><span style="width:' + pct.toFixed(0) + '%"></span></div>'; };
+      tela.innerHTML = '<h1>Operação</h1>' +
+        '<p>Robôs: <b class="' + (cfg.sistema_ativo ? '' : 'ruim') + '">' + (cfg.sistema_ativo ? 'ligados' : 'parados') + '</b> <small class="mut">(o botão de parada chega na Fase 9; testes manuais funcionam mesmo parado)</small></p>' +
+        '<div class="numeros">' +
+        '<div><b>' + usd(g.hoje_usd, 4) + '</b>hoje, de ' + usd(g.teto_diario_usd) + barra(Number(g.hoje_usd), Number(g.teto_diario_usd)) + '</div>' +
+        '<div><b>' + usd(g.mes_usd, 4) + '</b>no mês, de ' + usd(g.teto_mensal_usd) + barra(Number(g.mes_usd), Number(g.teto_mensal_usd)) + '</div></div>' +
+        (dono ? '<form class="linha" id="form-tetos"><label>Teto diário US$ <input name="teto_diario_usd" type="number" min="0" step="0.01" value="' + esc(cfg.teto_diario_usd) + '" class="curto"></label>' +
+          '<label>Teto mensal US$ <input name="teto_mensal_usd" type="number" min="0" step="0.01" value="' + esc(cfg.teto_mensal_usd) + '" class="curto"></label><button type="submit">Salvar tetos</button></form>' +
+          '<h2>Testar conexão</h2><p class="mut">Uma chamada curta no modelo mais barato de cada um (custa frações de centavo).</p>' +
+          '<div class="linha"><button type="button" data-testar="anthropic">Testar Claude</button><button type="button" data-testar="openai">Testar ChatGPT</button></div><pre id="resultado-teste" class="resultado" hidden></pre>' : '') +
+        '<h2>Últimas execuções</h2><table class="tab"><thead><tr><th>Quando</th><th>Provedor / modelo</th><th>Papel</th><th class="num">Tokens</th><th class="num">Custo</th><th class="num">Tempo</th><th>Resultado</th></tr></thead><tbody>' +
+        (ex.map(function (e) {
+          return '<tr><td>' + esc(dataHora(e.criado_em)) + '</td><td>' + esc(e.provedor) + '<br><small class="mut">' + esc(e.modelo) + '</small></td><td>' + esc(e.papel) + '</td>' +
+            '<td class="num">' + esc(e.tokens_entrada) + ' / ' + esc(e.tokens_saida) + '</td><td class="num">' + esc(usd(e.custo_usd, 5)) + '</td><td class="num">' + (e.duracao_ms != null ? (e.duracao_ms / 1000).toFixed(1) + ' s' : '') + '</td>' +
+            '<td>' + (e.sucesso ? 'ok' : '<span class="ruim">' + esc(e.erro) + '</span>') + '</td></tr>';
+        }).join('') || '<tr><td colspan="7" class="mut">Nenhuma execução ainda.</td></tr>') + '</tbody></table>';
+      if (!dono) return;
+      enviar('form-tetos', function (d) {
+        return Promise.all(['teto_diario_usd', 'teto_mensal_usd'].map(function (k) {
+          return api('/rest/v1/config?chave=eq.' + k, { metodo: 'PATCH', corpo: { valor: Number(d[k] || 0) }, retorno: true });
+        }));
+      }, rota);
+      tela.querySelectorAll('[data-testar]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var saida = document.getElementById('resultado-teste');
+          tela.querySelectorAll('[data-testar]').forEach(function (x) { x.disabled = true; });
+          saida.hidden = false; saida.textContent = 'Chamando ' + b.textContent.replace('Testar ', '') + '…';
+          api('/functions/v1/ia-teste', { metodo: 'POST', corpo: { provedor: b.dataset.testar } })
+            .then(function (r) { saida.textContent = r.modelo + ': ' + r.texto + '\n' + r.tokensEntrada + ' tokens de entrada, ' + r.tokensSaida + ' de saída, ' + usd(r.custoUsd, 6) + ', ' + (r.duracaoMs / 1000).toFixed(1) + ' s'; })
+            .catch(function (e) { saida.textContent = 'Recusado: ' + e.message; })
+            .then(function () { setTimeout(rota, 2500); });
+        });
+      });
     });
   }
 
