@@ -1,2 +1,6 @@
 dist/
 node_modules/
+# planilhas e exportações com dados de clientes: nunca no repositório
+*.xlsx
+*.xls
+*.csv

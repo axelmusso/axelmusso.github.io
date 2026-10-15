@@ -36,3 +36,19 @@ Alterado no Editor de Zona:
 - `_caldav._tcp`, `_caldavs._tcp`, `_carddav._tcp`, `_carddavs._tcp` SRV: destino `corquimica.com.br` → `mail.corquimica.com.br`
 
 Para desfazer (voltar ao site antigo da Webstorage): apagar 3 dos 4 registros A `185.199.x.153`, editar o restante para `138.186.228.40` e voltar o `www` para CNAME `corquimica.com.br`. Os SRV podem ficar como estão.
+
+## Fase 3 (15/10/2026): subdomínio de disparo `comercial.corquimica.com.br` (Resend)
+
+Criado no Editor de Zona (nada existente foi alterado; o domínio principal, o MX da empresa e o `contato.` do SendGrid ficaram iguais):
+
+| Nome | Tipo | Valor | Para quê |
+|---|---|---|---|
+| `resend._domainkey.comercial` | TXT | `p=MIGfMA0G…8wIDAQAB` (chave DKIM do Resend, completa no painel do Resend) | Assinatura dos e-mails |
+| `send.comercial` | CNAME | `send.forge.rmta.net` | Envio (SPF e bounces) |
+| `rsend.comercial` | CNAME | `rsend-sae1.forge.rmta.net` | Envio, região São Paulo |
+| `comercial` | MX 10 | `inbound-smtp.sa-east-1.amazonaws.com` | Recebe as respostas no Resend |
+| `_dmarc.comercial` | TXT | `v=DMARC1; p=none;` | Política anti-falsificação só do subdomínio (monitoramento) |
+
+O Resend sugeriu o DMARC em `_dmarc` (domínio principal). Foi colocado em `_dmarc.comercial` de propósito, para não mexer na política do e-mail principal.
+
+Para desfazer: apagar os 5 registros acima. Não afeta site nem e-mail principal.

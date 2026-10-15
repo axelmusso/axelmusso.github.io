@@ -89,6 +89,16 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Antes de agir, os agentes leem os parecidos com a tarefa com confiança > 0,6 e não refutados; o id usado fica em `execucoes_agente.memorias` (visível na tela Operação).
 - Consolidação (botão na tela Memória; semanal automática na Fase 9): apaga refutados, funde duplicados, confirma o que se repetiu 3 vezes e resume o que mudou em `memoria_consolidacoes`.
 
+## Prospecção (Fase 6)
+**Parte A (pronta):** aba Prospecção do /app.
+- **Base de clientes:** o dono importa a planilha (.xlsx) na própria tela. Ela é lida no navegador e vai direto para o banco (nunca para o GitHub; `*.xlsx` e `*.csv` estão no `.gitignore`). Compra a partir de 01/06/2026 = cliente ativo, que nunca recebe e-mail (e-mails e domínio entram na `lista_supressao`, motivo `cliente`); os demais viram ex-clientes para retomada. Reimportar atualiza pelo CNPJ, sem duplicar.
+- **Descoberta:** cole o endereço de uma página pública (expositores de feira, associados). O robô lê respeitando o robots.txt, ignora a Corquímica e o dono da página, e não duplica empresas.
+- **Qualificação:** lê o site público, dá a nota de 0 a 100 pelos critérios em `config.icp`, escreve o motivo e procura um gancho (fato específico). Abaixo de 50, ou sem gancho, não contata. E-mails profissionais publicados no site viram contatos com fonte e data.
+- **Redação:** 1º e-mail (ou retomada para ex-cliente) como rascunho, usando a memória. Uma pergunta só no fim, pedindo o celular para seguir pelo WhatsApp. Sem gancho honesto, não escreve.
+- **Aprovação:** todo e-mail espera "Aprovar" na tela. A assinatura de Fernando Gutierrez e o link de descadastro entram no envio.
+
+**Parte B (próxima):** envio pelo Resend (`comercial.corquimica.com.br`, já verificado), aquecimento, horário comercial, cadência de 14 dias com retomadas, webhook de entrega/bounce/reclamação, descadastro em um clique, caixa de respostas e medição.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.

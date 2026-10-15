@@ -100,3 +100,6 @@ summary{cursor:pointer;color:var(--blue)}
 .mem-confirmado{border-left:4px solid var(--ok)}
 .mem-proposta{border-left:4px solid var(--blue)}
 .mem-refutado{opacity:.6}
+.assinatura pre{margin:0;font:13px/1.45 'Segoe UI',system-ui,Arial,sans-serif;color:var(--muted);white-space:pre-wrap;border-left:3px solid var(--line);padding-left:10px}
+.abas button{padding:6px 10px}
+.email-rasc{border-left:4px solid var(--blue)}
