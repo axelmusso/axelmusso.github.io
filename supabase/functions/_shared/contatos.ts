@@ -21,7 +21,8 @@ async function jaTentados(empresaId: string) {
   return new Set<string>(env.map((m: { para: string }) => m.para.toLowerCase()));
 }
 
-async function escolher(empresaId: string, tentados: Set<string>) {
+// dominio: o da empresa; com ele, e-mail gratuito (Gmail, Hotmail...) fica por último, pois costuma ser de terceiro.
+async function escolher(empresaId: string, tentados: Set<string>, dominio?: string | null) {
   const lista = await banco(`/rest/v1/contatos?select=id,nome,cargo,email,origem&empresa_id=eq.${empresaId}&pode_contatar=is.true&email=not.is.null`);
   const livres = [];
   for (const c of lista) {
@@ -29,7 +30,8 @@ async function escolher(empresaId: string, tentados: Set<string>) {
     if (tentados.has(email) || tipoEmail(email) === 'bloqueado' || (await suprimido(email))) continue;
     livres.push(c);
   }
-  const peso = (c: { email: string; origem: string }) => ORDEM_TIPO[tipoEmail(c.email)] * 10 + (ORDEM_ORIGEM[c.origem] ?? 2);
+  const gratuitoComDominio = (email: string) => !!dominio && !GRATUITOS.includes(dominio) && GRATUITOS.includes(email.split('@')[1]?.toLowerCase());
+  const peso = (c: { email: string; origem: string }) => (gratuitoComDominio(c.email) ? 100 : 0) + ORDEM_TIPO[tipoEmail(c.email)] * 10 + (ORDEM_ORIGEM[c.origem] ?? 2);
   return livres.sort((a, b) => peso(a) - peso(b))[0] ?? null;
 }
 
@@ -84,10 +86,11 @@ export async function buscarContatos(e: Record<string, any>) {
 // Melhor e-mail ainda não tentado. Se não houver, ou se só sobrar caixa fiscal, procura outros antes.
 export async function melhorContato(e: Record<string, any>) {
   const tentados = await jaTentados(e.id);
-  let c = await escolher(e.id, tentados);
+  const dominio = e.dominio || dominioDe(e.site);
+  let c = await escolher(e.id, tentados, dominio);
   if ((!c || tipoEmail(c.email) === 'fiscal') && podeBuscar(e)) {
     await buscarContatos(e);
-    c = await escolher(e.id, tentados);
+    c = await escolher(e.id, tentados, dominio);
   }
   return c;
 }

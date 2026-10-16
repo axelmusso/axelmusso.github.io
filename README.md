@@ -110,6 +110,14 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Sem e-mail novo, `_shared/contatos.ts` procura no site da empresa (pelo domínio do e-mail que já temos, respeitando o robots.txt) e no cadastro público do CNPJ (BrasilAPI), no máximo a cada 30 dias; cada contato achado guarda fonte e data. E-mail do CNPJ com cara de escritório de contabilidade é ignorado.
 - Acabaram os e-mails: segue para as retomadas de 60 dias, como antes.
 
+**Feiras (16/10/2026):** fonte constante de leads. A tabela `feiras` guarda cada feira do setor: onde está a lista pública de expositores, a situação (lista pública, sem lista on-line, a verificar, fora do escopo), a próxima edição e a última leitura. A aba Prospecção mostra a tabela, marca "reler" quando a lista foi lida há mais de 60 dias e tem o botão "Ler lista" (`descobrir_url` com `feira_id`, que grava a origem `feira:<nome>`).
+- Já lidas: FIMMA Brasil 2025 e Inspiramais (janeiro de 2027, só materiais de enfeites, saltos e solados, metalização e embalagem). SEINCC e FIMEC não publicam a lista: pedir ao organizador.
+- Quem já está no cadastro (cliente, ex-cliente) ou na lista de não contatar é pulado.
+
+**Escopo (16/10/2026):** o cliente trabalha com PLÁSTICO (`config.icp.escopo` e `config.icp.fora_do_escopo`). Ferragens e metal, madeira e MDF, papel, tecidos, lojas e revendas, concorrentes químicos, máquinas e serviços ficam com nota 0 ("Fora do escopo: …"), mas só quando o site mostra isso; sem informação, não exclui. Em calçados, saltos, solados, enfeites injetados e metalização contam como plástico. O perfil `metalizacao` também sai da qualificação pelo site.
+
+**E-mail do site:** com domínio próprio, só entram e-mails do domínio da empresa (Gmail e afins no site costumam ser de representantes), e a qualificação também lê a página de contato.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.

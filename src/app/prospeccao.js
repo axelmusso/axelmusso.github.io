@@ -7,6 +7,7 @@
   var PERFIL_DO_GRUPO = { MOV: 'verniz', MET: 'metalizacao', '3D': 'resina3d' };
   // De onde veio o e-mail do contato (LGPD: a fonte fica registrada).
   var ORIGEM = { base_clientes: 'da planilha', site: 'achado no site', receita_federal: 'do cadastro do CNPJ', indicado: 'indicado pela empresa', resposta: 'veio na resposta' };
+  var SITUACAO_FEIRA = { com_lista: 'lista pública', sem_lista: 'sem lista on-line', a_verificar: 'a verificar', fora_do_escopo: 'fora do escopo' };
   var NOME_PERFIL = { verniz: 'usa verniz', metalizacao: 'metalizadora', resina3d: 'só resina 3D', geral: 'perfil geral' };
   var GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
@@ -174,8 +175,9 @@
       api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em.desc'),
       api('/rest/v1/emails?select=id,para,assunto,passo,enviado_em,eventos,empresa_id,empresas(nome)&status=eq.enviado&order=enviado_em.desc&limit=15'),
       envio({ acao: 'status' }).catch(function (e) { return { erro: e.message }; }),
+      api('/rest/v1/feiras?select=*&order=situacao,nome'),
     ]).then(function (r) {
-      var rasc = r[0], cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), emp = r[2], resps = r[3], enviados = r[4], st = r[5];
+      var rasc = r[0], cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), emp = r[2], resps = r[3], enviados = r[4], st = r[5], feiras = r[6];
       var icp = cfg.icp || { criterios: [], nota_minima: 50 };
       var conta = function (f) { return emp.filter(f).length; };
       tela.innerHTML = '<h1>Prospecção</h1><p id="aviso-prosp" class="aviso" hidden></p>' +
@@ -212,6 +214,15 @@
         [['fila', 'A qualificar'], ['qualificadas', 'Prontas para escrever'], ['retomada', 'Ex-clientes'], ['abaixo', 'Abaixo da nota / sem gancho']].map(function (a) {
           return '<button type="button" data-aba="' + a[0] + '"' + (filtroProsp === a[0] ? ' class="prim"' : '') + '>' + a[1] + '</button>';
         }).join('') + '</div><div id="lista-prosp"><p class="mut">Carregando…</p></div>' +
+
+        // Feiras: fonte constante de leads. Lista lida há mais de 60 dias (ou nunca) pede nova leitura.
+        '<h2>Feiras <small class="mut">' + feiras.length + '</small></h2><p class="mut">Listas públicas de expositores. Só entram como prospects os segmentos de plástico; quem já está no cadastro ou na lista de não contatar é pulado.</p>' +
+        '<table class="tab"><thead><tr><th>Feira</th><th>Segmento</th><th>Próxima edição</th><th>Situação</th><th>Última leitura</th><th></th></tr></thead><tbody>' + feiras.map(function (f) {
+          var velha = f.situacao === 'com_lista' && (!f.ultima_leitura || Date.now() - new Date(f.ultima_leitura).getTime() > 60 * 864e5);
+          return '<tr><td>' + (f.site ? '<a href="' + esc(f.site) + '" target="_blank" rel="noopener">' + esc(f.nome) + '</a>' : esc(f.nome)) + '<br><small class="mut">' + esc([f.cidade, f.uf].filter(Boolean).join('/')) + '</small></td><td>' + esc(f.segmento) + '</td><td>' + esc(f.proxima_edicao) + '</td>' +
+            '<td title="' + esc(f.observacao) + '">' + esc(SITUACAO_FEIRA[f.situacao] || f.situacao) + '</td><td>' + (f.ultima_leitura ? dataHoraBR(f.ultima_leitura) + ' (' + f.expositores_importados + ' importados)' : '—') + (velha ? ' <b class="ruim">reler</b>' : '') + '</td>' +
+            '<td>' + (w && f.situacao === 'com_lista' && f.url_expositores ? '<button type="button" data-feira="' + f.id + '" data-url="' + esc(f.url_expositores) + '">Ler lista</button>' : '') + '</td></tr>';
+        }).join('') + '</tbody></table>' +
 
         (w ? '<h2>Descobrir empresas numa página pública</h2><p class="mut">Cole o endereço de uma lista de expositores de feira, associados ou catálogo. O robô respeita o robots.txt e não entra em área com login.</p>' +
           '<form class="linha" id="form-descobrir"><input name="url" type="url" required placeholder="https://…/expositores" style="flex:1 1 300px"><button type="submit">Descobrir</button></form>' : '') +
@@ -344,6 +355,14 @@
           feito = api('/rest/v1/respostas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { status: 'descartada' }, retorno: true }).then(function () { aviso('Resposta descartada.'); });
         }
         feito.then(render).catch(function (e) { aviso(e.message, true); b.disabled = false; });
+      });
+    });
+    document.querySelectorAll('[data-feira]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        b.disabled = true; b.textContent = 'Lendo…';
+        fn({ acao: 'descobrir_url', url: b.dataset.url, feira_id: b.dataset.feira })
+          .then(function (r) { aviso(r.encontradas + ' empresa(s) na lista: ' + r.novas + ' nova(s), ' + r.repetidas + ' já existiam ou não podem ser contatadas. Qualifique as novas na aba "A qualificar". Custo US$ ' + Number(r.custo).toFixed(4) + '.'); filtroProsp = 'fila'; return render(); })
+          .catch(function (e) { aviso(e.message, true); b.disabled = false; b.textContent = 'Ler lista'; });
       });
     });
     var fd = document.getElementById('form-descobrir');

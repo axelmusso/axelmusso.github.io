@@ -65,7 +65,7 @@ export function problemas(t: Rascunho, perfil = 'geral', final: 'telefone' | 'le
   if (final === 'telefone' && !/celular|whats/i.test(ultima)) p.push('a pergunta final deve ser sobre seguir pelo WhatsApp');
   if (final === 'telefone' && /qual (é |e )?(o )?seu (celular|n[úu]mero|whats)/i.test(ultima)) p.push('a pergunta do celular está direta demais: pergunte se seria possível compartilhar');
   if (final === 'leve' && /celular|whats|telefone/i.test(corpo)) p.push('este e-mail não deve pedir telefone (o pedido fica no primeiro e no último)');
-  if (final === 'responsavel' && !/respons[áa]vel|quem cuida|encaminh|indicar|indicaria|contato d[ae]/i.test(ultima)) p.push('caixa genérica: a pergunta final deve pedir o contato de quem cuida de compras ou produção');
+  if (final === 'responsavel' && !/respons[áa]vel|quem cuida|encaminh|indicar|indicaria|contato d[ae]|nome e (o )?telefone|dessa pessoa|\bdela\b/i.test(ultima)) p.push('caixa genérica: a pergunta final deve pedir o contato de quem cuida de compras ou produção');
   if (final === 'responsavel' && /\bseu (celular|whats|telefone)/i.test(corpo)) p.push('caixa genérica: não peça o celular de quem está lendo');
   if (!/fernando/i.test(corpo)) p.push('falta a apresentação breve do Fernando');
   if ((FORA_DO_PERFIL[perfil] ?? FORA_DO_PERFIL.geral).test(corpo + ' ' + (t.assunto ?? ''))) p.push('cita produto fora do perfil desta empresa');
@@ -110,7 +110,7 @@ function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null, f
   ][passo - 1];
 }
 
-const REGRAS = `Regras do texto: quem escreve e assina é sempre o Fernando; nunca cite o Áxel nem outra pessoa da Corquímica. Português do Brasil com acentuação correta, inclusive no nome da empresa (ex.: "Parobe" → "Parobé", "Metalurgica" → "Metalúrgica"), sem trocar o nome; tom de conversa entre profissionais, confiante: nunca insinue que houve ou há problema, algo a ajustar ou a corrigir (no produto, no fornecimento anterior ou no acabamento do cliente), e nunca condicione a conversa a "se a linha ainda usa/segue" o que o perfil já confirma: fale do que a Corquímica oferece para a operação dele; até 110 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura nem despedida (a assinatura é colocada depois). Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação; o assunto também respeita o perfil de produto.
+const REGRAS = `Regras do texto: quem escreve e assina é sempre o Fernando; nunca cite o Áxel nem outra pessoa da Corquímica. Português do Brasil com acentuação correta, inclusive no nome da empresa (ex.: "Parobe" → "Parobé", "Metalurgica" → "Metalúrgica"), sem trocar o nome; o gancho tem de ser atual: evento com data que já passou (feira, lançamento) é citado no passado, nunca como se ainda fosse acontecer; tom de conversa entre profissionais, confiante: nunca insinue que houve ou há problema, algo a ajustar ou a corrigir (no produto, no fornecimento anterior ou no acabamento do cliente), e nunca condicione a conversa a "se a linha ainda usa/segue" o que o perfil já confirma: fale do que a Corquímica oferece para a operação dele; até 110 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura nem despedida (a assinatura é colocada depois). Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação; o assunto também respeita o perfil de produto.
 Responda só com JSON: {"assunto":"","corpo":"","angulo":"nome curto da abordagem"}`;
 
 // Escreve o e-mail do passo. Devolve o rascunho conferido (ou "sem gancho"), as memórias usadas e o custo.
@@ -123,6 +123,7 @@ export async function redigirEmail(o: { empresa: Record<string, any>; contato: R
   const mem = await buscarMemoria(`e-mail de ${tipo}, passo ${passo}, para empresa de ${e.setor ?? 'indústria'}: assunto, ângulo e resposta`, 3, manual);
   const meses = e.ultima_compra ? Math.max(1, Math.round((Date.now() - new Date(e.ultima_compra).getTime()) / (30.4 * 864e5))) : null;
   const contexto = `${SOBRE_A_CORQUIMICA}
+HOJE: ${new Date().toISOString().slice(0, 10)}
 
 EMPRESA: ${JSON.stringify({ nome: e.nome, setor: e.setor, cidade: e.cidade, uf: e.uf, gancho: e.gancho, gancho_fonte: e.gancho_fonte, icp_motivo: e.icp_motivo })}
 PERFIL DE PRODUTO (${perfil}): ${PERFIS[perfil]}

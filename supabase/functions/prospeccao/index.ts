@@ -1,6 +1,6 @@
 // Prospecção (Fase 6, parte A): descobrir empresas numa página pública, qualificar com nota e motivo, escrever o e-mail.
 // Nada sai daqui para o mundo: os e-mails nascem como rascunho e esperam aprovação humana.
-//   { acao: 'descobrir_url', url }       → lista de expositores/associados vira empresas novas (sem duplicar)
+//   { acao: 'descobrir_url', url, feira_id? } → lista de expositores/associados vira empresas novas (sem duplicar); com feira_id, marca a origem e a leitura da feira
 //   { acao: 'qualificar', empresa_id }   → lê o site público, dá a nota de 0 a 100 com motivo e acha o gancho
 //   { acao: 'redigir', empresa_id }      → escreve o 1º e-mail (prospecção ou retomada de ex-cliente) como rascunho
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
@@ -14,7 +14,8 @@ const q = encodeURIComponent;
 const GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
 
 // ---------- descobrir: página pública com lista de empresas ----------
-async function descobrirUrl(url: string) {
+async function descobrirUrl(url: string, feiraId?: string) {
+  const [feira] = feiraId ? await banco('/rest/v1/feiras?select=id,nome,expositores_importados&id=eq.' + q(feiraId)) : [];
   const pag = await lerPagina(url, 40_000);
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'prospeccao_descobrir', nivel: 'barato', manual: true, maxTokens: 6000,
@@ -28,7 +29,8 @@ async function descobrirUrl(url: string) {
     const dominio = dominioDe(e.site);
     if ((dominio && ignorar.has(dominio)) || /corqu[ií]mica/i.test(e.nome)) { repetidas++; continue; }
     const uf = (e.uf ?? '').trim().toUpperCase();
-    const filtro = dominio ? 'dominio=eq.' + q(dominio) : 'nome=ilike.' + q(e.nome.trim());
+    // Já cadastrada (pelo domínio ou pelo nome): não duplica, e cliente ou ex-cliente não vira prospect.
+    const filtro = dominio ? `or=(dominio.eq.${q(dominio)},nome.ilike.${q('"' + e.nome.trim().replace(/"/g, '') + '"')})` : 'nome=ilike.' + q(e.nome.trim());
     const ja = await banco(`/rest/v1/empresas?select=id&${filtro}&limit=1`);
     if (ja.length) { repetidas++; continue; }
     if (dominio && (await banco(`/rest/v1/lista_supressao?select=id&dominio=ilike.${q(dominio)}&limit=1`)).length) { repetidas++; continue; } // não contatar
@@ -36,23 +38,24 @@ async function descobrirUrl(url: string) {
       metodo: 'POST',
       corpo: {
         nome: e.nome.trim().slice(0, 200), site: e.site || null, dominio, cidade: e.cidade || null, uf: /^[A-Z]{2}$/.test(uf) ? uf : null,
-        setor: e.segmento || null, origem: 'pagina:' + new URL(pag.url).host, fonte_url: pag.url, coletado_em: new Date().toISOString(),
+        setor: e.segmento || null, origem: feira ? 'feira:' + feira.nome : 'pagina:' + new URL(pag.url).host, fonte_url: pag.url, coletado_em: new Date().toISOString(),
         status: 'prospect', relacao: 'prospect',
       },
     });
     novas++;
   }
+  if (feira) await banco('/rest/v1/feiras?id=eq.' + feira.id, { metodo: 'PATCH', corpo: { ultima_leitura: new Date().toISOString(), expositores_importados: (feira.expositores_importados ?? 0) + novas, situacao: 'com_lista', url_expositores: url } });
   return { encontradas: lista.length, novas, repetidas, custo: r.custoUsd };
 }
 
 // ---------- qualificar: nota de 0 a 100, motivo e gancho ----------
-type Qualif = { criterios: Record<string, number>; motivo: string; segmento: string; gancho: string; gancho_fonte: string; perfil?: string; perfil_evidencia?: string; cidade: string; uf: string };
+type Qualif = { criterios: Record<string, number>; motivo: string; segmento: string; gancho: string; gancho_fonte: string; perfil?: string; perfil_evidencia?: string; fora_do_escopo?: string; cidade: string; uf: string };
 async function qualificar(id: string) {
   const [e] = await banco('/rest/v1/empresas?select=*&id=eq.' + q(id));
   if (!e) throw new Error('Empresa não encontrada.');
   const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.icp');
   const icp = cfg.valor;
-  // Site público: home e até 2 páginas internas sobre a empresa ou produtos.
+  // Site público: home e até 3 páginas internas (sobre, produtos, contato).
   const paginas: Pagina[] = [];
   const avisos: string[] = [];
   if (e.site) {
@@ -60,22 +63,25 @@ async function qualificar(id: string) {
       const home = await lerPagina(e.site, 15_000);
       paginas.push(home);
       const internas = home.links.filter((l) => dominioDe(l) === dominioDe(home.url) && /sobre|empresa|quem-somos|institucional|produt|servic|linha/i.test(l)).slice(0, 2);
-      for (const l of internas) { try { paginas.push(await lerPagina(l, 8_000)); } catch { /* página interna opcional */ } }
+      const contato = home.links.find((l) => dominioDe(l) === dominioDe(home.url) && /contato|fale-?conosco|atendimento/i.test(l));
+      for (const l of contato ? [...internas, contato] : internas) { try { paginas.push(await lerPagina(l, 8_000)); } catch { /* página interna opcional */ } }
     } catch (err) { avisos.push((err as Error).message); }
   }
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'prospeccao_qualificar', nivel: 'barato', manual: true, maxTokens: 2500,
-    instrucoes: `Você qualifica empresas para a prospecção da Corquímica. Responda só com JSON.\n${SOBRE_A_CORQUIMICA}\nCritérios e pontos máximos:\n${JSON.stringify(icp.criterios)}\nDê para cada critério um número entre 0 e o máximo, só com base no que está no texto. Sem evidência, 0.`,
+    instrucoes: `Você qualifica empresas para a prospecção da Corquímica. Responda só com JSON.\n${SOBRE_A_CORQUIMICA}\nCritérios e pontos máximos:\n${JSON.stringify(icp.criterios)}\nDê para cada critério um número entre 0 e o máximo, só com base no que está no texto. Sem evidência, 0.\nESCOPO (o cliente trabalha com PLÁSTICO): ${icp.escopo ?? ''}\nFORA DO ESCOPO: ${(icp.fora_do_escopo ?? []).join('; ')}.`,
     contexto: `EMPRESA: ${JSON.stringify({ nome: e.nome, site: e.site, cidade: e.cidade, uf: e.uf, setor: e.setor, origem: e.origem, relacao: e.relacao })}
 ${avisos.length ? 'AVISO: ' + avisos.join('; ') + '\n' : ''}${paginas.length ? paginas.map((p) => `--- ${p.url}\n${p.texto}`).join('\n') : '(sem site para ler)'}
 
-Devolva {"criterios":{"setor":0,"processo":0,"regiao":0,"porte":0,"momento":0},"motivo":"2 a 3 frases dizendo por que deu a nota, citando o que viu","segmento":"um dos segmentos alvo ou outro","gancho":"um fato verdadeiro e específico desta empresa visto no texto, útil para abrir um e-mail; vazio se não houver","gancho_fonte":"URL onde viu o gancho","perfil":"verniz | resina3d | geral","perfil_evidencia":"frase do texto que prova o uso; vazio se geral","cidade":"","uf":""}
-Perfil: "verniz" só se o texto mostrar que a empresa aplica verniz, laca, pintura ou acabamento em peças na própria produção; "resina3d" só se mostrar impressão 3D com resina; sem prova clara, "geral".`,
+Devolva {"criterios":{"setor":0,"processo":0,"regiao":0,"porte":0,"momento":0},"motivo":"2 a 3 frases dizendo por que deu a nota, citando o que viu","segmento":"um dos segmentos alvo ou outro","gancho":"um fato verdadeiro e específico desta empresa visto no texto, útil para abrir um e-mail; vazio se não houver","gancho_fonte":"URL onde viu o gancho","perfil":"verniz | metalizacao | resina3d | geral","perfil_evidencia":"frase do texto que prova o uso; vazio se geral","fora_do_escopo":"motivo curto se a empresa está fora do escopo; vazio se está dentro","cidade":"","uf":""}
+Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanoplastia em peças plásticas; "verniz" só se mostrar que a empresa aplica verniz, laca ou pintura em peças plásticas na própria produção; "resina3d" só se mostrar impressão 3D com resina; sem prova clara, "geral".
+Fora do escopo: preencha "fora_do_escopo" só quando o texto MOSTRAR que a empresa trabalha com outro material ou atividade (ex.: ferragens e peças de metal, madeira e MDF, papel e papelão, tecidos e aviamentos têxteis, loja ou revenda ao consumidor, concorrente químico, máquinas ou serviços). Sem informação suficiente, deixe vazio. Em calçados e moda, saltos, solados, enfeites injetados e metalização são, por padrão, de plástico ou polímero (ABS, PS, PVC, TPU, PU): conte como dentro do escopo.`,
   });
   const v = jsonDe<Qualif>(r.texto);
   const maximos = Object.fromEntries((icp.criterios as { id: string; pontos: number }[]).map((c) => [c.id, c.pontos]));
   const crit = Object.fromEntries(Object.keys(maximos).map((k) => [k, Math.max(0, Math.min(maximos[k], Math.round(Number(v.criterios?.[k]) || 0)))]));
-  const nota = Object.values(crit).reduce((s, n) => s + n, 0);
+  const fora = v.fora_do_escopo?.trim() ?? '';
+  const nota = fora ? 0 : Object.values(crit).reduce((s, n) => s + n, 0); // fora do escopo: nota 0, não contata
   const uf = (v.uf || '').toUpperCase();
   // Domínio só é gravado se nenhuma outra empresa já usa (o domínio é único no cadastro).
   let dominio = e.dominio;
@@ -84,26 +90,27 @@ Perfil: "verniz" só se o texto mostrar que a empresa aplica verniz, laca, pintu
   await banco('/rest/v1/empresas?id=eq.' + q(id), {
     metodo: 'PATCH',
     corpo: {
-      icp_score: nota, icp_criterios: crit, icp_motivo: (v.motivo || '').slice(0, 1000) + (avisos.length ? ` (${avisos.join('; ')})` : ''),
+      icp_score: nota, icp_criterios: crit, icp_motivo: (fora ? 'Fora do escopo: ' + fora + ' | ' : '') + (v.motivo || '').slice(0, 1000) + (avisos.length ? ` (${avisos.join('; ')})` : ''),
       setor: e.setor || v.segmento || null, gancho: v.gancho?.trim() || null, gancho_fonte: v.gancho_fonte || null,
       sem_gancho: !v.gancho?.trim(), qualificado_em: new Date().toISOString(),
       // Perfil de produto: o da base de clientes (grupo de cadastro) vale mais que o site.
-      ...(e.origem === 'base_clientes' ? {} : { perfil_produto: ['verniz', 'resina3d'].includes(v.perfil ?? '') && v.perfil_evidencia?.trim() ? v.perfil : 'geral', perfil_fonte: v.perfil_evidencia?.trim() ? 'site: ' + v.perfil_evidencia.trim().slice(0, 300) : 'sem evidência no site' }),
+      ...(e.origem === 'base_clientes' ? {} : { perfil_produto: ['verniz', 'metalizacao', 'resina3d'].includes(v.perfil ?? '') && v.perfil_evidencia?.trim() ? v.perfil : 'geral', perfil_fonte: v.perfil_evidencia?.trim() ? 'site: ' + v.perfil_evidencia.trim().slice(0, 300) : 'sem evidência no site' }),
       cidade: e.cidade || v.cidade || null, uf: e.uf || (/^[A-Z]{2}$/.test(uf) ? uf : null), dominio,
     },
   });
   // E-mails profissionais publicados no site viram contatos (com fonte e data, base legal: legítimo interesse).
+  // Com domínio próprio, só e-mails do domínio da empresa: Gmail e afins no site costumam ser de representantes, não da empresa.
   const dom = dominioDe(e.site);
   const achados = [...new Set(paginas.flatMap((p) => p.emails.map((m) => ({ m, url: p.url }))).map((x) => JSON.stringify(x)))].map((x) => JSON.parse(x) as { m: string; url: string })
-    .filter((x) => !dom || x.m.endsWith('@' + dom) || GENERICOS.includes(x.m.split('@')[1]));
+    .filter((x) => (dom && !GENERICOS.includes(dom) ? x.m.endsWith('@' + dom) || x.m.endsWith('.' + dom) : true));
   let contatos = 0;
-  for (const { m, url } of achados.slice(0, 5)) {
+  for (const { m, url } of achados.slice(0, 8)) {
     const ja = await banco(`/rest/v1/contatos?select=id&empresa_id=eq.${q(id)}&email=ilike.${q(m)}&limit=1`);
     if (ja.length) continue;
     await banco('/rest/v1/contatos', { metodo: 'POST', corpo: { empresa_id: id, email: m, origem: 'site', fonte_url: url, coletado_em: new Date().toISOString(), base_legal: 'Legítimo interesse (contato profissional público)', pode_contatar: true } });
     contatos++;
   }
-  return { nota, criterios: crit, motivo: v.motivo, gancho: v.gancho || null, contatos, custo: r.custoUsd };
+  return { nota, criterios: crit, motivo: v.motivo, fora_do_escopo: fora || null, gancho: v.gancho || null, contatos, custo: r.custoUsd };
 }
 
 // ---------- redigir: 1º e-mail (prospecção) ou 1º da retomada (ex-cliente), como rascunho ----------
@@ -149,7 +156,7 @@ Deno.serve(async (req) => {
   let c: Record<string, unknown>;
   try { c = await req.json(); } catch { return json(req, 400, { erro: 'Corpo inválido.' }); }
   try {
-    if (c.acao === 'descobrir_url') return json(req, 200, await descobrirUrl(String(c.url ?? '')));
+    if (c.acao === 'descobrir_url') return json(req, 200, await descobrirUrl(String(c.url ?? ''), c.feira_id ? String(c.feira_id) : undefined));
     if (c.acao === 'qualificar') return json(req, 200, await qualificar(String(c.empresa_id ?? '')));
     if (c.acao === 'redigir') return json(req, 200, await redigir(String(c.empresa_id ?? ''), quem.id));
     return json(req, 400, { erro: 'Ação desconhecida.' });
