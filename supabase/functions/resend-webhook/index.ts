@@ -4,6 +4,7 @@
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { classificarResposta } from '../_shared/redacao.ts';
 import { config, enderecoDe, enviarResend, lerRecebido } from '../_shared/envio.ts';
+import { aplicarClassificacao, suprimir } from '../_shared/respostas.ts';
 
 const q = encodeURIComponent;
 
@@ -20,15 +21,6 @@ async function assinaturaValida(req: Request, corpo: string) {
   return assin.split(' ').some((p) => p.split(',')[1] === esperado);
 }
 
-async function suprimir(email: string, motivo: 'bounce' | 'spam' | 'descadastro') {
-  const ja = await banco(`/rest/v1/lista_supressao?select=id&email=ilike.${q(email)}&limit=1`);
-  if (!ja.length) await banco('/rest/v1/lista_supressao', { metodo: 'POST', corpo: { email: email.toLowerCase(), motivo } });
-  await banco(`/rest/v1/contatos?email=ilike.${q(email)}`, { metodo: 'PATCH', corpo: { pode_contatar: false } });
-  const cads = await banco(`/rest/v1/cadencias?select=id,contatos!inner(email)&contatos.email=ilike.${q(email)}&status=in.(ativa,pausada)`);
-  for (const c of cads) await banco('/rest/v1/cadencias?id=eq.' + c.id, { metodo: 'PATCH', corpo: { status: 'suprimida' } });
-  await banco(`/rest/v1/emails?para=ilike.${q(email)}&status=in.(rascunho,aprovado)`, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'Endereço entrou na lista de não contatar (' + motivo + ').' } });
-}
-
 async function eventoDeEnvio(tipo: string, d: Record<string, any>) {
   const [m] = await banco(`/rest/v1/emails?select=id,empresa_id,contato_id,para,eventos,status&resend_id=eq.${q(d.email_id)}`);
   if (!m) return;
@@ -38,6 +30,15 @@ async function eventoDeEnvio(tipo: string, d: Record<string, any>) {
     await suprimir(m.para, tipo === 'email.complained' ? 'spam' : 'bounce');
     await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: m.empresa_id, contato_id: m.contato_id, tipo: 'email', direcao: 'interna', assunto: tipo === 'email.complained' ? 'Marcado como spam' : 'Bounce definitivo', conteudo: `${m.para} entrou na lista de não contatar.`, agente_id: 'webhook' } });
   }
+}
+
+// A empresa respondeu: a cadência para, rascunhos pendentes saem da fila e o negócio vai para "Respondeu".
+async function pararCadencia(orig: Record<string, any>, classe: string | null) {
+  if (orig.cadencia_id) await banco(`/rest/v1/cadencias?id=eq.${orig.cadencia_id}&status=in.(ativa,pausada)`, { metodo: 'PATCH', corpo: { status: 'respondeu' } });
+  await banco(`/rest/v1/emails?empresa_id=eq.${orig.empresa_id}&status=in.(rascunho,aprovado)`, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'A empresa respondeu: cadência parada.' } });
+  const [n] = await banco(`/rest/v1/negocios?select=id,etapa&empresa_id=eq.${orig.empresa_id}&etapa=in.(novo,qualificado,contatado)&limit=1`);
+  const perdeu = classe === 'nao' || classe === 'descadastro';
+  if (n) await banco('/rest/v1/negocios?id=eq.' + n.id, { metodo: 'PATCH', corpo: { etapa: perdeu ? 'perdido' : 'respondeu', ...(perdeu ? { motivo_perda: 'Respondeu que não tem interesse' } : {}) } });
 }
 
 async function respostaRecebida(d: Record<string, any>) {
@@ -56,29 +57,29 @@ async function respostaRecebida(d: Record<string, any>) {
     metodo: 'POST',
     corpo: { email_id: orig?.id ?? null, empresa_id: orig?.empresa_id ?? null, de, assunto: cheio.subject ?? d.subject ?? '', texto, resend_id: d.email_id, message_id: cheio.message_id ?? d.message_id ?? null },
   });
+  // A empresa respondeu: a cadência para (exceto resposta automática). Telefone do decisor e indicação viram ações.
+  const empresa = orig ? (await banco('/rest/v1/empresas?select=*&id=eq.' + orig.empresa_id))[0] : null;
   // Classifica e rascunha (respeita o botão de parada e o teto; se não puder, fica para o botão "Classificar" na tela).
-  let classe: string | null = null, rascunho = '';
+  let classe: string | null = null, rascunho = '', resultado: string | null = null, telefone = '';
   try {
     const enviados = orig ? await banco(`/rest/v1/emails?select=assunto,corpo&empresa_id=eq.${orig.empresa_id}&status=eq.enviado&order=enviado_em`) : [];
-    const empresa = orig ? (await banco('/rest/v1/empresas?select=*&id=eq.' + orig.empresa_id))[0] : null;
-    const v = await classificarResposta({ texto, assunto: resp.assunto, empresa, enviados, manual: false });
+    const v = await classificarResposta({ texto, assunto: resp.assunto, de, empresa, enviados, manual: false });
     classe = v.classificacao; rascunho = v.rascunho;
+    telefone = v.telefone_decisor ? `${v.telefone_decisor.nome ?? 'Responsável'}${v.telefone_decisor.cargo ? ' (' + v.telefone_decisor.cargo + ')' : ''}: ${v.telefone_decisor.telefone}` : '';
     await banco('/rest/v1/respostas?id=eq.' + resp.id, { metodo: 'PATCH', corpo: { classificacao: classe, rascunho: rascunho || null } });
-  } catch (e) { if (!(e instanceof ErroIA)) console.error('classificação', e); }
-  // Ações que não dependem da IA: para a cadência (exceto resposta automática), registra, e "não"/descadastro suprime.
-  if (classe === 'nao' || classe === 'descadastro') await suprimir(de, 'descadastro');
-  if (orig && classe !== 'automatica') {
-    if (orig.cadencia_id) await banco(`/rest/v1/cadencias?id=eq.${orig.cadencia_id}&status=in.(ativa,pausada)`, { metodo: 'PATCH', corpo: { status: 'respondeu' } });
-    await banco(`/rest/v1/emails?empresa_id=eq.${orig.empresa_id}&status=in.(rascunho,aprovado)`, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'A empresa respondeu: cadência parada.' } });
-    const [n] = await banco(`/rest/v1/negocios?select=id,etapa&empresa_id=eq.${orig.empresa_id}&etapa=in.(novo,qualificado,contatado)&limit=1`);
-    if (n) await banco('/rest/v1/negocios?id=eq.' + n.id, { metodo: 'PATCH', corpo: { etapa: classe === 'nao' || classe === 'descadastro' ? 'perdido' : 'respondeu', ...(classe === 'nao' || classe === 'descadastro' ? { motivo_perda: 'Respondeu que não tem interesse' } : {}) } });
+    if (orig && classe !== 'automatica') await pararCadencia(orig, classe);
+    resultado = await aplicarClassificacao({ ...resp, de }, empresa, v, false);
+  } catch (e) {
+    if (!(e instanceof ErroIA)) console.error('classificação', e);
+    if (orig && classe !== 'automatica') await pararCadencia(orig, classe);
   }
   if (orig) await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: orig.empresa_id, contato_id: orig.contato_id, tipo: 'email', direcao: 'entrada', assunto: resp.assunto, conteudo: texto.slice(0, 4000), agente_id: null } });
   // Cópia para a caixa do dono, com a classificação e o rascunho para aprovar.
   const c = await config(['email_remetente', 'email_copia_respostas']);
   if (c.email_copia_respostas) {
-    const aviso = `Resposta recebida de ${de}${orig ? '' : ' (não ligada a nenhum envio)'}.\nClassificação: ${classe ?? 'pendente (sistema parado ou teto atingido)'}\n\n--- Mensagem ---\n${texto.slice(0, 8000)}\n\n--- Rascunho sugerido (aprove em https://corquimica.com.br/app/#prospeccao) ---\n${rascunho || '(sem rascunho)'}`;
-    await enviarResend({ from: c.email_remetente, to: c.email_copia_respostas, subject: `[Resposta] ${resp.assunto || de}`, text: aviso, html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${aviso.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`, chave: 'copia-' + resp.id }).catch((e) => console.error('cópia', e));
+    const destaque = resultado === 'telefone' ? `TELEFONE DO RESPONSÁVEL OBTIDO — ${telefone}\nA cadência parou; a tarefa de ligar está no CRM. Daqui em diante é com você.\n\n` : resultado === 'indicado' ? 'A empresa indicou outra pessoa: o contato foi criado e há um rascunho para ela esperando sua aprovação.\n\n' : '';
+    const aviso = `${destaque}Resposta recebida de ${de}${orig ? '' : ' (não ligada a nenhum envio)'}.\nClassificação: ${classe ?? 'pendente (sistema parado ou teto atingido)'}\n\n--- Mensagem ---\n${texto.slice(0, 8000)}\n\n--- Rascunho sugerido (aprove em https://corquimica.com.br/app/#prospeccao) ---\n${rascunho || '(sem rascunho)'}`;
+    await enviarResend({ from: c.email_remetente, to: c.email_copia_respostas, subject: `${resultado === 'telefone' ? '[TELEFONE] ' : '[Resposta] '}${resp.assunto || de}`, text: aviso, html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${aviso.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`, chave: 'copia-' + resp.id }).catch((e) => console.error('cópia', e));
   }
 }
 

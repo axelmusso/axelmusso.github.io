@@ -57,11 +57,14 @@ export async function limiteDeHoje() {
 const escHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Texto final: corpo + assinatura + descadastro (em texto e em HTML simples, sem rastreio).
-export function montar(corpo: string, assinatura: string, token: string) {
+// apresentacao: link do PDF da Corquímica, que vai só no 1º e-mail de empresas novas (link, não anexo, para não pesar na entrega).
+export function montar(corpo: string, assinatura: string, token: string, apresentacao?: string) {
   const link = LINK_DESCADASTRO(token);
-  const text = `${corpo.trim()}\n\n${assinatura}\n\nNão quer mais receber estes e-mails? Clique aqui: ${link}`;
+  const pdf = apresentacao ? `\n\nApresentação da Corquímica (PDF): ${apresentacao}` : '';
+  const text = `${corpo.trim()}${pdf}\n\n${assinatura}\n\nNão quer mais receber estes e-mails? Clique aqui: ${link}`;
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#222">` +
     corpo.trim().split(/\n{2,}/).map((p) => `<p style="margin:0 0 12px">${escHtml(p).replace(/\n/g, '<br>')}</p>`).join('') +
+    (apresentacao ? `<p style="margin:0 0 12px"><a href="${escHtml(apresentacao)}">Apresentação da Corquímica (PDF)</a></p>` : '') +
     `<p style="margin:16px 0 12px;color:#444">${escHtml(assinatura).replace(/\n/g, '<br>')}</p>` +
     `<p style="margin:0;font-size:12px;color:#777">Não quer mais receber estes e-mails? <a href="${link}" style="color:#777">Clique aqui</a>.</p></div>`;
   return { text, html, link };

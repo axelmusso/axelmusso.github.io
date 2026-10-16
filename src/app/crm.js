@@ -3,8 +3,9 @@
 (function () {
   var api, perfil, tela;
   var ETAPAS = [
+    // O sucesso da prospecção é o telefone do responsável: daí em diante quem conduz é o Áxel, por telefone/WhatsApp.
     ['novo', 'Novo'], ['qualificado', 'Qualificado'], ['contatado', 'Contatado'], ['respondeu', 'Respondeu'],
-    ['reuniao', 'Reunião'], ['proposta', 'Proposta'], ['ganho', 'Ganho'], ['perdido', 'Perdido'],
+    ['telefone', 'Telefone obtido'], ['com_axel', 'Com o Áxel'], ['ganho', 'Cliente'], ['perdido', 'Perdido'],
   ];
   var NOME_ETAPA = Object.fromEntries(ETAPAS);
   var TIPOS = [['nota', 'Nota'], ['ligacao', 'Ligação'], ['email', 'E-mail'], ['reuniao', 'Reunião'], ['whatsapp', 'WhatsApp'], ['visita', 'Visita']];
@@ -68,14 +69,15 @@
       var neg = r[0], tar = r[1], h = hoje();
       var porEtapa = {}; neg.forEach(function (n) { porEtapa[n.etapa] = (porEtapa[n.etapa] || 0) + 1; });
       var abertos = neg.filter(function (n) { return n.etapa !== 'ganho' && n.etapa !== 'perdido'; });
-      var valor = abertos.reduce(function (s, n) { return s + Number(n.valor_estimado || 0); }, 0);
+      var telefones = porEtapa.telefone || 0;
       var atrasadas = tar.filter(function (t) { return t.vence_em && t.vence_em < h; }).length;
       var doDia = tar.filter(function (t) { return t.vence_em === h; }).length;
       tela.innerHTML = '<h1>Dashboard</h1><p class="mut">Olá, ' + esc(perfil.nome || perfil.email) + ' (' + esc(perfil.papel) + ').</p>' +
         '<div class="numeros">' +
         '<a href="#empresas"><b>' + r[2].length + '</b>empresas</a>' +
         '<a href="#funil"><b>' + abertos.length + '</b>negócios abertos</a>' +
-        '<a href="#funil"><b>' + esc(moeda(valor)) + '</b>em aberto</a>' +
+        '<a href="#funil" class="' + (telefones ? 'bom' : '') + '"><b>' + telefones + '</b>telefones para você ligar</a>' +
+        '<a href="#funil"><b>' + (porEtapa.com_axel || 0) + '</b>com você</a>' +
         '<a href="#tarefas"><b>' + doDia + '</b>tarefas hoje</a>' +
         '<a href="#tarefas" class="' + (atrasadas ? 'ruim' : '') + '"><b>' + atrasadas + '</b>atrasadas</a>' +
         '</div><h2>Funil</h2><table class="tab"><tbody>' +
@@ -257,7 +259,7 @@
           return '<section class="coluna" data-coluna="' + et[0] + '"><h2>' + esc(et[1]) + ' <small class="mut">' + col.length + (soma ? ' · ' + esc(moeda(soma)) : '') + '</small></h2>' +
             col.map(function (n) {
               return '<article class="cartao-neg" draggable="' + w + '" data-id="' + esc(n.id) + '"><a href="#empresa/' + esc(n.empresa_id) + '">' + esc(n.empresas && n.empresas.nome) + '</a>' +
-                '<div>' + esc(n.titulo) + '</div><small class="mut">' + esc(moeda(n.valor_estimado)) + '</small>' +
+                '<div>' + esc(n.titulo) + '</div>' + (n.valor_estimado ? '<small class="mut">' + esc(moeda(n.valor_estimado)) + '</small>' : '') +
                 (w ? '<select data-etapa="' + esc(n.id) + '" aria-label="Mover para">' + opcoes(ETAPAS, n.etapa) + '</select>' : '') + '</article>';
             }).join('') + '</section>';
         }).join('') + '</div>';

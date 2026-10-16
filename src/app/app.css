@@ -49,6 +49,7 @@ button.perigo{color:var(--err);border-color:var(--err);margin-top:8px}
 .numeros a{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--muted);text-decoration:none;font-size:13px}
 .numeros b{display:block;font-size:22px;color:var(--ink)}
 .numeros a.ruim b{color:var(--err)}
+.numeros a.bom{border-color:var(--ok)}.numeros a.bom b{color:var(--ok)}
 .tab{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:8px}
 .tab th,.tab td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 .tab th{font-size:12px;color:var(--muted);font-weight:600}
