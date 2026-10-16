@@ -4,7 +4,7 @@
 //   "não" ou descadastro → lista de não contatar
 import { banco } from './ia.ts';
 import { agoraBrasilia, suprimido } from './envio.ts';
-import { redigirEmail, type Pessoa } from './redacao.ts';
+import { emailGenerico, redigirEmail, type Pessoa } from './redacao.ts';
 
 const q = encodeURIComponent;
 
@@ -66,7 +66,9 @@ async function indicacao(resp: Record<string, any>, empresa: Record<string, any>
     });
   }
   if ((await banco(`/rest/v1/emails?select=id&contato_id=eq.${contato.id}&status=in.(rascunho,aprovado)&limit=1`)).length) return contato;
-  const quem = (resp.de as string).split('@')[0];
+  // Quem indicou: caixa geral vira "a equipe de vocês"; e-mail de pessoa vira o primeiro nome (joao.silva@ → Joao).
+  const local = String(resp.de).split('@')[0];
+  const quem = emailGenerico(resp.de) ? 'a equipe de vocês' : local.split(/[._-]/)[0].replace(/^./, (c) => c.toUpperCase());
   const r = await redigirEmail({ empresa, contato, passo: 1, tipo: empresa.relacao === 'ex_cliente' ? 'retomada' : 'prospeccao', manual, indicadoPor: quem });
   if (r.sem_gancho) return contato;
   await banco('/rest/v1/emails', { metodo: 'POST', corpo: { empresa_id: empresa.id, contato_id: contato.id, para: contato.email, passo: 1, angulo: 'indicacao', assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null } });
