@@ -114,7 +114,24 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Já lidas: FIMMA Brasil 2025 e Inspiramais (janeiro de 2027, só materiais de enfeites, saltos e solados, metalização e embalagem). SEINCC e FIMEC não publicam a lista: pedir ao organizador.
 - Quem já está no cadastro (cliente, ex-cliente) ou na lista de não contatar é pulado.
 
-**Escopo (16/10/2026):** o cliente trabalha com PLÁSTICO (`config.icp.escopo` e `config.icp.fora_do_escopo`). Ferragens e metal, madeira e MDF, papel, tecidos, lojas e revendas, concorrentes químicos, máquinas e serviços ficam com nota 0 ("Fora do escopo: …"), mas só quando o site mostra isso; sem informação, não exclui. Em calçados, saltos, solados, enfeites injetados e metalização contam como plástico. O perfil `metalizacao` também sai da qualificação pelo site.
+**Escopo e nota ICP por segmento (16/10/2026):** o cliente trabalha com PLÁSTICO. A IA não dá mais nota: ela só classifica a empresa num **segmento**, com a frase do site que prova, e o banco calcula a nota pela tabela `config.icp.segmentos` (gatilho `aplicar_segmento_icp`). Fora das UFs prioritárias, 10 pontos a menos.
+
+| Grupo | Nota | Segmentos |
+|---|---|---|
+| Alvo | 100 | Metalização |
+| Alvo | 95 | Fitas de borda (PVC, ABS, melamínica), saltos e solados, enfeites e bijuterias, puxadores e maçanetas de plástico ou zamac com acabamento, embalagens de cosméticos |
+| Bom | 80 | Gráficas com verniz UV, peças plásticas com acabamento, impressão 3D com resina, plástico automotivo e linha branca |
+| Médio | 55 | Fábrica de calçados prontos, injeção ou sopro de peças plásticas visíveis, sem acabamento |
+| Verificar | 40 | Sem informação suficiente |
+| Fora | 0 | Vidro, madeira e móveis, lojas e revendas, ferragens e metalurgia, têxtil e couro, papel, químicos concorrentes, máquinas e serviços, plástico técnico ou oculto (tacos de salto, núcleos, painéis acrílicos, perfis, rodízios, sapatas) |
+
+- Na ficha da empresa (CRM → Empresas), o seletor "Segmento" corrige a classificação; a escolha do Áxel (`icp_manual`) vale sobre a IA nas próximas qualificações.
+- Segmentos com perfil de produto (metalização, fita de borda e gráfica → verniz, 3D → resina) passam esse perfil ao prospect.
+- Clientes e ex-clientes da base que compram verniz para metalização ou resina 3D já entram com o segmento; os demais são qualificados pelo site.
+- Duplicatas: `empresas.nome_chave` (nome sem acento nem pontuação) evita que um cliente da base volte como prospect de feira.
+- Regras do prompt vindas das correções do Áxel: tacos de salto, núcleos estruturais e painéis acrílicos = plástico técnico (fora); impressão digital UV é tinta, não verniz; o setor informado pela feira vale como evidência; sem site, nome com alumínio/aço/metal/madeira/vidro já indica segmento fora.
+- Dados do CNPJ: a ação `dados_cnpj` da prospecção completa CNAE principal e secundários, situação cadastral, cidade, UF e porte (cadastro público via BrasilAPI). Empresa com CNPJ baixado, inapto, suspenso ou nulo não recebe rascunho.
+- Busca de feiras: tarefa agendada no app (dias 1 e 15 de cada mês) procura feiras novas e listas de expositores, e atualiza a tabela `feiras`; a importação continua no botão "Ler lista".
 
 **E-mail do site:** com domínio próprio, só entram e-mails do domínio da empresa (Gmail e afins no site costumam ser de representantes), e a qualificação também lê a página de contato.
 
