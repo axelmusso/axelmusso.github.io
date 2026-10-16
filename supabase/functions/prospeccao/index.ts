@@ -1,7 +1,7 @@
 // Prospecção (Fase 6, parte A): descobrir empresas numa página pública, qualificar com nota e motivo, escrever o e-mail.
 // Nada sai daqui para o mundo: os e-mails nascem como rascunho e esperam aprovação humana.
 //   { acao: 'descobrir_url', url, feira_id? } → lista de expositores/associados vira empresas novas (sem duplicar); com feira_id, marca a origem e a leitura da feira
-//   { acao: 'qualificar', empresa_id }   → lê o site público, dá a nota de 0 a 100 com motivo e acha o gancho
+//   { acao: 'qualificar', empresa_id }   → lê o site público, classifica no segmento (a nota vem dele, em config.icp.segmentos) e acha o gancho
 //   { acao: 'redigir', empresa_id }      → escreve o 1º e-mail (prospecção ou retomada de ex-cliente) como rascunho
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
@@ -10,6 +10,9 @@ import { melhorContato } from '../_shared/contatos.ts';
 import { dominioDe, ErroWeb, jsonDe, lerPagina, type Pagina } from '../_shared/web.ts';
 
 const q = encodeURIComponent;
+
+// Igual à coluna gerada empresas.nome_chave (sem acento, sem pontuação, minúsculo).
+const nomeChave = (nome: string) => nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
 
@@ -29,8 +32,9 @@ async function descobrirUrl(url: string, feiraId?: string) {
     const dominio = dominioDe(e.site);
     if ((dominio && ignorar.has(dominio)) || /corqu[ií]mica/i.test(e.nome)) { repetidas++; continue; }
     const uf = (e.uf ?? '').trim().toUpperCase();
-    // Já cadastrada (pelo domínio ou pelo nome): não duplica, e cliente ou ex-cliente não vira prospect.
-    const filtro = dominio ? `or=(dominio.eq.${q(dominio)},nome.ilike.${q('"' + e.nome.trim().replace(/"/g, '') + '"')})` : 'nome=ilike.' + q(e.nome.trim());
+    // Já cadastrada (pelo domínio ou pelo nome sem acento e pontuação): não duplica, e cliente ou ex-cliente não vira prospect.
+    const chave = nomeChave(e.nome);
+    const filtro = dominio ? `or=(dominio.eq.${q(dominio)},nome_chave.eq.${q(chave)})` : 'nome_chave=eq.' + q(chave);
     const ja = await banco(`/rest/v1/empresas?select=id&${filtro}&limit=1`);
     if (ja.length) { repetidas++; continue; }
     if (dominio && (await banco(`/rest/v1/lista_supressao?select=id&dominio=ilike.${q(dominio)}&limit=1`)).length) { repetidas++; continue; } // não contatar
@@ -49,7 +53,8 @@ async function descobrirUrl(url: string, feiraId?: string) {
 }
 
 // ---------- qualificar: nota de 0 a 100, motivo e gancho ----------
-type Qualif = { criterios: Record<string, number>; motivo: string; segmento: string; gancho: string; gancho_fonte: string; perfil?: string; perfil_evidencia?: string; fora_do_escopo?: string; cidade: string; uf: string };
+type Qualif = { segmento: string; evidencia: string; motivo: string; gancho: string; gancho_fonte: string; perfil?: string; perfil_evidencia?: string; cidade: string; uf: string };
+type Segmento = { id: string; nome: string; nota: number; grupo: string; perfil?: string };
 async function qualificar(id: string) {
   const [e] = await banco('/rest/v1/empresas?select=*&id=eq.' + q(id));
   if (!e) throw new Error('Empresa não encontrada.');
@@ -67,21 +72,24 @@ async function qualificar(id: string) {
       for (const l of contato ? [...internas, contato] : internas) { try { paginas.push(await lerPagina(l, 8_000)); } catch { /* página interna opcional */ } }
     } catch (err) { avisos.push((err as Error).message); }
   }
+  const segmentos = (icp.segmentos ?? []) as Segmento[];
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'prospeccao_qualificar', nivel: 'barato', manual: true, maxTokens: 2500,
-    instrucoes: `Você qualifica empresas para a prospecção da Corquímica. Responda só com JSON.\n${SOBRE_A_CORQUIMICA}\nCritérios e pontos máximos:\n${JSON.stringify(icp.criterios)}\nDê para cada critério um número entre 0 e o máximo, só com base no que está no texto. Sem evidência, 0.\nESCOPO (o cliente trabalha com PLÁSTICO): ${icp.escopo ?? ''}\nFORA DO ESCOPO: ${(icp.fora_do_escopo ?? []).join('; ')}.`,
+    instrucoes: `Você classifica empresas para a prospecção da Corquímica. Responda só com JSON.\n${SOBRE_A_CORQUIMICA}\nA nota vem do SEGMENTO: escolha o segmento que descreve o que a empresa FABRICA, pelo texto do site e pelo setor informado.\nSEGMENTOS (id: descrição):\n${segmentos.map((g) => `${g.id}: ${g.nome}`).join('\n')}\n` +
+      'Exemplos dados pelo dono: fita de borda melamínica ou de PVC (CPI Tegus, Plastibordo) = fita_borda; enfeites, correntes e argolas metálicas para calçados e bolsas (Nil Arte) = enfeites_bijuterias; ' +
+      'vidros para móveis (Danglass, Vidrotech) = vidro; fábrica ou loja de móveis = madeira_moveis ou loja_revenda; metalizadora = metalizacao. ' +
+      'puxadores_acessorios só para PUXADORES, maçanetas e peças decorativas de plástico ou zamac com acabamento visível (cromado, pintado, envernizado); "acessórios" ou "componentes" para móveis sem prova de que são peças de plástico ou zamac com acabamento = sem_informacao; sapatas, pés, rodízios e buchas de plástico = injecao_plastica; atuadores, automação, motores = maquinas_servicos; corrediças, dobradiças e ferragens de aço = ferragens_metalurgia. ' +
+      'Feira de calçados/moda: saltos, solados, tacos e enfeites injetados são saltos_solados ou enfeites_bijuterias. Sem texto suficiente para decidir, use sem_informacao.',
     contexto: `EMPRESA: ${JSON.stringify({ nome: e.nome, site: e.site, cidade: e.cidade, uf: e.uf, setor: e.setor, origem: e.origem, relacao: e.relacao })}
 ${avisos.length ? 'AVISO: ' + avisos.join('; ') + '\n' : ''}${paginas.length ? paginas.map((p) => `--- ${p.url}\n${p.texto}`).join('\n') : '(sem site para ler)'}
 
-Devolva {"criterios":{"setor":0,"processo":0,"regiao":0,"porte":0,"momento":0},"motivo":"2 a 3 frases dizendo por que deu a nota, citando o que viu","segmento":"um dos segmentos alvo ou outro","gancho":"um fato verdadeiro e específico desta empresa visto no texto, útil para abrir um e-mail; vazio se não houver","gancho_fonte":"URL onde viu o gancho","perfil":"verniz | metalizacao | resina3d | geral","perfil_evidencia":"frase do texto que prova o uso; vazio se geral","fora_do_escopo":"motivo curto se a empresa está fora do escopo; vazio se está dentro","cidade":"","uf":""}
-Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanoplastia em peças plásticas; "verniz" só se mostrar que a empresa aplica verniz, laca ou pintura em peças plásticas na própria produção; "resina3d" só se mostrar impressão 3D com resina; sem prova clara, "geral".
-Fora do escopo: preencha "fora_do_escopo" só quando o texto MOSTRAR que a empresa trabalha com outro material ou atividade (ex.: ferragens e peças de metal, madeira e MDF, papel e papelão, tecidos e aviamentos têxteis, loja ou revenda ao consumidor, concorrente químico, máquinas ou serviços). Sem informação suficiente, deixe vazio. Em calçados e moda, saltos, solados, enfeites injetados e metalização são, por padrão, de plástico ou polímero (ABS, PS, PVC, TPU, PU): conte como dentro do escopo.`,
+Devolva {"segmento":"id da lista","evidencia":"frase curta do texto que mostra o que a empresa fabrica","motivo":"1 a 2 frases sobre a escolha","gancho":"um fato verdadeiro e específico desta empresa visto no texto, útil para abrir um e-mail; vazio se não houver","gancho_fonte":"URL onde viu o gancho","perfil":"verniz | metalizacao | resina3d | geral","perfil_evidencia":"frase do texto que prova o uso; vazio se geral","cidade":"","uf":""}
+Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanoplastia; "verniz" só se mostrar que a empresa aplica verniz, laca ou pintura na própria produção; "resina3d" só se mostrar impressão 3D com resina; sem prova clara, "geral".`,
   });
   const v = jsonDe<Qualif>(r.texto);
-  const maximos = Object.fromEntries((icp.criterios as { id: string; pontos: number }[]).map((c) => [c.id, c.pontos]));
-  const crit = Object.fromEntries(Object.keys(maximos).map((k) => [k, Math.max(0, Math.min(maximos[k], Math.round(Number(v.criterios?.[k]) || 0)))]));
-  const fora = v.fora_do_escopo?.trim() ?? '';
-  const nota = fora ? 0 : Object.values(crit).reduce((s, n) => s + n, 0); // fora do escopo: nota 0, não contata
+  // Correção manual do Áxel vale sobre a IA; segmento fora da lista vira "sem informação".
+  const seg = e.icp_manual && e.segmento_icp ? e.segmento_icp : segmentos.some((g) => g.id === v.segmento) ? v.segmento : 'sem_informacao';
+  const nomeSeg = segmentos.find((g) => g.id === seg)?.nome ?? seg;
   const uf = (v.uf || '').toUpperCase();
   // Domínio só é gravado se nenhuma outra empresa já usa (o domínio é único no cadastro).
   let dominio = e.dominio;
@@ -90,10 +98,12 @@ Fora do escopo: preencha "fora_do_escopo" só quando o texto MOSTRAR que a empre
   await banco('/rest/v1/empresas?id=eq.' + q(id), {
     metodo: 'PATCH',
     corpo: {
-      icp_score: nota, icp_criterios: crit, icp_motivo: (fora ? 'Fora do escopo: ' + fora + ' | ' : '') + (v.motivo || '').slice(0, 1000) + (avisos.length ? ` (${avisos.join('; ')})` : ''),
-      setor: e.setor || v.segmento || null, gancho: v.gancho?.trim() || null, gancho_fonte: v.gancho_fonte || null,
+      // A nota sai do segmento (gatilho no banco, tabela em config.icp.segmentos).
+      segmento_icp: seg, icp_criterios: null,
+      icp_motivo: `${nomeSeg}${e.icp_manual ? ' (definido pelo Áxel)' : ''}: ${(v.evidencia || v.motivo || '').slice(0, 600)}` + (avisos.length ? ` (${avisos.join('; ')})` : ''),
+      setor: e.setor || nomeSeg, gancho: v.gancho?.trim() || null, gancho_fonte: v.gancho_fonte || null,
       sem_gancho: !v.gancho?.trim(), qualificado_em: new Date().toISOString(),
-      // Perfil de produto: o da base de clientes (grupo de cadastro) vale mais que o site.
+      // Perfil pelo site (o da base de clientes vale mais); o gatilho do segmento pode impor o dele (fita de borda → verniz).
       ...(e.origem === 'base_clientes' ? {} : { perfil_produto: ['verniz', 'metalizacao', 'resina3d'].includes(v.perfil ?? '') && v.perfil_evidencia?.trim() ? v.perfil : 'geral', perfil_fonte: v.perfil_evidencia?.trim() ? 'site: ' + v.perfil_evidencia.trim().slice(0, 300) : 'sem evidência no site' }),
       cidade: e.cidade || v.cidade || null, uf: e.uf || (/^[A-Z]{2}$/.test(uf) ? uf : null), dominio,
     },
@@ -110,7 +120,8 @@ Fora do escopo: preencha "fora_do_escopo" só quando o texto MOSTRAR que a empre
     await banco('/rest/v1/contatos', { metodo: 'POST', corpo: { empresa_id: id, email: m, origem: 'site', fonte_url: url, coletado_em: new Date().toISOString(), base_legal: 'Legítimo interesse (contato profissional público)', pode_contatar: true } });
     contatos++;
   }
-  return { nota, criterios: crit, motivo: v.motivo, fora_do_escopo: fora || null, gancho: v.gancho || null, contatos, custo: r.custoUsd };
+  const [atual] = await banco('/rest/v1/empresas?select=icp_score&id=eq.' + q(id));
+  return { nota: atual?.icp_score ?? null, segmento: nomeSeg, motivo: v.evidencia || v.motivo, gancho: v.gancho || null, contatos, custo: r.custoUsd };
 }
 
 // ---------- redigir: 1º e-mail (prospecção) ou 1º da retomada (ex-cliente), como rascunho ----------

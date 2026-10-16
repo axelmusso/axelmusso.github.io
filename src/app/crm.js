@@ -44,6 +44,13 @@
   }
   var inserir = function (tabela, corpo) { return api('/rest/v1/' + tabela, { metodo: 'POST', corpo: corpo, retorno: true }); };
   var alterar = function (tabela, id, corpo) { return api('/rest/v1/' + tabela + '?id=eq.' + q(id), { metodo: 'PATCH', corpo: corpo, retorno: true }); };
+  // Segmentos do ICP (config.icp.segmentos): a nota da empresa vem do segmento, calculada no banco.
+  var cacheSegmentos = null;
+  function segmentos() {
+    if (!cacheSegmentos) cacheSegmentos = api('/rest/v1/config?select=valor&chave=eq.icp').then(function (r) { return (r[0] && r[0].valor.segmentos) || []; });
+    return cacheSegmentos;
+  }
+  var GRUPO_SEG = { alvo: 'alvo principal', bom: 'alvo bom', medio: 'médio', verificar: 'verificar', fora: 'fora do escopo' };
   var apagar = function (tabela, id) { return api('/rest/v1/' + tabela + '?id=eq.' + q(id), { metodo: 'DELETE' }); };
 
   // ---------- navegação ----------
@@ -89,13 +96,14 @@
   // ---------- empresas ----------
   var filtro = { busca: '', status: '', setor: '', uf: '' };
   function empresas() {
-    var url = '/rest/v1/empresas?select=id,nome,dominio,setor,cidade,uf,status,icp_score&order=atualizado_em.desc&limit=300';
+    var url = '/rest/v1/empresas?select=id,nome,dominio,setor,cidade,uf,status,icp_score,segmento_icp,icp_manual&order=atualizado_em.desc&limit=300';
     var b = filtro.busca.replace(/[,()*%\\]/g, ' ').trim();
     if (b) url += '&or=' + q('(nome.ilike.*' + b + '*,dominio.ilike.*' + b + '*,cidade.ilike.*' + b + '*,cnpj.ilike.*' + b + '*)');
     if (filtro.status) url += '&status=eq.' + q(filtro.status);
     if (filtro.setor) url += '&setor=ilike.' + q('*' + filtro.setor.replace(/[*%,()]/g, '') + '*');
     if (filtro.uf) url += '&uf=eq.' + q(filtro.uf.toUpperCase());
-    return api(url).then(function (lista) {
+    return Promise.all([api(url), segmentos()]).then(function (r) {
+      var lista = r[0], nomeSeg = Object.fromEntries(r[1].map(function (g) { return [g.id, g.nome]; }));
       tela.innerHTML = '<div class="cab"><h1>Empresas</h1>' + (podeEscrever() ? '<button type="button" class="prim" id="nova-empresa">Nova empresa</button>' : '') + '</div>' +
         (podeEscrever() ? formEmpresa() : '') +
         '<form class="filtros" id="filtros">' +
@@ -105,10 +113,10 @@
         '<input name="uf" placeholder="UF" maxlength="2" value="' + esc(filtro.uf) + '" aria-label="UF" class="curto">' +
         '<button type="submit">Filtrar</button></form>' +
         '<p class="mut">' + lista.length + (lista.length === 300 ? '+ (mostrando as 300 mais recentes)' : '') + ' empresa(s)</p>' +
-        '<table class="tab"><thead><tr><th>Nome</th><th>Setor</th><th>Cidade</th><th>Status</th><th class="num">ICP</th></tr></thead><tbody>' +
+        '<table class="tab"><thead><tr><th>Nome</th><th>Setor</th><th>Cidade</th><th>Status</th><th>Segmento</th><th class="num">ICP</th></tr></thead><tbody>' +
         (lista.map(function (e) {
-          return '<tr><td><a href="#empresa/' + esc(e.id) + '">' + esc(e.nome) + '</a>' + (e.dominio ? '<br><small class="mut">' + esc(e.dominio) + '</small>' : '') + '</td><td>' + esc(e.setor) + '</td><td>' + esc([e.cidade, e.uf].filter(Boolean).join('/')) + '</td><td>' + esc(e.status) + '</td><td class="num">' + esc(e.icp_score) + '</td></tr>';
-        }).join('') || '<tr><td colspan="5" class="mut">Nenhuma empresa.</td></tr>') + '</tbody></table>';
+          return '<tr><td><a href="#empresa/' + esc(e.id) + '">' + esc(e.nome) + '</a>' + (e.dominio ? '<br><small class="mut">' + esc(e.dominio) + '</small>' : '') + '</td><td>' + esc(e.setor) + '</td><td>' + esc([e.cidade, e.uf].filter(Boolean).join('/')) + '</td><td>' + esc(e.status) + '</td><td>' + esc(nomeSeg[e.segmento_icp] || '') + (e.icp_manual ? ' <small class="mut">(você)</small>' : '') + '</td><td class="num">' + esc(e.icp_score) + '</td></tr>';
+        }).join('') || '<tr><td colspan="6" class="mut">Nenhuma empresa.</td></tr>') + '</tbody></table>';
       document.getElementById('filtros').addEventListener('submit', function (ev) { ev.preventDefault(); filtro = dados(ev.target); rota(); });
       if (!podeEscrever()) return;
       var f = document.getElementById('form-empresa');
@@ -132,7 +140,7 @@
       campo('nome', 'Nome *', ' required maxlength="200"') + campo('site', 'Site') + campo('setor', 'Setor') +
       campo('porte', 'Porte') + campo('cidade', 'Cidade') + campo('uf', 'UF', ' maxlength="2"') + campo('cnpj', 'CNPJ') + campo('telefone', 'Telefone') +
       (e.id ? '<label>Status<select name="status">' + opcoes([['prospect', 'Prospect'], ['cliente', 'Cliente'], ['descartada', 'Descartada']], e.status) + '</select></label>' +
-        campo('icp_score', 'ICP (0–100)', ' type="number" min="0" max="100"')
+        ''
         : '<label class="chk"><input type="checkbox" name="criar_negocio" checked> Já criar negócio no funil (etapa Novo)</label>') +
       '<button type="submit" class="prim">' + (e.id ? 'Salvar dados' : 'Cadastrar') + '</button></form>';
   }
@@ -146,15 +154,16 @@
       api('/rest/v1/contatos?select=*' + f + '&order=nome'),
       api('/rest/v1/negocios?select=*' + f),
       api('/rest/v1/interacoes?select=*,contatos(nome)' + f + '&order=ocorrido_em.desc&limit=200'),
+      segmentos(),
     ]).then(function (r) {
-      var e = r[0][0], contatos = r[1], negocios = r[2], linha = r[3];
+      var e = r[0][0], contatos = r[1], negocios = r[2], linha = r[3], segs = r[4];
       if (!e) { tela.innerHTML = '<h1>Empresa não encontrada</h1><p><a href="#empresas">Voltar</a></p>'; return; }
       var ids = negocios.map(function (n) { return n.id; });
       return (ids.length ? api('/rest/v1/tarefas?select=*&order=concluida,vence_em&negocio_id=in.(' + ids.map(q).join(',') + ')') : Promise.resolve([]))
-        .then(function (tars) { desenharFicha(e, contatos, negocios, linha, tars); });
+        .then(function (tars) { desenharFicha(e, contatos, negocios, linha, tars, segs); });
     });
   }
-  function desenharFicha(e, contatos, negocios, linha, tars) {
+  function desenharFicha(e, contatos, negocios, linha, tars, segs) {
     var w = podeEscrever();
     var nomeNeg = Object.fromEntries(negocios.map(function (n) { return [n.id, n.titulo]; }));
     var agoraLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -162,6 +171,11 @@
       '<p><a href="#empresas">← Empresas</a></p>' +
       '<div class="cab"><h1>' + esc(e.nome) + '</h1>' + (e.site ? '<a href="' + esc(/^https?:/.test(e.site) ? e.site : 'https://' + e.site) + '" target="_blank" rel="noopener noreferrer">' + esc(e.dominio || e.site) + '</a>' : '') + '</div>' +
       '<p class="mut">' + esc([e.setor, e.porte, [e.cidade, e.uf].filter(Boolean).join('/'), e.cnpj && 'CNPJ ' + e.cnpj, e.telefone, e.origem && 'origem: ' + e.origem].filter(Boolean).join(' · ')) + '</p>' +
+      // ICP: nota vem do segmento; o Áxel corrige o segmento e a IA não troca mais.
+      '<p><b>ICP ' + esc(e.icp_score == null ? '—' : e.icp_score) + '</b>' + (e.icp_motivo ? ' · <span class="mut">' + esc(e.icp_motivo) + '</span>' : '') + '</p>' +
+      (w ? '<p><label>Segmento <select id="segmento-icp"><option value="">— escolher —</option>' +
+        segs.map(function (g) { return '<option value="' + esc(g.id) + '"' + (g.id === e.segmento_icp ? ' selected' : '') + '>' + esc(g.nome + ' · ' + (GRUPO_SEG[g.grupo] || g.grupo) + ' · ' + g.nota) + '</option>'; }).join('') +
+        '</select></label>' + (e.icp_manual ? ' <small class="mut">definido por você</small>' : '') + '</p>' : '') +
       '<div class="colunas"><div>' +
       // negócios
       '<h2>Negócios</h2>' + (negocios.map(function (n) {
@@ -222,6 +236,11 @@
     // Hora não mexida = agora (com segundos), para a ordem da linha do tempo ficar certa.
     enviar('form-interacao', function (d) { d.empresa_id = e.id; d.ocorrido_em = !d.ocorrido_em || d.ocorrido_em === agoraLocal ? new Date().toISOString() : new Date(d.ocorrido_em).toISOString(); return inserir('interacoes', d); }, recarregar);
     enviar('form-empresa', function (d) { d.dominio = dominioDe(d.site); if (d.uf) d.uf = d.uf.toUpperCase(); return alterar('empresas', e.id, d); }, recarregar);
+    var sg = document.getElementById('segmento-icp');
+    if (sg) sg.addEventListener('change', function () {
+      if (!sg.value) return;
+      alterar('empresas', e.id, { segmento_icp: sg.value, icp_manual: true }).then(recarregar).catch(erro);
+    });
     var ap = document.getElementById('apagar-empresa');
     if (ap) ap.addEventListener('click', function () {
       if (!confirm('Excluir "' + e.nome + '" com contatos, negócios, tarefas e linha do tempo? Não tem volta.')) return;
