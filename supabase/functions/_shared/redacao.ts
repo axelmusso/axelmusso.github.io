@@ -28,10 +28,29 @@ const FORA_DO_PERFIL: Record<string, RegExp> = {
 const DUVIDA = /\bse (a |o )?(linha|produção|fábrica|operação|voc[êe]s|empresa)\b[^.?!]{0,40}\b(ainda|segue|seguem|continua|continuam|usa|usam|trabalha|trabalham|imprime|imprimem|aplica|aplicam)\b/i;
 const PROBLEMA = /n[ãa]o (tenha|tenham|tiver) atendido|problema|defeito|falha|reclama|insatisf|algo a (ajustar|corrigir|melhorar)|ajustar o que|precis\w* (de )?(ajuste|corre[çc])|corrigir|feito diferente/i;
 
-// Caixa genérica (contato@, faleconosco@, sac@...): quem lê costuma ser recepção ou atendimento, não quem decide.
-// compras@, producao@, diretoria@ e e-mails de pessoas NÃO são genéricos.
-export const emailGenerico = (email: string) =>
-  /^(contato|contatos|faleconosco|fale|atendimento|sac|info|informacoes|comercial|vendas|recepcao|adm|administrativo|administracao|financeiro|rh|marketing|geral|suporte|ouvidoria|orcamento|orcamentos|empresa|site|ola|oi|mail|email)([._-]?\d*)?@/i.test(String(email || '').trim());
+// Tipo do endereço, que decide a ordem de tentativa e como o e-mail termina:
+//   decisor  → compras@, producao@, diretoria@... (área de quem decide): primeiro
+//   pessoa   → joao@, maria.silva@: em seguida
+//   generico → contato@, faleconosco@, sac@... (recepção ou atendimento): pede o contato do responsável
+//   fiscal   → nfe@, xml@, financeiro@... (nota fiscal e cobrança; muitas vezes ninguém lê): por último, pedindo para encaminhar
+//   bloqueado → noreply@ e afins: nunca recebe
+const FIM_LOCAL = '([._-]?\\d*)?@';
+const FIM_PREFIXO = '(\\d*|[._-][\\w.-]*)@'; // nfe.recebimento@, noreply-loja@ (mas não nfelipe@)
+const BLOQUEADO = new RegExp('^(no-?reply|nao-?responda|nao-?responder|naoresponda|donotreply|do-?not-?reply|mailer-daemon|postmaster|bounce\\w*)' + FIM_PREFIXO, 'i');
+const FISCAL = new RegExp('^(nfe?s?|nf-?e|nota|notas|notafiscal|notasfiscais|xml|xmls|danfe|fiscal|faturamento|fatura|financeiro|financas|cobranca|contas|contasapagar|contasareceber|contabil|contabilidade|boleto|boletos|pagamentos?)' + FIM_PREFIXO, 'i');
+const GENERICO = new RegExp('^(contato|contatos|faleconosco|fale|atendimento|sac|info|informacoes|comercial|vendas|recepcao|adm|administrativo|administracao|rh|marketing|geral|suporte|ouvidoria|orcamento|orcamentos|empresa|site|ola|oi|mail|email|pedidos?|expedicao|logistica)' + FIM_LOCAL, 'i');
+const DECISOR = new RegExp('^(compras?|suprimentos|producao|fabrica|industrial|engenharia|qualidade|diretoria|diretor|gerencia|gerente|proprietario|socios?|pcp)' + FIM_LOCAL, 'i');
+export type TipoEmail = 'decisor' | 'pessoa' | 'generico' | 'fiscal' | 'bloqueado';
+export function tipoEmail(email: string): TipoEmail {
+  const e = String(email || '').trim();
+  if (BLOQUEADO.test(e)) return 'bloqueado';
+  if (FISCAL.test(e)) return 'fiscal';
+  if (GENERICO.test(e)) return 'generico';
+  if (DECISOR.test(e)) return 'decisor';
+  return 'pessoa';
+}
+// Caixa genérica ou fiscal: quem lê não decide. compras@, producao@, diretoria@ e e-mails de pessoas NÃO são genéricos.
+export const emailGenerico = (email: string) => ['generico', 'fiscal'].includes(tipoEmail(email));
 
 const PROIBIDO = /espero que (esteja|estejam|você esteja) bem|tudo bem\?|venho por meio|gostaria de apresentar|soluç(ão|ões) inovador|líder (de|no) mercado|qualidade incompar|excelência/i;
 export type Rascunho = { sem_gancho?: boolean; motivo?: string; assunto: string; corpo: string; angulo: string };
@@ -151,12 +170,13 @@ Uma resposta curta escrita por uma pessoa ("recebi", "obrigado", "pode mandar") 
 Extraia também:
 - "telefone_decisor": se a resposta (inclusive a assinatura) traz o telefone de quem DECIDE a compra — o próprio remetente, se pelo cargo ou pelo texto ele cuida de compras, produção ou é dono/diretor/gerente; ou uma pessoa indicada com esse papel. Telefone de recepção, atendimento ou caixa geral NÃO conta. Formato {"nome":"","cargo":"","telefone":""}; null se não houver.
 - "indicado": se quem respondeu aponta OUTRA pessoa como responsável (nome, cargo, e-mail e/ou telefone). Formato {"nome":"","cargo":"","email":"","telefone":""}; null se não houver.
+- "caixa_sem_leitura": true se a resposta diz que este endereço não é lido, não é monitorado, não recebe mensagens ou serve só para nota fiscal/cobrança (ex.: "este e-mail é exclusivo para envio de NF", "caixa não monitorada", "não responda"); senão false. Aviso de férias ou ausência temporária NÃO conta.
 Não invente dados: só o que está escrito.
 
 Rascunho (escrito pelo Fernando, que é quem conversa com o cliente: nunca cite o Áxel nem outra pessoa da Corquímica; só para interessado, pergunta e nao_agora, e só se NÃO houver telefone_decisor — com o telefone em mãos, quem conversa é o Áxel): curto, confiante (sem insinuar problema), com acentuação correta, responde o que foi perguntado sem inventar dado técnico (se não souber, diga que confirma por telefone). Só peça o telefone se o último e-mail que enviamos ainda não pediu; sem insistir. Se quem respondeu é recepção/caixa geral, peça o contato de quem cuida de compras ou produção, não o celular de quem respondeu. Sem despedida nem assinatura (a assinatura completa é colocada depois). Para nao, descadastro e automatica, rascunho vazio.
-Devolva {"classificacao":"","rascunho":"","motivo":"uma frase","telefone_decisor":null,"indicado":null}`,
+Devolva {"classificacao":"","rascunho":"","motivo":"uma frase","telefone_decisor":null,"indicado":null,"caixa_sem_leitura":false}`,
   });
-  const v = jsonDe<{ classificacao: string; rascunho: string; motivo: string; telefone_decisor?: Pessoa | null; indicado?: Pessoa | null }>(r.texto);
+  const v = jsonDe<{ classificacao: string; rascunho: string; motivo: string; telefone_decisor?: Pessoa | null; indicado?: Pessoa | null; caixa_sem_leitura?: boolean }>(r.texto);
   const validas = ['interessado', 'pergunta', 'nao_agora', 'nao', 'descadastro', 'automatica'];
   const limpo = (x?: Pessoa | null) => (x && (x.telefone?.trim() || x.email?.trim() || x.nome?.trim()) ? { nome: x.nome?.trim() || undefined, cargo: x.cargo?.trim() || undefined, email: x.email?.trim().toLowerCase() || undefined, telefone: x.telefone?.trim() || undefined } : null);
   const telefone = limpo(v.telefone_decisor);
@@ -166,5 +186,6 @@ Devolva {"classificacao":"","rascunho":"","motivo":"uma frase","telefone_decisor
     motivo: v.motivo ?? '', custo: r.custoUsd,
     telefone_decisor: telefone?.telefone ? telefone : null,
     indicado: limpo(v.indicado),
+    caixa_sem_leitura: v.caixa_sem_leitura === true,
   };
 }

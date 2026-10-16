@@ -94,12 +94,14 @@ export async function lerRecebido(id: string) {
 
 export const enderecoDe = (s: string) => (String(s).match(/<([^>]+)>/)?.[1] ?? String(s)).trim().toLowerCase();
 
-// Próximo passo da cadência depois de enviar o passo "passo". 1→+3 dias úteis; 2→dia 7; 3→dia 14; 4 e retomadas→+60 dias.
+// Próximo passo da cadência depois de enviar o passo "passo". 1→+3 dias úteis; 2→dia 7; 3→dia 14;
+// 4→+5 dias úteis para responder e então troca de e-mail (ou retomada); retomadas→+60 dias.
 export function proximoEm(passo: number, iniciada: Date) {
   const agora = new Date();
   const no = (dias: number) => { const d = new Date(iniciada.getTime() + dias * 864e5); return d > agora ? d : somarDiasUteis(agora, 1); };
   if (passo === 1) return somarDiasUteis(agora, 3);
   if (passo === 2) return no(7);
   if (passo === 3) return no(14);
+  if (passo === 4) return somarDiasUteis(agora, 5);
   return new Date(agora.getTime() + 60 * 864e5);
 }

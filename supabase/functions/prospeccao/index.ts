@@ -6,17 +6,12 @@
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { redigirEmail, SOBRE_A_CORQUIMICA } from '../_shared/redacao.ts';
+import { melhorContato } from '../_shared/contatos.ts';
 import { dominioDe, ErroWeb, jsonDe, lerPagina, type Pagina } from '../_shared/web.ts';
 
 const q = encodeURIComponent;
 
 const GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
-
-async function suprimido(email: string) {
-  const dom = email.split('@')[1]?.toLowerCase() ?? '';
-  const r = await banco(`/rest/v1/lista_supressao?select=id&or=(email.ilike.${q(email)},and(email.is.null,dominio.ilike.${q(dom)}))&limit=1`);
-  return r.length > 0;
-}
 
 // ---------- descobrir: página pública com lista de empresas ----------
 async function descobrirUrl(url: string) {
@@ -127,11 +122,10 @@ async function redigir(id: string, quem: string) {
   if (pend.length) throw new Error('Já existe um rascunho esperando aprovação para esta empresa.');
   const ativa = await banco(`/rest/v1/cadencias?select=id&empresa_id=eq.${q(id)}&status=in.(ativa,pausada)&limit=1`);
   if (ativa.length) throw new Error('Esta empresa já está numa cadência; os próximos e-mails saem por ela.');
-  // Contato com e-mail, liberado e fora da lista de supressão.
-  const contatos = await banco(`/rest/v1/contatos?select=id,nome,cargo,email&empresa_id=eq.${q(id)}&pode_contatar=is.true&email=not.is.null`);
-  let contato = null;
-  for (const c of contatos) if (!(await suprimido(c.email))) { contato = c; break; }
-  if (!contato) throw new Error('Nenhum e-mail liberado para esta empresa (sem contato ou todos na lista de não contatar).');
+  // Melhor e-mail ainda não tentado (área de decisão antes de caixa geral; nota fiscal por último).
+  // Sem e-mail, ou só com caixa fiscal: procura outros no site e no CNPJ antes.
+  const contato = await melhorContato(e);
+  if (!contato) throw new Error('Nenhum e-mail liberado para esta empresa (procurei no site e no CNPJ; os que existem já foram tentados ou estão na lista de não contatar).');
 
   const r = await redigirEmail({ empresa: e, contato, passo: 1, tipo: retomada ? 'retomada' : 'prospeccao', manual: true });
   if (r.sem_gancho) {

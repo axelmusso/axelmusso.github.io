@@ -104,6 +104,12 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Segredos no Supabase: `RESEND_API_KEY` (acesso completo, para ler as respostas recebidas) e `RESEND_WEBHOOK_SECRET`.
 - Testado de ponta a ponta em 15/10/2026 com um endereço interno (dados de teste apagados).
 
+**Parte E (outros contatos):** a empresa, prospect ou ex-cliente, só sai da tentativa quando alguém responde ou acabam os e-mails dela.
+- Ordem de tentativa (`tipoEmail` em `_shared/redacao.ts`): área de decisão (compras@, producao@, diretoria@...) → pessoas → caixas gerais (contato@...) → nota fiscal e financeiro (nfe@, xml@, financeiro@...). noreply@ e afins nunca recebem. Caixa geral ou fiscal recebe o pedido de encaminhar para quem cuida de compras ou produção.
+- Depois do 4º e-mail sem resposta (+5 dias úteis), a cadência passa para o próximo e-mail ainda não tentado e recomeça do 1º e-mail. Bounce e resposta automática de "caixa não monitorada / só NF" trocam na hora.
+- Sem e-mail novo, `_shared/contatos.ts` procura no site da empresa (pelo domínio do e-mail que já temos, respeitando o robots.txt) e no cadastro público do CNPJ (BrasilAPI), no máximo a cada 30 dias; cada contato achado guarda fonte e data. E-mail do CNPJ com cara de escritório de contabilidade é ignorado.
+- Acabaram os e-mails: segue para as retomadas de 60 dias, como antes.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.
