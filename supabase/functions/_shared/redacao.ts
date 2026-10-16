@@ -26,7 +26,7 @@ const FORA_DO_PERFIL: Record<string, RegExp> = {
 };
 // Dúvida sobre o que o cliente usa (perfil confirmado) e insinuação de problema: passam insegurança.
 const DUVIDA = /\bse (a |o )?(linha|produção|fábrica|operação|voc[êe]s|empresa)\b[^.?!]{0,40}\b(ainda|segue|seguem|continua|continuam|usa|usam|trabalha|trabalham|imprime|imprimem|aplica|aplicam)\b/i;
-const PROBLEMA = /n[ãa]o (tenha|tenham|tiver) atendido|problema|defeito|falha|reclama|insatisf|ajust|corrig|feito diferente/i;
+const PROBLEMA = /n[ãa]o (tenha|tenham|tiver) atendido|problema|defeito|falha|reclama|insatisf|algo a (ajustar|corrigir|melhorar)|ajustar o que|precis\w* (de )?(ajuste|corre[çc])|corrigir|feito diferente/i;
 
 // Caixa genérica (contato@, faleconosco@, sac@...): quem lê costuma ser recepção ou atendimento, não quem decide.
 // compras@, producao@, diretoria@ e e-mails de pessoas NÃO são genéricos.
