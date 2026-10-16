@@ -3,6 +3,7 @@
 //   { acao: 'descobrir_url', url, feira_id? } → lista de expositores/associados vira empresas novas (sem duplicar); com feira_id, marca a origem e a leitura da feira
 //   { acao: 'qualificar', empresa_id }   → lê o site público, classifica no segmento (a nota vem dele, em config.icp.segmentos) e acha o gancho
 //   { acao: 'redigir', empresa_id }      → escreve o 1º e-mail (prospecção ou retomada de ex-cliente) como rascunho
+//   { acao: 'dados_cnpj', empresa_id }   → completa CNAE, cidade, UF e porte pelo cadastro público do CNPJ (base do perfil de cliente)
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { redigirEmail, SOBRE_A_CORQUIMICA } from '../_shared/redacao.ts';
@@ -78,8 +79,12 @@ async function qualificar(id: string) {
     instrucoes: `Você classifica empresas para a prospecção da Corquímica. Responda só com JSON.\n${SOBRE_A_CORQUIMICA}\nA nota vem do SEGMENTO: escolha o segmento que descreve o que a empresa FABRICA, pelo texto do site e pelo setor informado.\nSEGMENTOS (id: descrição):\n${segmentos.map((g) => `${g.id}: ${g.nome}`).join('\n')}\n` +
       'Exemplos dados pelo dono: fita de borda melamínica ou de PVC (CPI Tegus, Plastibordo) = fita_borda; enfeites, correntes e argolas metálicas para calçados e bolsas (Nil Arte) = enfeites_bijuterias; ' +
       'vidros para móveis (Danglass, Vidrotech) = vidro; fábrica ou loja de móveis = madeira_moveis ou loja_revenda; metalizadora = metalizacao. ' +
-      'puxadores_acessorios só para PUXADORES, maçanetas e peças decorativas de plástico ou zamac com acabamento visível (cromado, pintado, envernizado); "acessórios" ou "componentes" para móveis sem prova de que são peças de plástico ou zamac com acabamento = sem_informacao; sapatas, pés, rodízios e buchas de plástico = injecao_plastica; atuadores, automação, motores = maquinas_servicos; corrediças, dobradiças e ferragens de aço = ferragens_metalurgia. ' +
-      'Feira de calçados/moda: saltos, solados, tacos e enfeites injetados são saltos_solados ou enfeites_bijuterias. Sem texto suficiente para decidir, use sem_informacao.',
+      'puxadores_acessorios só para PUXADORES, maçanetas e peças decorativas de plástico ou zamac com acabamento visível (cromado, pintado, envernizado); "acessórios" ou "componentes" para móveis sem prova de que são peças de plástico ou zamac com acabamento = sem_informacao; sapatas, pés, rodízios e buchas de plástico = plastico_tecnico; atuadores, automação, motores = maquinas_servicos; corrediças, dobradiças e ferragens de aço = ferragens_metalurgia. ' +
+      'O setor informado pela feira VALE como evidência mesmo sem site: "saltos e solados" = saltos_solados; "acessórios e enfeites" = enfeites_bijuterias; calçadista = calcados_fabricante; injetados para calçados = saltos_solados. TACOS (ponteiras de salto) = plastico_tecnico (o dono descartou a Goldtech). ' +
+      'plastico_tecnico também para núcleos e chapas estruturais (ex. C-Core), painéis e chapas de acrílico para móveis (ex. Al Componenti), perfis e peças ocultas. ' +
+      'Impressão digital UV é TINTA, não verniz: só conte grafica_uv ou plastico_acabamento se o texto mostrar verniz, laca, pintura, metalização ou hot stamping em peça plástica. ' +
+      'injecao_plastica só para quem injeta ou sopra peças plásticas VISÍVEIS (utilidades, brinquedos, tampas, peças de móveis à vista). ' +
+      'Sem site: nome com alumínio/alumi, aço, metal, madeira ou vidro já indica o segmento fora (ex. Alumiconte = ferragens_metalurgia). Sem texto suficiente para decidir, use sem_informacao.',
     contexto: `EMPRESA: ${JSON.stringify({ nome: e.nome, site: e.site, cidade: e.cidade, uf: e.uf, setor: e.setor, origem: e.origem, relacao: e.relacao })}
 ${avisos.length ? 'AVISO: ' + avisos.join('; ') + '\n' : ''}${paginas.length ? paginas.map((p) => `--- ${p.url}\n${p.texto}`).join('\n') : '(sem site para ler)'}
 
@@ -124,11 +129,34 @@ Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanopl
   return { nota: atual?.icp_score ?? null, segmento: nomeSeg, motivo: v.evidencia || v.motivo, gancho: v.gancho || null, contatos, custo: r.custoUsd };
 }
 
+// ---------- dados do CNPJ: CNAE, cidade, UF e porte (cadastro público da Receita, via BrasilAPI) ----------
+// Serve para conhecer o perfil dos clientes (quais CNAEs e cidades) e achar empresas parecidas. Não sobrescreve o que já foi preenchido.
+async function dadosCnpj(id: string) {
+  const [e] = await banco('/rest/v1/empresas?select=id,cnpj,cidade,uf,porte&id=eq.' + q(id));
+  if (!e) throw new Error('Empresa não encontrada.');
+  const cnpj = String(e.cnpj ?? '').replace(/\D/g, '');
+  if (cnpj.length !== 14) throw new Error('Empresa sem CNPJ válido.');
+  const fonte = 'https://brasilapi.com.br/api/cnpj/v1/' + cnpj;
+  const r = await fetch(fonte, { signal: AbortSignal.timeout(15_000) });
+  if (!r.ok) throw new Error(`Consulta do CNPJ respondeu ${r.status}.`);
+  const d = await r.json();
+  const fmt = (c: unknown) => String(c ?? '').padStart(7, '0').replace(/^(\d{4})(\d)(\d{2})$/, '$1-$2/$3');
+  const cnae = d.cnae_fiscal ? `${fmt(d.cnae_fiscal)} ${d.cnae_fiscal_descricao ?? ''}`.trim() : null;
+  const secundarios = (d.cnaes_secundarios ?? []).filter((c: { codigo: number }) => c.codigo).map((c: { codigo: number; descricao: string }) => `${fmt(c.codigo)} ${c.descricao ?? ''}`.trim());
+  const cidade = d.municipio ? String(d.municipio).toLowerCase().replace(/(^|\s)\S/g, (x: string) => x.toUpperCase()) : null;
+  await banco('/rest/v1/empresas?id=eq.' + q(id), {
+    metodo: 'PATCH',
+    corpo: { cnae, cnaes_secundarios: secundarios, situacao_cadastral: d.descricao_situacao_cadastral ?? null, cidade: e.cidade || cidade, uf: e.uf || d.uf || null, porte: e.porte || d.porte || null },
+  });
+  return { cnae, uf: e.uf || d.uf || null, situacao: d.descricao_situacao_cadastral ?? null };
+}
+
 // ---------- redigir: 1º e-mail (prospecção) ou 1º da retomada (ex-cliente), como rascunho ----------
 async function redigir(id: string, quem: string) {
   const [e] = await banco('/rest/v1/empresas?select=*&id=eq.' + q(id));
   if (!e) throw new Error('Empresa não encontrada.');
   if (e.relacao === 'cliente_ativo') throw new Error('Cliente ativo: não recebe e-mail de prospecção.');
+  if (['BAIXADA', 'INAPTA', 'SUSPENSA', 'NULA'].includes(e.situacao_cadastral)) throw new Error(`CNPJ ${e.situacao_cadastral.toLowerCase()} na Receita: empresa fechada, não contata.`);
   const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.icp');
   const retomada = e.relacao === 'ex_cliente';
   if (!retomada) {
@@ -169,6 +197,7 @@ Deno.serve(async (req) => {
   try {
     if (c.acao === 'descobrir_url') return json(req, 200, await descobrirUrl(String(c.url ?? ''), c.feira_id ? String(c.feira_id) : undefined));
     if (c.acao === 'qualificar') return json(req, 200, await qualificar(String(c.empresa_id ?? '')));
+    if (c.acao === 'dados_cnpj') return json(req, 200, await dadosCnpj(String(c.empresa_id ?? '')));
     if (c.acao === 'redigir') return json(req, 200, await redigir(String(c.empresa_id ?? ''), quem.id));
     return json(req, 400, { erro: 'Ação desconhecida.' });
   } catch (e) {
