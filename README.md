@@ -119,8 +119,8 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 | Grupo | Nota | Segmentos |
 |---|---|---|
 | Alvo | 100 | Metalização |
-| Alvo | 95 | Fitas de borda (PVC, ABS, melamínica), saltos e solados, enfeites e bijuterias, pés de sofá, pés de cama e puxadores de móveis em plástico, zamac ou aço (ex. AKEO), embalagens de cosméticos |
-| Bom | 80 | Gráficas com verniz UV, peças plásticas com acabamento, impressão 3D com resina, plástico automotivo e linha branca |
+| Alvo | 95 | Fitas de borda (PVC, ABS, melamínica), saltos e solados, enfeites e bijuterias, pés de sofá, pés de cama e puxadores de móveis em plástico, zamac ou aço (ex. AKEO), embalagens de cosméticos, revestimentos de PET/PVC (ex. Lamiecco, Allparts, Plasbil), bebedouros, chuveiros elétricos e sifões de plástico (ex. Acquabios) |
+| Bom | 80 | Gráficas com verniz UV, peças plásticas com acabamento, impressão 3D com resina, peças plásticas automotivas e de eletrodomésticos |
 | Médio | 55 | Fábrica de calçados prontos, injeção ou sopro de peças plásticas visíveis, sem acabamento |
 | Verificar | 40 | Sem informação suficiente |
 | Fora | 0 | Vidro, madeira e móveis, lojas e revendas, ferragens e metalurgia, têxtil e couro, papel, químicos concorrentes, máquinas e serviços, plástico técnico ou oculto (tacos de salto, rodízios, sapatas, núcleos estruturais, painéis acrílicos) |
