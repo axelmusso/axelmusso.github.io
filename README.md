@@ -110,6 +110,8 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Sem e-mail novo, `_shared/contatos.ts` procura no site da empresa (pelo domínio do e-mail que já temos, respeitando o robots.txt) e no cadastro público do CNPJ (BrasilAPI), no máximo a cada 30 dias; cada contato achado guarda fonte e data. E-mail do CNPJ com cara de escritório de contabilidade é ignorado.
 - Acabaram os e-mails: segue para as retomadas de 60 dias, como antes.
 
+**Feiras (16/10/2026):** a lista pública de expositores da FIMMA Brasil 2025 (fimma.com.br) entrou como prospects (`origem = 'feira:FIMMA 2025'`, com fonte e data). Ficaram só os segmentos que podem usar acabamento (componentes, acessórios, ferragens, matérias-primas e outros), sem fabricantes de tinta e verniz, e sem quem já está no cadastro ou na lista de não contatar. Todos foram qualificados pela aba Prospecção. A FIMEC não publica a lista de expositores.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.
