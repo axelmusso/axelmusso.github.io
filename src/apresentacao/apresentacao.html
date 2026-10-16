@@ -1,0 +1,91 @@
+<!doctype html>
+<!-- Apresentação curta da Corquímica (2 páginas A4). Fonte do PDF public/apresentacao-corquimica.pdf.
+     Gerar de novo: node scripts/gerar-apresentacao.mjs (usa o Chrome instalado, sem biblioteca).
+     Só usa o que já está publicado no site: produtos, segmentos, números e diferenciais. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Corquímica — Apresentação</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111A3C; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pagina { width: 210mm; height: 297mm; padding: 16mm 16mm 14mm; position: relative; page-break-after: always; overflow: hidden; }
+  .pagina:last-child { page-break-after: auto; }
+  .topo { display: flex; align-items: center; gap: 10px; }
+  .topo img { width: 34px; height: 34px; }
+  .topo b { font-size: 20px; letter-spacing: .3px; }
+  .topo span { margin-left: auto; font-size: 11px; color: #5B6478; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 14mm 0 5mm; }
+  h2 { font-size: 15px; margin: 8mm 0 3mm; color: #1365C4; text-transform: uppercase; letter-spacing: .6px; }
+  p { font-size: 12.5px; line-height: 1.55; margin: 0 0 3mm; }
+  .capa { width: 100%; height: 72mm; object-fit: cover; border-radius: 6px; margin-top: 6mm; }
+  .numeros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 6mm 0 0; }
+  .numeros div { border: 1px solid #DCE1EA; border-radius: 6px; padding: 4mm; }
+  .numeros b { display: block; font-size: 22px; color: #1365C4; }
+  .numeros small { font-size: 11px; color: #5B6478; }
+  .grade { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 6mm; }
+  .item { display: flex; gap: 3mm; align-items: flex-start; }
+  .item img { width: 22mm; height: 16mm; object-fit: cover; border-radius: 4px; flex: none; }
+  .item b { display: block; font-size: 12.5px; margin-bottom: 1mm; }
+  .item span { font-size: 11px; color: #5B6478; line-height: 1.4; }
+  ul { margin: 0; padding-left: 5mm; font-size: 12.5px; line-height: 1.6; }
+  .contato { position: absolute; left: 16mm; right: 16mm; bottom: 14mm; border-top: 3px solid #1365C4; padding-top: 5mm; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 8mm; font-size: 12px; line-height: 1.5; }
+  .contato b { font-size: 13px; }
+  .rodape { position: absolute; left: 16mm; right: 16mm; bottom: 8mm; font-size: 10px; color: #5B6478; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<section class="pagina">
+  <div class="topo"><img src="../../public/favicon.svg" alt=""><b>Corquímica</b><span>Estância Velha · RS · desde 1997</span></div>
+  <h1>Vernizes UV, lacas, tintas e corantes para plásticos e metais</h1>
+  <p>A Corquímica é fabricante, em Estância Velha (RS), de vernizes UV (Base e Top Coat), lacas, tintas para ABS e PS, tintas para piso, corantes UV, resinas 3D, solventes e desengraxantes.</p>
+  <p>Cada cliente recebe uma formulação ajustada à peça, ao material e ao processo, e a equipe presta apoio técnico dentro da fábrica.</p>
+  <img class="capa" src="fotos/home-hero.jpg" alt="">
+  <div class="numeros">
+    <div><b>1997</b><small>fabricando em Estância Velha (RS)</small></div>
+    <div><b>+100</b><small>clientes em todo o Brasil</small></div>
+    <div><b>In loco</b><small>apoio técnico na fábrica do cliente</small></div>
+  </div>
+  <h2>Linha de produtos</h2>
+  <div class="grade">
+    <div class="item"><img src="fotos/familia-verniz-uv-base.jpg" alt=""><div><b>Verniz UV Base</b><span>Ancoragem e nivelamento antes da metalização a vácuo.</span></div></div>
+    <div class="item"><img src="fotos/familia-verniz-uv-top-coat.jpg" alt=""><div><b>Verniz UV Top Coat</b><span>Proteção e brilho sobre a metalização.</span></div></div>
+    <div class="item"><img src="fotos/familia-lacas.jpg" alt=""><div><b>Lacas</b><span>Cores lisas e efeitos metalizados com secagem rápida.</span></div></div>
+    <div class="item"><img src="fotos/familia-tintas-abs-ps.jpg" alt=""><div><b>Tintas para ABS e PS</b><span>Pintura de saltos e peças de moda e plásticos em geral.</span></div></div>
+  </div>
+  <div class="rodape"><span>corquimica.com.br</span><span>1/2</span></div>
+</section>
+
+<section class="pagina">
+  <div class="topo"><img src="../../public/favicon.svg" alt=""><b>Corquímica</b><span>Estância Velha · RS · desde 1997</span></div>
+  <div class="grade" style="margin-top:8mm">
+    <div class="item"><img src="fotos/familia-corantes-uv.jpg" alt=""><div><b>Corantes UV</b><span>Cor intensa e personalizada para vernizes e tintas UV.</span></div></div>
+    <div class="item"><img src="fotos/familia-resinas-3d.jpg" alt=""><div><b>Resinas 3D</b><span>Resinas rígidas, semirrígidas e flexíveis para prototipagem.</span></div></div>
+    <div class="item"><img src="fotos/familia-solventes.jpg" alt=""><div><b>Solventes e desengraxantes</b><span>Solventes para linha UV e laca, e desengraxantes de limpeza.</span></div></div>
+    <div class="item"><img src="fotos/familia-tintas-piso.jpg" alt=""><div><b>Tintas para piso</b><span>Pintura e proteção para pisos, com formulação por aplicação.</span></div></div>
+  </div>
+  <h2>Segmentos atendidos</h2>
+  <div class="grade">
+    <div class="item"><img src="fotos/segmento-moda.jpg" alt=""><div><b>Moda e calçados</b><span>Saltos, enfeites e acessórios de moda.</span></div></div>
+    <div class="item"><img src="fotos/segmento-moveleiro.jpg" alt=""><div><b>Moveleiro</b><span>Acessórios moveleiros e revestimentos plásticos.</span></div></div>
+    <div class="item"><img src="fotos/segmento-automotivo.jpg" alt=""><div><b>Automotivo</b><span>Proteção e acabamento estético em peças e acessórios.</span></div></div>
+    <div class="item"><img src="fotos/segmento-cosmeticos.jpg" alt=""><div><b>Cosméticos</b><span>Embalagens plásticas de perfumes e cosméticos.</span></div></div>
+    <div class="item"><img src="fotos/segmento-linha-branca.jpg" alt=""><div><b>Linha branca</b><span>Peças e acabamentos de eletrodomésticos e bebedouros.</span></div></div>
+    <div class="item"><img src="fotos/segmento-plasticos.jpg" alt=""><div><b>Plástico em geral</b><span>Qualquer processo que pede pintura e proteção.</span></div></div>
+  </div>
+  <h2>Por que a Corquímica</h2>
+  <ul>
+    <li>Fábrica própria em Estância Velha (RS), desde 1997.</li>
+    <li>Formulação ajustada à peça, ao material e ao processo de cada cliente.</li>
+    <li>Apoio técnico in loco, dentro da fábrica do cliente.</li>
+    <li>Mais de 100 clientes no Brasil e parcerias na Europa e na Ásia.</li>
+  </ul>
+  <div class="contato">
+    <div><b>Fernando Gutierrez</b><br>Executivo Comercial<br>fernando@corquimica.com.br</div>
+    <div><b>Corquímica Ind. e Com. Ltda</b><br>Av. Walter Klein, 1442 – Lago Azul<br>Estância Velha – RS · CEP 93.612-280<br>(51) 3594-8004 · corquimica.com.br</div>
+  </div>
+  <div class="rodape"><span>corquimica.com.br</span><span>2/2</span></div>
+</section>
+</body>
+</html>

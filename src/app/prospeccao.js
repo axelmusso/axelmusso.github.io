@@ -201,7 +201,7 @@
             (m.erro ? '<p class="ruim">' + esc(m.erro) + '</p>' : '') +
             '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
             '<label class="largo">Corpo<textarea name="corpo" rows="6"' + (w ? '' : ' disabled') + '>' + esc(m.corpo) + '</textarea></label>' +
-            '<div class="largo assinatura"><pre>' + esc(cfg.email_assinatura || '') + '\n\nNão quer mais receber estes e-mails? Clique aqui.</pre></div>' +
+            '<div class="largo assinatura"><pre>' + (m.passo === 1 && m.empresas && m.empresas.relacao === 'prospect' ? 'Apresentação da Corquímica (PDF): link\n\n' : '') + esc(cfg.email_assinatura || '') + '\n\nNão quer mais receber estes e-mails? Clique aqui.</pre></div>' +
             (w ? '<div class="largo linha"><button type="submit" name="acao" value="aprovar" class="prim">' + (m.status === 'aprovado' ? 'Salvar (já aprovado)' : 'Aprovar') + '</button><button type="submit" name="acao" value="salvar">Salvar sem aprovar</button><button type="submit" name="acao" value="descartar">Descartar</button></div>' : '') +
             '</form></div>';
         }).join('') || '<p class="mut">Nenhum rascunho esperando.</p>') +
@@ -332,7 +332,12 @@
           feito = envio({ acao: 'responder', resposta_id: id, texto: f.texto.value }).then(function (r) { aviso(r.aviso || 'Resposta enviada.'); });
         } else if (acao === 'classificar') {
           b.disabled = true; b.textContent = 'Lendo…';
-          feito = envio({ acao: 'classificar', resposta_id: id }).then(function (r) { aviso('Classificada como ' + (CLASSE[r.classificacao] || r.classificacao) + '.'); });
+          feito = envio({ acao: 'classificar', resposta_id: id }).then(function (r) {
+            var t = r.telefone_decisor;
+            aviso(r.resultado === 'telefone' ? 'Telefone do responsável obtido (' + (t.nome || 'responsável') + ': ' + t.telefone + '). A cadência parou e a tarefa de ligar está em Tarefas.'
+              : r.resultado === 'indicado' ? 'A empresa indicou outra pessoa: o contato foi criado e há um rascunho para ela em "E-mails para aprovar".'
+              : 'Classificada como ' + (CLASSE[r.classificacao] || r.classificacao) + '.');
+          });
         } else {
           feito = api('/rest/v1/respostas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { status: 'descartada' }, retorno: true }).then(function () { aviso('Resposta descartada.'); });
         }

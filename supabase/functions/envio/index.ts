@@ -8,6 +8,7 @@
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { classificarResposta, redigirEmail } from '../_shared/redacao.ts';
+import { aplicarClassificacao } from '../_shared/respostas.ts';
 import { agoraBrasilia, config, diaDeIniciais, enviarResend, ErroEnvio, horarioComercial, limiteDeHoje, montar, proximoEm, suprimido } from '../_shared/envio.ts';
 
 const q = encodeURIComponent;
@@ -37,7 +38,7 @@ async function enviarAprovados(teste = false) {
   }
   const lim = await limiteDeHoje();
   if (lim.restante <= 0) return { enviados: 0, respostas, problemas: problemasResp, aviso: `Limite de hoje atingido (${lim.enviados} de ${lim.limite}, aquecimento dia ${lim.dias_de_aquecimento + 1}).` };
-  const c = await config(['email_remetente', 'email_assinatura', 'email_aquecimento']);
+  const c = await config(['email_remetente', 'email_assinatura', 'email_aquecimento', 'apresentacao_url']);
   const fila = await banco(`/rest/v1/emails?select=*,empresas(*)&status=eq.aprovado&order=aprovado_em&limit=${Math.min(lim.restante, POR_CHAMADA)}`);
   let enviados = 0; const problemas: string[] = [];
   for (const m of fila) {
@@ -46,7 +47,9 @@ async function enviarAprovados(teste = false) {
       await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'Na lista de não contatar ou cliente ativo: não enviado.' } });
       problemas.push(`${e.nome}: na lista de não contatar`); continue;
     }
-    const { text, html, link } = montar(m.corpo, c.email_assinatura, m.id);
+    // 1º e-mail para empresa nova leva o link da apresentação em PDF (ex-cliente já conhece a Corquímica).
+    const pdf = m.passo === 1 && e.relacao === 'prospect' ? c.apresentacao_url : undefined;
+    const { text, html, link } = montar(m.corpo, c.email_assinatura, m.id, pdf);
     try {
       const resendId = await enviarResend({
         from: c.email_remetente, to: m.para, subject: m.assunto, text, html, chave: m.id,
@@ -101,9 +104,10 @@ async function classificar(id: string, manual: boolean) {
   const [r] = await banco('/rest/v1/respostas?select=*,empresas(*)&id=eq.' + q(id));
   if (!r) throw new Error('Resposta não encontrada.');
   const enviados = r.empresa_id ? await banco(`/rest/v1/emails?select=assunto,corpo&empresa_id=eq.${r.empresa_id}&status=eq.enviado&order=enviado_em`) : [];
-  const v = await classificarResposta({ texto: r.texto, assunto: r.assunto ?? '', empresa: r.empresas, enviados, manual });
+  const v = await classificarResposta({ texto: r.texto, assunto: r.assunto ?? '', de: r.de, empresa: r.empresas, enviados, manual });
   await banco('/rest/v1/respostas?id=eq.' + r.id, { metodo: 'PATCH', corpo: { classificacao: v.classificacao, rascunho: v.rascunho || null } });
-  return v;
+  const resultado = await aplicarClassificacao(r, r.empresas, v, manual);
+  return { ...v, resultado };
 }
 
 async function responder(id: string, texto: string) {
