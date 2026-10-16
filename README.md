@@ -130,6 +130,7 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Clientes e ex-clientes da base que compram verniz para metalização ou resina 3D já entram com o segmento; os demais são qualificados pelo site.
 - Duplicatas: `empresas.nome_chave` (nome sem acento nem pontuação) evita que um cliente da base volte como prospect de feira.
 - Regras do prompt vindas das correções do Áxel: tacos de salto, núcleos estruturais e painéis acrílicos = plástico técnico (fora); pés de sofá, pés de cama e puxadores de móveis (plástico, zamac ou aço) = alvo prioritário, mas rodízios e sapatas não; impressão digital UV é tinta, não verniz; o setor informado pela feira vale como evidência; sem site, nome com alumínio/aço/metal/madeira/vidro já indica segmento fora.
+- Metalização é só em plástico (vácuo ou galvanoplastia em plástico). Galvanização, zincagem, anodização e cromo em metal ficam fora (ferragens e metalurgia), regra do Áxel.
 - Dados do CNPJ: a ação `dados_cnpj` da prospecção completa CNAE principal e secundários, situação cadastral, cidade, UF e porte (cadastro público via BrasilAPI). Empresa com CNPJ baixado, inapto, suspenso ou nulo não recebe rascunho.
 - Busca de feiras: tarefa agendada no app (dias 1 e 15 de cada mês) procura feiras novas e listas de expositores, e atualiza a tabela `feiras`; a importação continua no botão "Ler lista".
 
