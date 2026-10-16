@@ -5,6 +5,8 @@
   var DATA_ATIVO = '2026-06-01'; // comprou desta data em diante = cliente ativo, não recebe contato
   // Grupo de cadastro → o que a empresa usa. MOV (moveleiro) usa vernizes; MET (metalizadoras) verniz UV, solventes e tintas ABS; 3D só resinas 3D; o resto, mensagem geral.
   var PERFIL_DO_GRUPO = { MOV: 'verniz', MET: 'metalizacao', '3D': 'resina3d' };
+  // De onde veio o e-mail do contato (LGPD: a fonte fica registrada).
+  var ORIGEM = { base_clientes: 'da planilha', site: 'achado no site', receita_federal: 'do cadastro do CNPJ', indicado: 'indicado pela empresa', resposta: 'veio na resposta' };
   var NOME_PERFIL = { verniz: 'usa verniz', metalizacao: 'metalizadora', resina3d: 'só resina 3D', geral: 'perfil geral' };
   var GENERICOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
@@ -166,7 +168,7 @@
   function render() {
     var w = podeEscrever();
     return Promise.all([
-      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,empresas(nome,relacao,perfil_produto,perfil_fonte)&status=in.(rascunho,aprovado)&order=criado_em'),
+      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,empresas(nome,relacao,perfil_produto,perfil_fonte),contatos(origem)&status=in.(rascunho,aprovado)&order=criado_em'),
       api('/rest/v1/config?select=chave,valor&chave=in.(icp,email_assinatura)'),
       api('/rest/v1/empresas?select=relacao,icp_score,qualificado_em,sem_gancho&limit=5000'),
       api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em.desc'),
@@ -186,7 +188,7 @@
         '<h2>Envio</h2>' + (st.erro ? '<p class="ruim">' + esc(st.erro) + '</p>' :
           '<p>Hoje: <b>' + esc(st.enviados) + ' de ' + esc(st.limite) + '</b> e-mails de prospecção (aquecimento: dia ' + esc(st.dias_de_aquecimento + 1) + ', teto ' + esc(st.teto) + '/dia). ' +
           (st.dia_de_iniciais ? '<span>Pode sair tudo agora.</span>' : st.horario_comercial ? '<span class="ruim">Hoje só saem respostas; prospecção e retomada saem de terça a quinta.</span>' : '<span class="ruim">Fora do horário comercial: nada sai agora.</span>') + '</p>' +
-          '<p class="mut">Regra: e-mails de prospecção e retomada de terça a quinta; respostas de segunda a sexta; sempre das 8h às 18h (Brasília).</p>') +
+          '<p class="mut">Regra: e-mails de prospecção e retomada de terça a quinta; respostas de segunda a sexta; sempre das 8h às 18h (Brasília). Sem resposta em 14 dias, a cadência passa para outro e-mail da empresa (área de compras ou produção primeiro; nota fiscal e financeiro por último), até alguém responder ou acabarem os e-mails.</p>') +
         (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button>' + (perfil.papel === 'dono' && !st.erro && !st.horario_comercial ? '<button type="button" id="enviar-teste">Enviar aprovados agora (teste fora do horário)</button>' : '') + '<button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
 
         '<h2>Caixa de respostas <small class="mut">' + resps.length + '</small></h2>' + (resps.map(function (x) {
@@ -197,7 +199,7 @@
         }).join('') || '<p class="mut">Nenhuma resposta esperando.</p>') +
 
         '<h2>E-mails para aprovar</h2>' + (rasc.map(function (m) {
-          return '<div class="item email-rasc"><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
+          return '<div class="item email-rasc"><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + (m.contatos && ORIGEM[m.contatos.origem] ? ' (' + ORIGEM[m.contatos.origem] + ')' : '') + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
             (m.erro ? '<p class="ruim">' + esc(m.erro) + '</p>' : '') +
             '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
             '<label class="largo">Corpo<textarea name="corpo" rows="6"' + (w ? '' : ' disabled') + '>' + esc(m.corpo) + '</textarea></label>' +
@@ -317,7 +319,7 @@
     if (bp) bp.addEventListener('click', function () {
       bp.disabled = true; bp.textContent = 'Escrevendo…';
       envio({ acao: 'preparar' }).then(function (r) {
-        aviso(r.vencidas ? r.criados + ' rascunho(s) de continuação criado(s).' + (r.avisos.length ? ' ' + r.avisos.join(' | ') : '') : 'Nenhuma cadência com passo vencido agora.');
+        aviso(r.vencidas ? r.criados + ' rascunho(s) de continuação criado(s).' + (r.trocas && r.trocas.length ? ' Troca de contato: ' + r.trocas.join(' | ') + '.' : '') + (r.avisos.length ? ' ' + r.avisos.join(' | ') : '') : 'Nenhuma cadência com passo vencido agora.');
         return render();
       }).catch(function (e) { aviso(e.message, true); bp.disabled = false; bp.textContent = 'Preparar próximos e-mails da cadência'; });
     });

@@ -7,8 +7,9 @@
 //   { acao: 'responder', resposta_id, texto } → envia a resposta aprovada, na mesma conversa (fora do horário, fica aprovada e sai no próximo horário)
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
-import { classificarResposta, redigirEmail } from '../_shared/redacao.ts';
+import { classificarResposta, redigirEmail, tipoEmail } from '../_shared/redacao.ts';
 import { aplicarClassificacao } from '../_shared/respostas.ts';
+import { proximoContato } from '../_shared/contatos.ts';
 import { agoraBrasilia, config, diaDeIniciais, enviarResend, ErroEnvio, horarioComercial, limiteDeHoje, montar, proximoEm, suprimido } from '../_shared/envio.ts';
 
 const q = encodeURIComponent;
@@ -81,14 +82,32 @@ async function enviarAprovados(teste = false) {
 
 async function preparar(manual: boolean) {
   const vencidas = await banco(`/rest/v1/cadencias?select=*,empresas(*),contatos(*)&status=eq.ativa&proximo_em=lte.${q(new Date().toISOString())}&order=proximo_em&limit=3`);
-  let criados = 0; const avisos: string[] = [];
-  for (const cad of vencidas) {
-    const e = cad.empresas, contato = cad.contatos;
+  let criados = 0; const avisos: string[] = [], trocas: string[] = [];
+  for (let cad of vencidas) {
+    const e = cad.empresas;
+    let contato = cad.contatos;
     const pend = await banco(`/rest/v1/emails?select=id&empresa_id=eq.${e.id}&status=in.(rascunho,aprovado)&limit=1`);
     if (pend.length) continue;
-    if (!contato?.email || !contato.pode_contatar || (await suprimido(contato.email)) || e.relacao === 'cliente_ativo') {
-      await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { status: 'suprimida' } });
-      avisos.push(`${e.nome}: contato bloqueado, cadência encerrada`); continue;
+    if (e.relacao === 'cliente_ativo') {
+      await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { status: 'suprimida', motivo_fim: 'cliente ativo' } });
+      continue;
+    }
+    const bloqueado = !contato?.email || !contato.pode_contatar || tipoEmail(contato.email) === 'bloqueado' || (await suprimido(contato.email));
+    // Fim dos 14 dias sem resposta, ou contato que não serve mais: a empresa não está perdida, passa para o próximo e-mail dela.
+    if (bloqueado || (cad.passo === 4 && !cad.fim_sequencia_em)) {
+      const motivo = bloqueado ? 'contato bloqueado ou removido' : 'sem resposta em 14 dias';
+      const novo = await proximoContato(e, cad.tipo, motivo, cad.id);
+      if (novo) {
+        trocas.push(`${e.nome}: ${motivo}, segue com ${novo.contato.email}`);
+        cad = novo.cadencia; contato = novo.contato;
+      } else if (bloqueado) {
+        await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { status: 'suprimida', motivo_fim: 'sem outro e-mail' } });
+        avisos.push(`${e.nome}: contato bloqueado e nenhum outro e-mail (site e CNPJ consultados)`); continue;
+      } else {
+        // Acabaram os e-mails: segue para as retomadas, 60 dias depois do último e-mail.
+        await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { fim_sequencia_em: new Date().toISOString(), proximo_em: new Date(Date.now() + 53 * 864e5).toISOString() } });
+        avisos.push(`${e.nome}: sem outro e-mail; retomada em cerca de 60 dias`); continue;
+      }
     }
     const passo = cad.passo + 1;
     if (passo > 7) { await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { status: 'encerrada' } }); continue; }
@@ -97,7 +116,7 @@ async function preparar(manual: boolean) {
     await banco('/rest/v1/emails', { metodo: 'POST', corpo: { cadencia_id: cad.id, empresa_id: e.id, contato_id: contato.id, para: contato.email, passo, angulo: r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null } });
     criados++;
   }
-  return { criados, avisos, vencidas: vencidas.length };
+  return { criados, avisos, trocas, vencidas: vencidas.length };
 }
 
 async function classificar(id: string, manual: boolean) {

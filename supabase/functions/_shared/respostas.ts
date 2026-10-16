@@ -2,7 +2,9 @@
 //   telefone de quem decide → negócio em "Telefone obtido", tarefa para o Áxel ligar, cadência parada, nada mais automático
 //   pessoa indicada com e-mail → vira contato (com a fonte) e ganha um rascunho que cita a indicação, para aprovação
 //   "não" ou descadastro → lista de não contatar
+//   caixa que ninguém lê (só NF, não monitorada) → contato desligado e a cadência passa para outro e-mail da empresa
 import { banco } from './ia.ts';
+import { seguirComOutro } from './contatos.ts';
 import { agoraBrasilia, suprimido } from './envio.ts';
 import { emailGenerico, redigirEmail, type Pessoa } from './redacao.ts';
 
@@ -76,11 +78,22 @@ async function indicacao(resp: Record<string, any>, empresa: Record<string, any>
   return contato;
 }
 
-export type Classificacao = { classificacao: string; telefone_decisor: Pessoa | null; indicado: Pessoa | null };
+// O endereço não é lido por ninguém: desliga o contato, encerra a cadência e segue com outro e-mail da empresa.
+async function caixaSemLeitura(resp: Record<string, any>, empresa: Record<string, any>) {
+  const [orig] = resp.email_id ? await banco('/rest/v1/emails?select=para&id=eq.' + resp.email_id) : [];
+  const email = String(orig?.para ?? resp.de).toLowerCase();
+  await banco(`/rest/v1/contatos?empresa_id=eq.${empresa.id}&email=ilike.${q(email)}`, { metodo: 'PATCH', corpo: { pode_contatar: false } });
+  await banco(`/rest/v1/emails?empresa_id=eq.${empresa.id}&para=ilike.${q(email)}&status=in.(rascunho,aprovado)`, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'Caixa sem leitura: a cadência segue com outro e-mail.' } });
+  await banco(`/rest/v1/cadencias?empresa_id=eq.${empresa.id}&status=in.(ativa,pausada,respondeu)`, { metodo: 'PATCH', corpo: { status: 'encerrada', motivo_fim: 'caixa sem leitura', proximo_em: null } });
+  return await seguirComOutro(empresa.id, `${email} não é lido (resposta automática)`);
+}
+
+export type Classificacao = { classificacao: string; telefone_decisor: Pessoa | null; indicado: Pessoa | null; caixa_sem_leitura?: boolean };
 export async function aplicarClassificacao(resp: Record<string, any>, empresa: Record<string, any> | null, v: Classificacao, manual: boolean) {
   if (v.classificacao === 'nao' || v.classificacao === 'descadastro') { await suprimir(resp.de, 'descadastro'); return 'suprimido'; }
   if (!empresa) return null;
   if (v.telefone_decisor?.telefone) { await telefoneObtido(resp, empresa, v.telefone_decisor); return 'telefone'; }
   if (v.indicado?.email) { await indicacao(resp, empresa, v.indicado, manual); return 'indicado'; }
+  if (v.caixa_sem_leitura) return (await caixaSemLeitura(resp, empresa)) ? 'trocou' : 'sem_outro';
   return null;
 }

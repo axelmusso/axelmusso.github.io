@@ -5,6 +5,7 @@ import { banco, ErroIA } from '../_shared/ia.ts';
 import { classificarResposta } from '../_shared/redacao.ts';
 import { config, enderecoDe, enviarResend, lerRecebido } from '../_shared/envio.ts';
 import { aplicarClassificacao, suprimir } from '../_shared/respostas.ts';
+import { seguirComOutro } from '../_shared/contatos.ts';
 
 const q = encodeURIComponent;
 
@@ -29,6 +30,8 @@ async function eventoDeEnvio(tipo: string, d: Record<string, any>) {
   if ((tipo === 'email.bounced' && d.bounce?.type === 'Permanent') || tipo === 'email.complained' || tipo === 'email.suppressed') {
     await suprimir(m.para, tipo === 'email.complained' ? 'spam' : 'bounce');
     await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: m.empresa_id, contato_id: m.contato_id, tipo: 'email', direcao: 'interna', assunto: tipo === 'email.complained' ? 'Marcado como spam' : 'Bounce definitivo', conteudo: `${m.para} entrou na lista de não contatar.`, agente_id: 'webhook' } });
+    // Endereço que não existe: a empresa não está perdida, a cadência segue com outro e-mail dela (spam, não: quem reclamou não quer).
+    if (tipo !== 'email.complained') await seguirComOutro(m.empresa_id, `${m.para} voltou (bounce)`);
   }
 }
 
@@ -67,7 +70,7 @@ async function respostaRecebida(d: Record<string, any>) {
     classe = v.classificacao; rascunho = v.rascunho;
     telefone = v.telefone_decisor ? `${v.telefone_decisor.nome ?? 'Responsável'}${v.telefone_decisor.cargo ? ' (' + v.telefone_decisor.cargo + ')' : ''}: ${v.telefone_decisor.telefone}` : '';
     await banco('/rest/v1/respostas?id=eq.' + resp.id, { metodo: 'PATCH', corpo: { classificacao: classe, rascunho: rascunho || null } });
-    if (orig && classe !== 'automatica') await pararCadencia(orig, classe);
+    if (orig && classe !== 'automatica' && !v.caixa_sem_leitura) await pararCadencia(orig, classe);
     resultado = await aplicarClassificacao({ ...resp, de }, empresa, v, false);
   } catch (e) {
     if (!(e instanceof ErroIA)) console.error('classificação', e);
@@ -77,7 +80,9 @@ async function respostaRecebida(d: Record<string, any>) {
   // Cópia para a caixa do dono, com a classificação e o rascunho para aprovar.
   const c = await config(['email_remetente', 'email_copia_respostas']);
   if (c.email_copia_respostas) {
-    const destaque = resultado === 'telefone' ? `TELEFONE DO RESPONSÁVEL OBTIDO — ${telefone}\nA cadência parou; a tarefa de ligar está no CRM. Daqui em diante é com você.\n\n` : resultado === 'indicado' ? 'A empresa indicou outra pessoa: o contato foi criado e há um rascunho para ela esperando sua aprovação.\n\n' : '';
+    const destaque = resultado === 'telefone' ? `TELEFONE DO RESPONSÁVEL OBTIDO — ${telefone}\nA cadência parou; a tarefa de ligar está no CRM. Daqui em diante é com você.\n\n` : resultado === 'indicado' ? 'A empresa indicou outra pessoa: o contato foi criado e há um rascunho para ela esperando sua aprovação.\n\n'
+      : resultado === 'trocou' ? 'Este endereço não é lido por ninguém: a cadência passou para outro e-mail da empresa.\n\n'
+      : resultado === 'sem_outro' ? 'Este endereço não é lido por ninguém e não achei outro e-mail da empresa (site e CNPJ).\n\n' : '';
     const aviso = `${destaque}Resposta recebida de ${de}${orig ? '' : ' (não ligada a nenhum envio)'}.\nClassificação: ${classe ?? 'pendente (sistema parado ou teto atingido)'}\n\n--- Mensagem ---\n${texto.slice(0, 8000)}\n\n--- Rascunho sugerido (aprove em https://corquimica.com.br/app/#prospeccao) ---\n${rascunho || '(sem rascunho)'}`;
     await enviarResend({ from: c.email_remetente, to: c.email_copia_respostas, subject: `${resultado === 'telefone' ? '[TELEFONE] ' : '[Resposta] '}${resp.assunto || de}`, text: aviso, html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${aviso.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`, chave: 'copia-' + resp.id }).catch((e) => console.error('cópia', e));
   }
