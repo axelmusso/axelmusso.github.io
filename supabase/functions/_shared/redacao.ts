@@ -41,10 +41,13 @@ const FISCAL = new RegExp('^(nfe?s?|nf-?e|nota|notas|notafiscal|notasfiscais|xml
 const GENERICO = new RegExp('^(contato|contatos|faleconosco|fale|atendimento|sac|info|informacoes|comercial|vendas|recepcao|adm|administrativo|administracao|rh|marketing|geral|suporte|ouvidoria|orcamento|orcamentos|empresa|site|ola|oi|mail|email|pedidos?|expedicao|logistica)' + FIM_LOCAL, 'i');
 const DECISOR = new RegExp('^(compras?|suprimentos|producao|fabrica|industrial|engenharia|qualidade|diretoria|diretor|gerencia|gerente|proprietario|socios?|pcp)' + FIM_LOCAL, 'i');
 export type TipoEmail = 'decisor' | 'pessoa' | 'generico' | 'fiscal' | 'bloqueado';
+// Caixas de terceiros ou de áreas que não compram, mesmo com o nome da empresa grudado (fantonfinanceiro@, juridico.grupo@):
+// quem lê não decide, então o e-mail pede para encaminhar ao responsável.
+const AREA_SEM_COMPRA = /(financeiro|financas|fiscal|juridico|cobranca|faturamento|contabil|notafiscal|recursoshumanos)/i;
 export function tipoEmail(email: string): TipoEmail {
   const e = String(email || '').trim();
   if (BLOQUEADO.test(e)) return 'bloqueado';
-  if (FISCAL.test(e)) return 'fiscal';
+  if (FISCAL.test(e) || AREA_SEM_COMPRA.test(e.split('@')[0])) return 'fiscal';
   if (GENERICO.test(e)) return 'generico';
   if (DECISOR.test(e)) return 'decisor';
   return 'pessoa';
