@@ -475,8 +475,13 @@
       api('/rest/v1/config?select=chave,valor'),
       api('/rest/v1/execucoes_agente?select=*&order=criado_em.desc&limit=50'),
       api('/rest/v1/jobs?select=id,tipo,status,tentativas,rodar_em,terminado_em,erro,criado_em&order=criado_em.desc&limit=200'),
+      api('/rest/v1/rpc/painel_operacao', { metodo: 'POST', corpo: { p_dias: 30 } }),
+      api('/rest/v1/alertas?select=tipo,detalhe,enviado_em,criado_em&order=criado_em.desc&limit=10'),
     ]).then(function (r) {
-      var g = r[0][0] || {}, cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), ex = r[2], jobs = r[3];
+      var g = r[0][0] || {}, cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), ex = r[2], jobs = r[3], pn = r[4] || {}, alertas = r[5];
+      var em = pn.emails || {}, ap = pn.aprovacoes || {};
+      var pct = function (a, b) { return b ? ' <small class="mut">(' + (100 * a / b).toFixed(1).replace('.', ',') + '%)</small>' : ''; };
+      var ORIGEM = { feira: 'Feiras', maps: 'Google Maps', receita: 'Receita (CNAE)', indicacao: 'Indicação', base_clientes: 'Base de clientes', pagina: 'Páginas lidas', formulario_site: 'Formulário do site' };
       var nJobs = function (s) { return jobs.filter(function (j) { return j.status === s; }).length; };
       var dono = perfil.papel === 'dono';
       var barra = function (v, t) { var pct = t > 0 ? Math.min(100, (v / t) * 100) : 100; return '<div class="barra' + (pct >= 80 ? ' alto' : '') + '"><span style="width:' + pct.toFixed(0) + '%"></span></div>'; };
@@ -486,13 +491,30 @@
         ' · fila: ' + nJobs('pendente') + ' esperando, ' + nJobs('rodando') + ' rodando, <span class="' + (nJobs('erro') ? 'ruim' : '') + '">' + nJobs('erro') + ' com erro</span></p>' +
         (dono ? (cfg.sistema_ativo ? '<button type="button" class="parar" id="botao-parada" data-ligar="false">Parar tudo agora</button>' : '<button type="button" class="prim" id="botao-parada" data-ligar="true">Ligar os robôs</button>') +
           ' <small class="mut">' + (cfg.sistema_ativo ? 'Para na hora: nenhum job novo começa e a IA recusa chamadas automáticas.' : 'Ligados, rodam a fila a cada 5 minutos: cadência e envio dos e-mails aprovados (seg a sex, 8h às 18h), descoberta às 7h, qualificação às 21h, concorrência e memória às segundas e relatório às 8h.') + '</small>' : '') + '</div>' +
-        '<div class="numeros">' +
+        // Alertas (Fase 10): os mesmos que vão por e-mail ao dono, no máximo 1 vez por dia cada.
+        ((pn.alertas_ativos || []).length ? '<div class="aviso ruim">' + pn.alertas_ativos.map(function (a) { return esc(a.detalhe); }).join('<br>') + '</div>' : '') +
+        '<h2>Últimos 30 dias</h2><div class="numeros">' +
+        '<div><b>' + esc(em.enviados || 0) + '</b>e-mails enviados</div>' +
+        '<div><b>' + esc(em.entregues || 0) + '</b>entregues' + pct(em.entregues || 0, em.enviados) + '</div>' +
+        '<div><b>' + esc(em.respondidos || 0) + '</b>respondidos' + pct(em.respondidos || 0, em.enviados) + '</div>' +
+        '<div><b>' + esc(em.telefones || 0) + '</b>telefones obtidos</div>' +
+        '<div><b class="' + (em.reclamacoes ? 'ruim' : '') + '">' + esc(em.reclamacoes || 0) + '</b>reclamações de spam' + pct(em.reclamacoes || 0, em.entregues) + '</div>' +
+        '<div><b>' + esc(em.bounces || 0) + '</b>voltaram (bounce)</div></div>' +
+        '<div class="colunas"><div><h3>Aprovações pendentes</h3><ul>' +
+        '<li><a href="#prospeccao">' + esc(ap.emails || 0) + ' e-mail(s) para aprovar</a></li>' +
+        '<li>' + esc(ap.aprovados_esperando || 0) + ' aprovado(s) esperando o envio <small class="mut">(saem de terça a quinta, das 8h às 18h)</small></li>' +
+        '<li><a href="#prospeccao">' + esc(ap.respostas || 0) + ' resposta(s) para aprovar</a></li>' +
+        '<li><a href="#conteudo">' + esc(ap.conteudo || 0) + ' rascunho(s) de conteúdo</a></li></ul></div>' +
+        '<div><h3>Empresas novas por origem</h3><ul>' + ((pn.leads_por_origem || []).map(function (o) { return '<li>' + esc(ORIGEM[o.origem] || o.origem) + ': ' + esc(o.n) + '</li>'; }).join('') || '<li class="mut">Nenhuma.</li>') + '</ul></div></div>' +
+        '<h2>Gasto de IA</h2><div class="numeros">' +
         '<div><b>' + usd(g.hoje_usd, 4) + '</b>hoje, de ' + usd(g.teto_diario_usd) + barra(Number(g.hoje_usd), Number(g.teto_diario_usd)) + '</div>' +
         '<div><b>' + usd(g.mes_usd, 4) + '</b>no mês, de ' + usd(g.teto_mensal_usd) + barra(Number(g.mes_usd), Number(g.teto_mensal_usd)) + '</div></div>' +
         (dono ? '<form class="linha" id="form-tetos"><label>Teto diário US$ <input name="teto_diario_usd" type="number" min="0" step="0.01" value="' + esc(cfg.teto_diario_usd) + '" class="curto"></label>' +
           '<label>Teto mensal US$ <input name="teto_mensal_usd" type="number" min="0" step="0.01" value="' + esc(cfg.teto_mensal_usd) + '" class="curto"></label><button type="submit">Salvar tetos</button></form>' +
           '<h2>Testar conexão</h2><p class="mut">Uma chamada curta no modelo mais barato de cada um (custa frações de centavo).</p>' +
           '<div class="linha"><button type="button" data-testar="anthropic">Testar Claude</button><button type="button" data-testar="openai">Testar ChatGPT</button></div><pre id="resultado-teste" class="resultado" hidden></pre>' : '') +
+        (alertas.length ? '<h2>Alertas enviados</h2><table class="tab"><thead><tr><th>Quando</th><th>Alerta</th><th>E-mail</th></tr></thead><tbody>' +
+          alertas.map(function (a) { return '<tr><td>' + esc(dataHora(a.criado_em)) + '</td><td>' + esc(a.detalhe) + '</td><td>' + (a.enviado_em ? 'enviado' : '<span class="ruim">não saiu</span>') + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
         '<h2>Fila de trabalhos</h2><table class="tab"><thead><tr><th>Tipo</th><th>Situação</th><th class="num">Tentativas</th><th>Quando</th><th>Erro</th></tr></thead><tbody>' +
         (jobs.slice(0, 30).map(function (j) {
           return '<tr><td>' + esc(j.tipo) + '</td><td' + (j.status === 'erro' ? ' class="ruim"' : '') + '>' + esc(j.status) + '</td><td class="num">' + esc(j.tentativas) + '</td>' +

@@ -163,6 +163,30 @@ async function relatorio() {
   return n;
 }
 
+// ---------- alertas para o dono (Fase 10) ----------
+// Conferidos a cada execução do worker; cada alerta (tipo e alvo) sai no máximo uma vez por dia, num e-mail só.
+async function alertas() {
+  const ativos: { tipo: string; alvo: string; detalhe: string }[] = await banco('/rest/v1/rpc/condicoes_alerta', { metodo: 'POST', corpo: {} });
+  const novos: { id: string; detalhe: string }[] = [];
+  for (const a of ativos) {
+    const id = await banco('/rest/v1/rpc/registrar_alerta', { metodo: 'POST', corpo: { p_tipo: a.tipo, p_alvo: a.alvo, p_detalhe: a.detalhe } });
+    if (id) novos.push({ id, detalhe: a.detalhe });
+  }
+  if (!novos.length) return 0;
+  const [dono] = await banco('/rest/v1/perfis?select=email&papel=eq.dono&limit=1');
+  if (!dono?.email) throw new Error('Não achei o e-mail do dono em perfis.');
+  const c = await config(['email_remetente']);
+  const texto = ['Alerta da plataforma Corquímica:', '', ...novos.map((n) => '- ' + n.detalhe), '', 'Para parar tudo na hora: https://corquimica.com.br/app/#operacao (botão "Parar tudo agora").'].join('\n');
+  await enviarResend({
+    from: `Plataforma Corquímica <${enderecoDe(c.email_remetente)}>`, to: dono.email,
+    subject: `Alerta Corquímica: ${novos.length === 1 ? novos[0].detalhe.slice(0, 80) : novos.length + ' alertas'}`,
+    text: texto, html: `<pre style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5">${texto.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`,
+    chave: 'alerta-' + novos.map((n) => n.id).join('-').slice(0, 200),
+  });
+  await banco(`/rest/v1/alertas?id=in.(${novos.map((n) => n.id).join(',')})`, { metodo: 'PATCH', corpo: { enviado_em: new Date().toISOString() } });
+  return novos.length;
+}
+
 // ---------- laço principal ----------
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Use POST.', { status: 405 });
@@ -177,6 +201,9 @@ Deno.serve(async (req) => {
     const teste = async (f: string) => { try { return { ok: true, resposta: await chamar(f, { acao: 'status' }) }; } catch (e) { return { ok: false, erro: (e as Error).message }; } };
     return Response.json({ ligado: await ligado(), maps: await teste('maps'), envio: await teste('envio') });
   }
+
+  // Alertas primeiro: um problema na conferência não impede a fila de andar.
+  try { await alertas(); } catch (e) { console.error('Falha nos alertas:', (e as Error).message); }
 
   const inicio = Date.now();
   const feitos: { tipo: string; ok: boolean; erro?: string }[] = [];

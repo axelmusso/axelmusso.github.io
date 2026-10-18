@@ -183,6 +183,27 @@ O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acres
 - **Botão de parada:** `config.sistema_ativo`. Desligado, o cron não chama o worker, as rotinas não entram na fila, o worker para antes do próximo job e a IA recusa chamadas automáticas. O botão fica na tela **Operação**, junto com a fila.
 - **Diagnóstico:** o worker chamado com `{"diagnostico": true}` e o segredo testa o acesso como sistema (status do Maps e do envio), mesmo parado. Para testar pelo banco, use `net.http_post` com o segredo do Vault.
 
+## Operação à vista (Fase 10)
+- **Tela Operação:**
+  - robôs ligados ou parados, com o botão;
+  - alertas ativos;
+  - e-mails dos últimos 30 dias: enviados, entregues, respondidos, telefones obtidos, reclamações de spam, bounces;
+  - aprovações pendentes e aprovados esperando o envio;
+  - empresas novas por origem (inclui o formulário do site);
+  - gasto de IA contra o teto;
+  - fila de trabalhos;
+  - alertas enviados;
+  - últimas 50 execuções de agente com custo e duração.
+
+  Os números vêm de `painel_operacao()`.
+- **Alertas por e-mail ao dono** (`condicoes_alerta()`):
+  - gasto de IA a partir de 80% do teto (dia ou mês);
+  - reclamação de spam acima de 0,1% dos entregues em 30 dias;
+  - mais de 50 jobs em erro em 24 h;
+  - qualquer agente com 5 falhas seguidas.
+- **Como os alertas saem:** o worker confere a cada execução (sem agendamento novo). Cada alerta fica em `alertas` com chave tipo + alvo + dia, então sai no máximo 1 e-mail por dia para cada um.
+- **Limite dos alertas:** com os robôs parados, o cron não chama o worker, então os alertas também não saem. A tela mostra os alertas ativos de qualquer forma.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.
