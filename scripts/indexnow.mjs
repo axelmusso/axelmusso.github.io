@@ -7,14 +7,23 @@ const site = JSON.parse(fs.readFileSync(new URL('../src/data/site.json', import.
 const host = new URL(site.url).host;
 const todas = process.argv[2] === 'todas';
 
-const sm = await (await fetch(site.url + '/sitemap.xml')).text();
+// Logo depois da publicação o endereço do site às vezes ainda não resolve no servidor do GitHub (EAI_AGAIN):
+// tenta até 5 vezes, com 20 s entre as tentativas.
+async function buscar(url, opcoes) {
+  for (let i = 1; ; i++) {
+    try { return await fetch(url, opcoes); }
+    catch (e) { if (i >= 5) throw e; console.log(`Tentativa ${i} falhou (${e.cause?.code ?? e.message}); de novo em 20 s.`); await new Promise((r) => setTimeout(r, 20_000)); }
+  }
+}
+
+const sm = await (await buscar(site.url + '/sitemap.xml')).text();
 const limite = new Date(Date.now() - 2 * 86400_000).toISOString().slice(0, 10);
 const urls = [...sm.matchAll(/<url><loc>([^<]+)<\/loc><lastmod>([^<]+)<\/lastmod>/g)]
   .filter(([, , lastmod]) => todas || lastmod >= limite)
   .map(([, loc]) => loc);
 
 if (!urls.length) { console.log('IndexNow: nenhuma página mudou nos últimos 2 dias.'); process.exit(0); }
-const r = await fetch('https://api.indexnow.org/indexnow', {
+const r = await buscar('https://api.indexnow.org/indexnow', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json; charset=utf-8' },
   body: JSON.stringify({ host, key: site.indexNowKey, keyLocation: `${site.url}/${site.indexNowKey}.txt`, urlList: urls.slice(0, 10000) }),
