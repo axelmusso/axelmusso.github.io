@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json(req, 405, { erro: 'Use POST.' });
   const quem = await usuario(req);
   if (!quem) return json(req, 401, { erro: 'Faça login de novo.' });
-  if (quem.papel !== 'dono' && quem.papel !== 'operador') return json(req, 403, { erro: 'Seu papel não pode enviar e-mails.' });
+  if (quem.papel !== 'dono' && quem.papel !== 'operador' && quem.papel !== 'sistema') return json(req, 403, { erro: 'Seu papel não pode enviar e-mails.' });
   let c: Record<string, unknown>;
   try { c = await req.json(); } catch { return json(req, 400, { erro: 'Corpo inválido.' }); }
   try {
@@ -170,8 +170,8 @@ Deno.serve(async (req) => {
       if (c.teste && quem.papel !== 'dono') return json(req, 403, { erro: 'Só o dono pode enviar fora do horário.' });
       return json(req, 200, await enviarAprovados(c.teste === true));
     }
-    if (c.acao === 'preparar') return json(req, 200, await preparar(true));
-    if (c.acao === 'classificar') return json(req, 200, await classificar(String(c.resposta_id ?? ''), true));
+    if (c.acao === 'preparar') return json(req, 200, await preparar(quem.papel !== 'sistema'));
+    if (c.acao === 'classificar') return json(req, 200, await classificar(String(c.resposta_id ?? ''), quem.papel !== 'sistema'));
     if (c.acao === 'responder') return json(req, 200, await responder(String(c.resposta_id ?? ''), String(c.texto ?? '')));
     return json(req, 400, { erro: 'Ação desconhecida.' });
   } catch (e) {

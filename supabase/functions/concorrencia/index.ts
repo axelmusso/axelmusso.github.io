@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json(req, 405, { erro: 'Use POST.' });
   const quem = await usuario(req);
   if (!quem) return json(req, 401, { erro: 'Faça login de novo.' });
-  if (quem.papel !== 'dono' && quem.papel !== 'operador') return json(req, 403, { erro: 'Seu papel não pode usar a análise de concorrência.' });
+  if (quem.papel !== 'dono' && quem.papel !== 'operador' && quem.papel !== 'sistema') return json(req, 403, { erro: 'Seu papel não pode usar a análise de concorrência.' });
   let c: Record<string, unknown>;
   try { c = await req.json(); } catch { return json(req, 400, { erro: 'Corpo inválido.' }); }
   try {

@@ -192,14 +192,14 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json(req, 405, { erro: 'Use POST.' });
   const quem = await usuario(req);
   if (!quem) return json(req, 401, { erro: 'Faça login de novo.' });
-  if (quem.papel !== 'dono' && quem.papel !== 'operador') return json(req, 403, { erro: 'Seu papel não pode usar a prospecção.' });
+  if (quem.papel !== 'dono' && quem.papel !== 'operador' && quem.papel !== 'sistema') return json(req, 403, { erro: 'Seu papel não pode usar a prospecção.' });
   let c: Record<string, unknown>;
   try { c = await req.json(); } catch { return json(req, 400, { erro: 'Corpo inválido.' }); }
   try {
     if (c.acao === 'descobrir_url') return json(req, 200, await descobrirUrl(String(c.url ?? ''), c.feira_id ? String(c.feira_id) : undefined));
     if (c.acao === 'qualificar') return json(req, 200, await qualificar(String(c.empresa_id ?? '')));
     if (c.acao === 'dados_cnpj') return json(req, 200, await dadosCnpj(String(c.empresa_id ?? '')));
-    if (c.acao === 'redigir') return json(req, 200, await redigir(String(c.empresa_id ?? ''), quem.id));
+    if (c.acao === 'redigir') return json(req, 200, await redigir(String(c.empresa_id ?? ''), quem.id ?? ''));
     return json(req, 400, { erro: 'Ação desconhecida.' });
   } catch (e) {
     if (e instanceof ErroWeb) return json(req, 422, { erro: e.message });

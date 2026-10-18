@@ -161,6 +161,28 @@ O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acres
   - Na tela **Conteúdo e SEO**, aprovar ou descartar é humano. Aprovado vira página por PR, nunca direto no ar.
 - **Search Console e Perfil da Empresa no Google:** o Áxel faz com a conta dele (passo 5 acima). Nome, endereço e telefone devem ser iguais aos de `site.json`.
 
+## Rodar 24 horas (Fase 9)
+- **Fila:** tabela `jobs` (pendente, rodando, feito, erro, cancelado).
+  - `pegar_job()` trava a linha com `FOR UPDATE SKIP LOCKED`.
+  - `terminar_job()` devolve à fila com espera de 5, 10 e 20 min; na 3ª falha, o job vira erro.
+  - Job rodando há mais de 20 min é dado como perdido.
+- **Agenda:** pg_cron chama a função `worker` a cada 5 min, via pg_net, com um segredo guardado no Vault (`worker_segredo`). O worker confere o segredo no banco; a chave secreta nunca vai para o cron.
+- **Como o worker chama as outras funções:** com a chave do servidor. `usuario()` em `_shared/http.ts` reconhece essa chave como papel `sistema`, aceito por envio, prospecção, Maps, memória e concorrência.
+- **Rotinas fixas** (o cron só põe o job na fila; horários de Brasília):
+
+  | Quando | Rotina | O que faz |
+  |---|---|---|
+  | Diária, 7h | descoberta | site pelo Maps de até 100 empresas da Receita sem site, dentro do limite do dia |
+  | Seg a sex, 8h às 17h, de hora em hora | cadência | rascunha os próximos e-mails, envia os aprovados, classifica respostas sem classificação |
+  | Diária, 21h | enriquecimento | qualifica até 40 empresas com site ainda sem nota |
+  | Segunda, 6h | concorrência | coleta dos concorrentes; meia hora depois, análise nova se algo mudou ou se a última tem mais de 28 dias |
+  | Segunda, 6h | memória | consolidação |
+  | Diária, 8h | relatório | e-mail para o dono com enviados, respostas, telefones, aprovações pendentes, gasto e erros |
+
+- **Nada sai sem aprovação:** o envio só manda e-mails aprovados, no horário e no limite do aquecimento (regras da função `envio`).
+- **Botão de parada:** `config.sistema_ativo`. Desligado, o cron não chama o worker, as rotinas não entram na fila, o worker para antes do próximo job e a IA recusa chamadas automáticas. O botão fica na tela **Operação**, junto com a fila.
+- **Diagnóstico:** o worker chamado com `{"diagnostico": true}` e o segredo testa o acesso como sistema (status do Maps e do envio), mesmo parado. Para testar pelo banco, use `net.http_post` com o segredo do Vault.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.

@@ -474,12 +474,18 @@
       api('/rest/v1/rpc/gasto_ia', { metodo: 'POST', corpo: {} }),
       api('/rest/v1/config?select=chave,valor'),
       api('/rest/v1/execucoes_agente?select=*&order=criado_em.desc&limit=50'),
+      api('/rest/v1/jobs?select=id,tipo,status,tentativas,rodar_em,terminado_em,erro,criado_em&order=criado_em.desc&limit=200'),
     ]).then(function (r) {
-      var g = r[0][0] || {}, cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), ex = r[2];
+      var g = r[0][0] || {}, cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), ex = r[2], jobs = r[3];
+      var nJobs = function (s) { return jobs.filter(function (j) { return j.status === s; }).length; };
       var dono = perfil.papel === 'dono';
       var barra = function (v, t) { var pct = t > 0 ? Math.min(100, (v / t) * 100) : 100; return '<div class="barra' + (pct >= 80 ? ' alto' : '') + '"><span style="width:' + pct.toFixed(0) + '%"></span></div>'; };
       tela.innerHTML = '<h1>Operação</h1>' +
-        '<p>Robôs: <b class="' + (cfg.sistema_ativo ? '' : 'ruim') + '">' + (cfg.sistema_ativo ? 'ligados' : 'parados') + '</b> <small class="mut">(o botão de parada chega na Fase 9; testes manuais funcionam mesmo parado)</small></p>' +
+        // Botão de parada (Fase 9): config.sistema_ativo. Desligado, o cron não chama o worker e nenhum job novo começa.
+        '<div class="parada"><p>Robôs: <b class="' + (cfg.sistema_ativo ? '' : 'ruim') + '">' + (cfg.sistema_ativo ? 'ligados' : 'parados') + '</b>' +
+        ' · fila: ' + nJobs('pendente') + ' esperando, ' + nJobs('rodando') + ' rodando, <span class="' + (nJobs('erro') ? 'ruim' : '') + '">' + nJobs('erro') + ' com erro</span></p>' +
+        (dono ? (cfg.sistema_ativo ? '<button type="button" class="parar" id="botao-parada" data-ligar="false">Parar tudo agora</button>' : '<button type="button" class="prim" id="botao-parada" data-ligar="true">Ligar os robôs</button>') +
+          ' <small class="mut">' + (cfg.sistema_ativo ? 'Para na hora: nenhum job novo começa e a IA recusa chamadas automáticas.' : 'Ligados, rodam a fila a cada 5 minutos: cadência e envio dos e-mails aprovados (seg a sex, 8h às 18h), descoberta às 7h, qualificação às 21h, concorrência e memória às segundas e relatório às 8h.') + '</small>' : '') + '</div>' +
         '<div class="numeros">' +
         '<div><b>' + usd(g.hoje_usd, 4) + '</b>hoje, de ' + usd(g.teto_diario_usd) + barra(Number(g.hoje_usd), Number(g.teto_diario_usd)) + '</div>' +
         '<div><b>' + usd(g.mes_usd, 4) + '</b>no mês, de ' + usd(g.teto_mensal_usd) + barra(Number(g.mes_usd), Number(g.teto_mensal_usd)) + '</div></div>' +
@@ -487,6 +493,11 @@
           '<label>Teto mensal US$ <input name="teto_mensal_usd" type="number" min="0" step="0.01" value="' + esc(cfg.teto_mensal_usd) + '" class="curto"></label><button type="submit">Salvar tetos</button></form>' +
           '<h2>Testar conexão</h2><p class="mut">Uma chamada curta no modelo mais barato de cada um (custa frações de centavo).</p>' +
           '<div class="linha"><button type="button" data-testar="anthropic">Testar Claude</button><button type="button" data-testar="openai">Testar ChatGPT</button></div><pre id="resultado-teste" class="resultado" hidden></pre>' : '') +
+        '<h2>Fila de trabalhos</h2><table class="tab"><thead><tr><th>Tipo</th><th>Situação</th><th class="num">Tentativas</th><th>Quando</th><th>Erro</th></tr></thead><tbody>' +
+        (jobs.slice(0, 30).map(function (j) {
+          return '<tr><td>' + esc(j.tipo) + '</td><td' + (j.status === 'erro' ? ' class="ruim"' : '') + '>' + esc(j.status) + '</td><td class="num">' + esc(j.tentativas) + '</td>' +
+            '<td>' + esc(dataHora(j.terminado_em || j.rodar_em)) + '</td><td><small class="ruim">' + esc((j.erro || '').slice(0, 200)) + '</small></td></tr>';
+        }).join('') || '<tr><td colspan="5" class="mut">Nenhum trabalho na fila ainda.</td></tr>') + '</tbody></table>' +
         '<h2>Últimas execuções</h2><table class="tab"><thead><tr><th>Quando</th><th>Provedor / modelo</th><th>Papel</th><th class="num">Tokens</th><th class="num">Custo</th><th class="num">Tempo</th><th>Resultado</th></tr></thead><tbody>' +
         (ex.map(function (e) {
           return '<tr><td>' + esc(dataHora(e.criado_em)) + '</td><td>' + esc(e.provedor) + '<br><small class="mut">' + esc(e.modelo) + '</small></td><td>' + esc(e.papel) + '</td>' +
@@ -495,6 +506,12 @@
             (e.memorias && e.memorias.length ? '<br><small class="mut">usou memória ' + e.memorias.map(function (m) { return '#' + esc(m.slice(0, 8)); }).join(', ') + '</small>' : '') + '</td></tr>';
         }).join('') || '<tr><td colspan="7" class="mut">Nenhuma execução ainda.</td></tr>') + '</tbody></table>';
       if (!dono) return;
+      document.getElementById('botao-parada').addEventListener('click', function (ev) {
+        var ligar = ev.target.dataset.ligar === 'true';
+        if (ligar && !confirm('Ligar os robôs? Eles passam a rodar sozinhos: escrevem rascunhos, enviam os e-mails já aprovados no horário comercial, qualificam empresas e mandam o relatório das 8h.')) return;
+        ev.target.disabled = true;
+        api('/rest/v1/config?chave=eq.sistema_ativo', { metodo: 'PATCH', corpo: { valor: ligar }, retorno: true }).then(rota).catch(erro);
+      });
       enviar('form-tetos', function (d) {
         return Promise.all(['teto_diario_usd', 'teto_mensal_usd'].map(function (k) {
           return api('/rest/v1/config?chave=eq.' + k, { metodo: 'PATCH', corpo: { valor: Number(d[k] || 0) }, retorno: true });
