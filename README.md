@@ -146,6 +146,21 @@ Tela **Concorrência** e função `concorrencia`. Tabelas `concorrentes`, `colet
 - O dossiê traz também o nosso site (`llms-full.txt`, só português), para a lacuna ser algo que nem nós respondemos.
 - Frequência: mensal e quando alguma página mudar. Até a Fase 9, pelos botões da tela, que mostra quantas páginas mudaram desde a última análise.
 
+## Google e IAs (Fase 8)
+O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acrescentou:
+- **LocalBusiness:** a Organization também é LocalBusiness, com o endereço da fábrica.
+- **Sem marcação Product:** as páginas de produto não usam `Product`, porque o Google exige preço, avaliação ou oferta e a Corquímica não publica preço. O teste da publicação recusa `Product` sem isso.
+- **Teste de página órfã:** a publicação falha se alguma página não receber link de outra.
+- **IndexNow:** a chave fica em `site.json` e no arquivo `<chave>.txt` na raiz; é pública por definição. Depois de cada publicação, o job `indexnow` avisa o Bing das páginas com `lastmod` dos últimos 2 dias. Na publicação manual, avisa todas.
+- **Medição própria:** `assets/visita.js` grava visitas pela função `registrar_visita`, sem cookie, sem IP e sem dados do aparelho. Guarda só página, dia, canal e o domínio de origem, e só conta em corquimica.com.br.
+  - O canal `ia` separa ChatGPT (inclusive pelo `utm_source=chatgpt.com`), Perplexity, Gemini, Copilot, Claude e afins.
+  - A política de privacidade foi atualizada nos 3 idiomas.
+  - O canal "AI Assistant" do Google Analytics não foi ligado: exige conta do Áxel e aviso de cookies. A medição própria cobre isso desde o primeiro dia.
+- **Fila de conteúdo:** tabela `propostas_conteudo`. Cada análise fechada da Fase 7 entra na fila por gatilho no banco.
+  - A função `conteudo` (`rascunhar`) escreve a página em Markdown só com fatos do `llms-full.txt`. O que falta vira `[PREENCHER: ...]`.
+  - Na tela **Conteúdo e SEO**, aprovar ou descartar é humano. Aprovado vira página por PR, nunca direto no ar.
+- **Search Console e Perfil da Empresa no Google:** o Áxel faz com a conta dele (passo 5 acima). Nome, endereço e telefone devem ser iguais aos de `site.json`.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.
