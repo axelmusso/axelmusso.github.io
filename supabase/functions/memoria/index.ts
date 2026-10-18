@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json(req, 405, { erro: 'Use POST.' });
   const quem = await usuario(req);
   if (!quem) return json(req, 401, { erro: 'Faça login de novo.' });
-  if (quem.papel !== 'dono' && quem.papel !== 'operador') return json(req, 403, { erro: 'Seu papel não pode alterar a memória.' });
+  if (quem.papel !== 'dono' && quem.papel !== 'operador' && quem.papel !== 'sistema') return json(req, 403, { erro: 'Seu papel não pode alterar a memória.' });
 
   let c: Record<string, unknown>;
   try { c = await req.json(); } catch { return json(req, 400, { erro: 'Corpo inválido.' }); }
@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
     }
     if (c.acao === 'buscar') return json(req, 200, { itens: await buscarMemoria(String(c.texto ?? ''), 5) });
     if (c.acao === 'consolidar') {
-      if (quem.papel !== 'dono') return json(req, 403, { erro: 'Só o dono consolida.' });
-      return json(req, 200, await consolidar(true));
+      if (quem.papel !== 'dono' && quem.papel !== 'sistema') return json(req, 403, { erro: 'Só o dono consolida.' });
+      return json(req, 200, await consolidar(quem.papel !== 'sistema'));
     }
     return json(req, 400, { erro: 'Ação desconhecida.' });
   } catch (e) {

@@ -17,8 +17,11 @@ export const json = (req: Request, status: number, corpo: unknown) =>
   new Response(JSON.stringify(corpo), { status, headers: { ...cors(req), 'Content-Type': 'application/json' } });
 
 // Confere o login no Auth e devolve { id, papel } do perfil, ou null.
-export async function usuario(req: Request): Promise<{ id: string; papel: string | null } | null> {
+// O worker da Fase 9 chama com a chave secreta do servidor: entra como "sistema", nunca como uma pessoa.
+export async function usuario(req: Request): Promise<{ id: string | null; papel: string | null } | null> {
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  const segredo = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (segredo && token === segredo) return { id: null, papel: 'sistema' };
   const u = await fetch(Deno.env.get('SUPABASE_URL') + '/auth/v1/user', {
     headers: { apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '', Authorization: 'Bearer ' + token },
   });
