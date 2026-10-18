@@ -4,8 +4,12 @@
 // As rotinas fixas só põem outros jobs na fila; o trabalho de verdade é feito pelas funções de sempre,
 // chamadas aqui como "sistema" (envio, prospecção, Maps, memória, concorrência).
 // Nada sai sem aprovação humana: o envio só manda e-mails que alguém aprovou.
-import { banco } from '../_shared/ia.ts';
+// Ciclo autônomo: toda segunda, depois da coleta dos concorrentes, a revisão semanal aprende com os descartes do dono
+// e com os números, compara os indicadores com as 4 semanas anteriores e, havendo sinal, abre o Conselho sozinha.
+// As ações que o Conselho propõe esperam o dono; as aprovadas são medidas depois e o resultado vira memória.
+import { banco, chamarIA } from '../_shared/ia.ts';
 import { config, enderecoDe, enviarResend } from '../_shared/envio.ts';
+import { gravarAprendizado } from '../_shared/memoria.ts';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
 const CHAVE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -69,6 +73,11 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   // Mantém sempre config.rascunhos_alvo (30) e-mails esperando aprovação: escreve só a diferença,
   // com o 1º e-mail das melhores empresas ainda não contatadas (maior nota primeiro). Nada sai sem aprovação.
   async reabastecer_rascunhos() {
+    // Rascunhos que o dono mandou refazer e que ainda não ganharam a versão nova (a tela tenta na hora; aqui é a garantia).
+    const reprovados = await banco(`/rest/v1/emails?select=id&descarte_tipo=eq.refazer&erro=is.null&descartado_em=gte.${q(new Date(Date.now() - 7 * 864e5).toISOString())}&limit=20`);
+    for (const r of reprovados) {
+      if (!(await banco(`/rest/v1/emails?select=id&refeito_de=eq.${r.id}&limit=1`)).length) await enfileirar('refazer_email', { email_id: r.id }, 7, 'refazer:' + r.id);
+    }
     const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.rascunhos_alvo');
     const alvo = Number(cfg?.valor ?? 30);
     const esperando = (await banco('/rest/v1/emails?select=id&status=eq.rascunho')).length;
@@ -101,6 +110,17 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     for (const e of lista) await enfileirar('maps_achar_site', { empresa_id: e.id }, 4, 'achar_site:' + e.id);
     return { enfileiradas: lista.length };
   },
+  // Reescreve o rascunho reprovado com o motivo do dono. Sem conserto possível, marca o erro e não tenta de novo.
+  async refazer_email(j) {
+    try { return await chamar('prospeccao', { acao: 'refazer', email_id: j.payload.email_id }); }
+    catch (e) {
+      const msg = (e as Error).message;
+      if (/teto|parado/i.test(msg)) throw e;
+      await banco('/rest/v1/emails?id=eq.' + q(j.payload.email_id), { metodo: 'PATCH', corpo: { erro: ('Não refeito: ' + msg).slice(0, 500) } });
+      return { pulou: msg };
+    }
+  },
+
   maps_achar_site: (j) => chamar('maps', { acao: 'achar_site', empresa_id: j.payload.empresa_id }),
 
   // Rotina da noite: qualificar (nota do ICP) as empresas com site que ainda não foram avaliadas.
@@ -116,6 +136,8 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     const cons = await banco('/rest/v1/concorrentes?select=id&ativo=is.true');
     for (const c of cons) await enfileirar('concorrencia_coletar', { concorrente_id: c.id }, 2, 'coletar:' + c.id);
     await enfileirar('analise_verificar', {}, 2, 'analise_verificar', new Date(Date.now() + 30 * 60_000));
+    // Três horas depois (coleta e análise já terminaram): a revisão semanal.
+    await enfileirar('revisao_semanal', {}, 2, 'revisao_semanal', new Date(Date.now() + 3 * 3600_000));
     return { concorrentes: cons.length };
   },
   concorrencia_coletar: (j) => chamar('concorrencia', { acao: 'coletar', concorrente_id: j.payload.concorrente_id }),
@@ -137,7 +159,16 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   },
 
   memoria_consolidar: () => chamar('memoria', { acao: 'consolidar' }),
-  relatorio: () => relatorio(),
+  revisao_semanal: () => revisaoSemanal(),
+  // O Conselho fala um passo por vez (cada um é uma chamada de IA); a sessão continua no job seguinte.
+  async conselho_avancar(j) {
+    const r = await chamar('conselho', { acao: 'avancar', sessao_id: j.payload.sessao_id });
+    if (r.status === 'em_andamento') await enfileirar('conselho_avancar', j.payload, 4, 'conselho:' + j.payload.sessao_id, new Date(Date.now() + 30_000));
+    return r;
+  },
+  medir_acoes: () => medirAcoes(),
+  // Junto com o relatório das 8h: medir as ações aprovadas que chegaram na data.
+  relatorio: async () => { await enfileirar('medir_acoes', {}, 3, 'medir_acoes'); return relatorio(); },
   teste: async (j) => ({ ok: true, eco: j.payload }),
 };
 
@@ -158,6 +189,9 @@ async function relatorio() {
     qualificadas: await conta(`/rest/v1/empresas?select=id&qualificado_em=gte.${q(ontem)}`),
     jobs_feitos: await conta(`/rest/v1/jobs?select=id&status=eq.feito&terminado_em=gte.${q(ontem)}`),
     jobs_erro: await banco(`/rest/v1/jobs?select=tipo,erro&status=eq.erro&terminado_em=gte.${q(ontem)}&limit=5`),
+    acoes: await conta('/rest/v1/acoes_propostas?select=id&status=eq.proposta'),
+    revisao: (await banco(`/rest/v1/revisoes?select=sinais,pulou_motivo,sessao_id&criado_em=gte.${q(ontem)}&order=criado_em.desc&limit=1`))[0],
+    medidas: await banco(`/rest/v1/acoes_propostas?select=titulo,resultado&status=eq.medida&medida_em=gte.${q(ontem)}`),
   };
   const visitas = await banco(`/rest/v1/visitas?select=canal&criado_em=gte.${q(ontem)}`);
   const ia = visitas.filter((v: { canal: string }) => v.canal === 'ia').length;
@@ -171,6 +205,9 @@ async function relatorio() {
     `Empresas novas: ${n.empresas_novas} · qualificadas: ${n.qualificadas}`,
     `Visitas no site: ${visitas.length} (${ia} vindas de assistentes de IA)`,
     `Gasto de IA: US$ ${custoOntem.toFixed(2)} nas 24 h · mês US$ ${Number(g.mes_usd).toFixed(2)} de ${Number(g.teto_mensal_usd).toFixed(2)}`,
+    `Ações propostas pelos robôs esperando você: ${n.acoes}${n.acoes ? ' (tela Conselho)' : ''}`,
+    ...(n.revisao ? [`Revisão semanal: ${n.revisao.sinais.length} sinal(is). ${n.revisao.pulou_motivo ?? 'O Conselho discutiu sozinho e propôs ações.'}`] : []),
+    ...n.medidas.map((m: { titulo: string; resultado: string }) => `Ação medida: "${m.titulo}" ${m.resultado}`),
     `Trabalhos automáticos: ${n.jobs_feitos} feitos, ${n.jobs_erro.length} com erro`,
     ...n.jobs_erro.map((e: { tipo: string; erro: string }) => `  - ${e.tipo}: ${String(e.erro).slice(0, 160)}`),
     '',
@@ -187,6 +224,158 @@ async function relatorio() {
     chave: 'relatorio-' + agora.toISOString().slice(0, 10),
   });
   return n;
+}
+
+// ---------- ciclo autônomo: revisão semanal, aprendizado e medição ----------
+type Ind = { valor: number | null; amostra: number; melhor: 'maior' | 'menor'; descricao: string };
+const TAXAS = ['resposta', 'interesse', 'bounce', 'descarte_rascunhos', 'descarte_por_empresa', 'entrada_qualificada'];
+const fmt = (k: string, v: number | null) => v == null ? '—' : TAXAS.includes(k) ? (100 * v).toFixed(1).replace('.', ',') + '%' : String(v);
+// Amostra mínima para um indicador virar sinal, e limites que já são sinal sozinhos.
+const MINIMO: Record<string, number> = { resposta: 30, interesse: 30, bounce: 30, telefones: 30, descarte_rascunhos: 10, descarte_por_empresa: 10, entrada_qualificada: 20, empresas_descartadas: 20, visitas: 20, visitas_ia: 20, visitas_busca: 20, leads_site: 20 };
+const LIMITE: Record<string, [number, 'acima' | 'abaixo']> = { descarte_rascunhos: [0.25, 'acima'], entrada_qualificada: [0.35, 'abaixo'], bounce: [0.03, 'acima'], resposta: [0.02, 'abaixo'] };
+
+// A reflexão só roda com folga: o dia abaixo da metade do teto e o mês dentro do teto próprio da reflexão.
+async function podeRefletir(): Promise<string | null> {
+  const [g] = await banco('/rest/v1/rpc/gasto_ia', { metodo: 'POST', corpo: {} });
+  const [c] = await banco('/rest/v1/config?select=valor&chave=eq.teto_reflexao_mensal_usd');
+  const teto = Number(c?.valor ?? 6);
+  const usado = Number(await banco('/rest/v1/rpc/gasto_reflexao_mes', { metodo: 'POST', corpo: {} }));
+  if (Number(g.hoje_usd) >= 0.5 * Number(g.teto_diario_usd)) return 'o gasto de hoje já passou da metade do teto diário (a rotina vem primeiro)';
+  if (usado >= teto) return `a reflexão já usou US$ ${usado.toFixed(2)} de US$ ${teto.toFixed(2)} no mês`;
+  return null;
+}
+
+function sinais(atual: Record<string, Ind>, anterior: Record<string, Ind>) {
+  const out: string[] = [];
+  for (const [k, a] of Object.entries(atual)) {
+    if (!a || typeof a !== 'object' || !MINIMO[k] || a.amostra < MINIMO[k] || a.valor == null) continue;
+    const lim = LIMITE[k], p = anterior[k];
+    if (lim && (lim[1] === 'acima' ? a.valor > lim[0] : a.valor < lim[0])) {
+      out.push(`${k} em ${fmt(k, a.valor)} (${a.descricao}; amostra ${a.amostra}), ${lim[1]} do limite de ${fmt(k, lim[0])}`);
+    } else if (p && p.amostra >= MINIMO[k] && p.valor) {
+      const v = (a.valor - p.valor) / p.valor;
+      if (Math.abs(v) >= 0.25) out.push(`${k} ${(v > 0) === (a.melhor === 'maior') ? 'melhorou' : 'piorou'}: ${fmt(k, p.valor)} → ${fmt(k, a.valor)} (${a.descricao}; amostra ${p.amostra} → ${a.amostra})`);
+    }
+  }
+  if (Number(atual.conteudo_parado?.valor) > 0) out.push(`${atual.conteudo_parado.valor} proposta(s) de conteúdo aberta(s) há mais de 14 dias`);
+  if (Number(atual.concorrente_mudou?.valor) > 0) out.push(`${atual.concorrente_mudou.valor} página(s) de concorrentes mudaram nas últimas 4 semanas`);
+  return out;
+}
+
+// Motivos que o dono escreveu ao descartar (desde a última revisão) viram padrões na memória.
+// Opinião explícita do dono vale como evidência forte: entra com confiança 0,65, já usada pelos redatores.
+async function aprenderDescartes(desde: string) {
+  const emails = await banco(`/rest/v1/emails?select=descarte_tipo,descarte_motivo,passo,empresas(segmento_icp)&descarte_tipo=not.is.null&descartado_em=gte.${q(desde)}&limit=60`);
+  const conteudo = (await banco(`/rest/v1/propostas_conteudo?select=status,descarte_motivo,ajustes&atualizado_em=gte.${q(desde)}`))
+    .filter((p: Record<string, any>) => p.descarte_motivo || p.ajustes?.length);
+  const motivos = [
+    ...emails.map((m: Record<string, any>) => ({ area: m.descarte_tipo === 'empresa' ? 'empresas' : 'redacao', segmento: m.empresas?.segmento_icp, motivo: m.descarte_motivo })),
+    ...conteudo.map((p: Record<string, any>) => ({ area: 'conteudo', motivo: p.descarte_motivo ?? p.ajustes?.at(-1)?.motivo })),
+  ].filter((m) => m.motivo);
+  if (motivos.length < 2) return [];
+  const r = await chamarIA({
+    provedor: 'anthropic', papel: 'reflexao_descartes', nivel: 'barato', manual: false, maxTokens: 1500,
+    instrucoes: 'Você agrupa os motivos que o dono da Corquímica escreveu ao reprovar rascunhos de e-mail, empresas e páginas. Responda só com JSON. Junte motivos que dizem a mesma coisa. Escreva cada padrão como regra geral, em uma frase, sem nome de empresa nem de pessoa.',
+    contexto: `MOTIVOS:\n${JSON.stringify(motivos)}\n\nDevolva {"padroes":[{"area":"redacao|empresas|conteudo","padrao":"","ocorrencias":0}]}, só com padrões que aparecem 2 ou mais vezes.`,
+  });
+  let v: { padroes?: { area: string; padrao: string; ocorrencias: number }[] } = {};
+  try { v = JSON.parse(r.texto.slice(r.texto.indexOf('{'), r.texto.lastIndexOf('}') + 1)); } catch { return [{ erro: 'resposta sem JSON' }]; }
+  const feitos: Record<string, unknown>[] = [];
+  for (const p of (v.padroes ?? []).filter((x) => x.padrao && Number(x.ocorrencias) >= 2)) {
+    try {
+      const g = await gravarAprendizado({
+        hipotese: `${p.padrao.trim().replace(/\.$/, '')} (o dono apontou isso em ${p.ocorrencias} de ${motivos.length} descartes recentes).`,
+        evidencia: [{ metrica: 'descartes com este motivo', valor: Number(p.ocorrencias), amostra: motivos.length, fonte: 'motivos de descarte escritos pelo dono' }],
+        status: 'hipotese', confianca: 0.65, tags: ['dono', p.area], origem: 'descartes',
+      }, false);
+      feitos.push({ padrao: p.padrao, ...g });
+    } catch (e) { feitos.push({ padrao: p.padrao, erro: (e as Error).message }); }
+  }
+  return feitos;
+}
+
+// Uma vez a cada 4 semanas (janelas que não se sobrepõem): segmento ou passo com resposta muito acima ou abaixo da média vira memória.
+async function padroesNumericos() {
+  const [ult] = await banco('/rest/v1/revisoes?select=criado_em&padroes_gravados=is.true&order=criado_em.desc&limit=1');
+  if (ult && Date.now() - new Date(ult.criado_em).getTime() < 27 * 864e5) return { itens: [], marcar: false };
+  const linhas: { grupo: string; valor: string; enviados: number; respostas: number }[] = await banco('/rest/v1/rpc/resposta_por_grupo', { metodo: 'POST', corpo: { p_dias: 28 } });
+  const seg = linhas.filter((l) => l.grupo === 'segmento');
+  const env = seg.reduce((s, l) => s + Number(l.enviados), 0), resp = seg.reduce((s, l) => s + Number(l.respostas), 0);
+  if (env < 60 || !resp) return { itens: [], marcar: false };
+  const media = resp / env;
+  const pct = (x: number) => (100 * x).toFixed(1).replace('.', ',') + '%';
+  const itens: Record<string, unknown>[] = [];
+  for (const l of linhas.filter((x) => Number(x.enviados) >= 30)) {
+    const taxa = Number(l.respostas) / Number(l.enviados);
+    if (Math.abs(taxa - media) / media < 0.5) continue;
+    const quem = l.grupo === 'segmento' ? `para o segmento ${l.valor}` : `do passo ${l.valor} da cadência`;
+    try {
+      const g = await gravarAprendizado({
+        hipotese: `Nas últimas 4 semanas, e-mails ${quem} tiveram ${pct(taxa)} de resposta, contra ${pct(media)} da média (${l.enviados} envios).`,
+        evidencia: [{ metrica: 'taxa de resposta', valor: pct(taxa), amostra: Number(l.enviados), fonte: 'resposta_por_grupo(28)' }],
+        status: 'testando', tags: ['resposta', l.grupo], origem: 'padroes',
+      }, false);
+      itens.push({ grupo: l.grupo, valor: l.valor, taxa: pct(taxa), ...g });
+    } catch (e) { itens.push({ grupo: l.grupo, valor: l.valor, erro: (e as Error).message }); }
+  }
+  return { itens, marcar: true };
+}
+
+async function revisaoSemanal() {
+  const semFolga = await podeRefletir();
+  if (semFolga) {
+    await banco('/rest/v1/revisoes', { metodo: 'POST', corpo: { pulou_motivo: 'Sem orçamento: ' + semFolga } });
+    return { pulou: semFolga };
+  }
+  const [ult] = await banco('/rest/v1/revisoes?select=criado_em&order=criado_em.desc&limit=1');
+  const desde = ult?.criado_em ?? new Date(Date.now() - 7 * 864e5).toISOString();
+  const aprendizados: Record<string, unknown>[] = [];
+  try { aprendizados.push(...(await aprenderDescartes(desde))); } catch (e) { aprendizados.push({ etapa: 'descartes', erro: (e as Error).message }); }
+  let padroes = false;
+  try { const p = await padroesNumericos(); aprendizados.push(...p.itens); padroes = p.marcar; } catch (e) { aprendizados.push({ etapa: 'padroes', erro: (e as Error).message }); }
+
+  const atual = await banco('/rest/v1/rpc/indicadores', { metodo: 'POST', corpo: { p_dias: 28 } });
+  const anterior = await banco('/rest/v1/rpc/indicadores', { metodo: 'POST', corpo: { p_dias: 28, p_ate: new Date(Date.now() - 28 * 864e5).toISOString() } });
+  const lista = sinais(atual, anterior);
+  const novosMotivos = (await banco(`/rest/v1/emails?select=id&descarte_tipo=not.is.null&descartado_em=gte.${q(desde)}`)).length;
+  if (novosMotivos) lista.push(`${novosMotivos} rascunho(s) descartado(s) pelo dono com motivo desde a última revisão (veja descartes_do_dono)`);
+  const medidas = await banco(`/rest/v1/acoes_propostas?select=titulo,metrica,valor_antes,valor_depois,resultado&status=eq.medida&medida_em=gte.${q(desde)}`);
+  for (const m of medidas) lista.push(`ação medida: "${m.titulo}" ${m.resultado} (${m.metrica}: ${fmt(m.metrica, m.valor_antes)} → ${fmt(m.metrica, m.valor_depois)})`);
+
+  const pendentes = (await banco('/rest/v1/acoes_propostas?select=id&status=eq.proposta')).length;
+  let pulou: string | null = null, sessao: string | null = null;
+  if (!lista.length) pulou = 'Nenhum sinal com amostra suficiente nesta semana.';
+  else if (pendentes >= 3) pulou = `${pendentes} ações ainda esperam a decisão do dono: o Conselho não abre outra sessão antes disso.`;
+  else {
+    const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const tema = `Revisão semanal automática (${hoje}). Sinais desta semana (números no bloco indicadores do dossiê):\n- ${lista.join('\n- ')}\n\n` +
+      'Perguntas: (1) o que explica cada sinal, com fonte no dossiê? (2) a qualidade das empresas que estão entrando (entrada_empresas, descartes_do_dono, segmentos e regras em regras_atuais) está boa, ou a rota de prospecção precisa mudar? (3) os e-mails, o site e o conteúdo estão bem posicionados contra a concorrência? ' +
+      'Proponha no máximo 3 ações, cada uma com a métrica que deve mover. Não repita ações recusadas sem evidência nova.';
+    const r = await chamar('conselho', { acao: 'abrir', gatilho: 'revisao_semanal', tema });
+    sessao = r.sessao_id;
+    await enfileirar('conselho_avancar', { sessao_id: sessao }, 4, 'conselho:' + sessao);
+  }
+  await banco('/rest/v1/revisoes', { metodo: 'POST', corpo: { sinais: lista, sessao_id: sessao, pulou_motivo: pulou, aprendizados, padroes_gravados: padroes } });
+  return { sinais: lista.length, sessao_id: sessao, pulou, aprendizados: aprendizados.length };
+}
+
+// Ações aprovadas que chegaram na data de medir: o banco calcula o depois; aqui o resultado vira memória.
+async function medirAcoes() {
+  const medidas = await banco('/rest/v1/rpc/medir_acoes', { metodo: 'POST', corpo: {} });
+  let gravadas = 0;
+  for (const a of medidas) {
+    if (!a.metrica || a.valor_depois == null || String(a.resultado).startsWith('inconclusivo')) continue;
+    try {
+      const g = await gravarAprendizado({
+        hipotese: `Ação aprovada "${a.titulo}" (${a.tipo}): ${a.metrica} foi de ${fmt(a.metrica, a.valor_antes)} para ${fmt(a.metrica, a.valor_depois)} (${a.resultado}; amostra ${a.amostra_antes} → ${a.amostra_depois}).`,
+        evidencia: [{ metrica: a.metrica, valor: Number(a.valor_depois), amostra: Number(a.amostra_depois), fonte: 'indicadores()' }],   // o registro é o fato medido (melhorou ou piorou), não uma hipótese contrariada
+        status: 'testando', tags: ['acao', a.tipo], origem: 'acao', origem_id: a.id,
+      }, false);
+      await banco('/rest/v1/acoes_propostas?id=eq.' + a.id, { metodo: 'PATCH', corpo: { aprendizado_id: g.id } });
+      gravadas++;
+    } catch (e) { console.error('Medição sem memória:', (e as Error).message); }
+  }
+  return { medidas: medidas.length, gravadas };
 }
 
 // ---------- alertas para o dono (Fase 10) ----------

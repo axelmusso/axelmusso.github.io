@@ -17,6 +17,9 @@
   var envio = function (corpo) { return api('/functions/v1/envio', { metodo: 'POST', corpo: corpo }); };
   // Que tipo de e-mail é o rascunho (as respostas a clientes ficam na "Caixa de respostas", separada).
   function tipoRascunho(m) {
+    return (m.refeito_de ? 'Refeito com o seu motivo · ' : '') + tipoBase(m);
+  }
+  function tipoBase(m) {
     var ex = m.empresas && m.empresas.relacao === 'ex_cliente';
     if (m.angulo === 'indicacao') return '1º contato com pessoa indicada';
     if (m.passo === 1) return ex ? '1º e-mail de retomada (ex-cliente)' : '1º contato (empresa nova)';
@@ -178,7 +181,7 @@
   function render() {
     var w = podeEscrever();
     return Promise.all([
-      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,empresas(nome,relacao,perfil_produto,perfil_fonte),contatos(origem)&status=in.(rascunho,aprovado)&order=criado_em'),
+      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,refeito_de,empresas(nome,relacao,perfil_produto,perfil_fonte),contatos(origem)&status=in.(rascunho,aprovado)&order=criado_em'),
       api('/rest/v1/config?select=chave,valor&chave=in.(icp,email_assinatura)'),
       api('/rest/v1/empresas?select=relacao,icp_score,qualificado_em,sem_gancho&limit=5000'),
       api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em.desc'),
@@ -215,7 +218,13 @@
             '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
             '<label class="largo">Corpo<textarea name="corpo" rows="6"' + (w ? '' : ' disabled') + '>' + esc(m.corpo) + '</textarea></label>' +
             '<div class="largo assinatura"><pre>' + (m.passo === 1 && m.empresas && m.empresas.relacao === 'prospect' ? 'Apresentação da Corquímica (PDF): link\n\n' : '') + esc(cfg.email_assinatura || '') + '\n\nNão quer mais receber estes e-mails? Clique aqui.</pre></div>' +
-            (w ? '<div class="largo linha"><button type="submit" name="acao" value="aprovar" class="prim">' + (m.status === 'aprovado' ? 'Salvar (já aprovado)' : 'Aprovar') + '</button><button type="submit" name="acao" value="salvar">Salvar sem aprovar</button><button type="submit" name="acao" value="descartar">Descartar</button></div>' : '') +
+            (w ? '<div class="largo linha"><button type="submit" name="acao" value="aprovar" class="prim">' + (m.status === 'aprovado' ? 'Salvar (já aprovado)' : 'Aprovar') + '</button><button type="submit" name="acao" value="salvar">Salvar sem aprovar</button><button type="submit" name="acao" value="descartar">Descartar</button></div>' +
+              // Descarte com motivo: o robô aprende com ele (refazer o texto ou tirar a empresa das rotinas).
+              '<div class="largo descarte" hidden><p><b>Por que descartar?</b> O motivo ensina os robôs.</p>' +
+              '<label class="chk"><input type="radio" name="dtipo" value="refazer" checked> O e-mail não está bom: refazer com ajustes (a empresa segue)</label>' +
+              '<label class="chk"><input type="radio" name="dtipo" value="empresa"> A empresa não serve: tirar de todas as rotinas</label>' +
+              '<label>Motivo<input name="dmotivo" maxlength="500" placeholder="Ex.: genérico demais, cite o produto que aparece no site"></label>' +
+              '<div class="linha"><button type="button" class="prim" data-confirmar-descarte>Confirmar descarte</button><button type="button" class="link" data-cancelar-descarte>Cancelar</button></div></div>' : '') +
             '</form></div>';
         }).join('') || '<p class="mut">Nenhum rascunho esperando.</p>') +
 
@@ -310,10 +319,34 @@
         var acao = ev.submitter && ev.submitter.value;
         var corpo = { assunto: f.assunto.value.trim(), corpo: f.corpo.value.trim() };
         if (acao === 'aprovar') { corpo.status = 'aprovado'; corpo.aprovado_por = perfil.id; corpo.aprovado_em = new Date().toISOString(); }
-        if (acao === 'descartar') { if (!confirm('Descartar este rascunho?')) return; corpo = { status: 'descartado' }; }
+        if (acao === 'descartar') { var d = f.querySelector('.descarte'); d.hidden = false; f.dmotivo.focus(); return; }
         api('/rest/v1/emails?id=eq.' + q(f.dataset.email), { metodo: 'PATCH', corpo: corpo, retorno: true })
           .then(function () { aviso(acao === 'aprovar' ? 'Aprovado. Sai no próximo "Enviar aprovados", dentro do limite e do horário.' : acao === 'descartar' ? 'Rascunho descartado.' : 'Salvo.'); return render(); })
           .catch(function (e) { aviso(e.message, true); });
+      });
+    });
+    // Enter no motivo confirma o descarte (sem isso, o Enter enviaria o formulário pelo primeiro botão: "Aprovar").
+    document.querySelectorAll('.descarte input[name=dmotivo]').forEach(function (i) {
+      i.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); i.closest('.descarte').querySelector('[data-confirmar-descarte]').click(); } });
+    });
+    document.querySelectorAll('[data-cancelar-descarte]').forEach(function (b) {
+      b.addEventListener('click', function () { b.closest('.descarte').hidden = true; });
+    });
+    document.querySelectorAll('[data-confirmar-descarte]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var f = b.closest('form'), id = f.dataset.email, tipo = f.dtipo.value, motivo = f.dmotivo.value.trim();
+        if (motivo.length < 3) { aviso('Escreva brevemente o motivo: é com ele que os robôs aprendem.', true); f.dmotivo.focus(); return; }
+        b.disabled = true; b.textContent = tipo === 'refazer' ? 'Reescrevendo… (até 40 s)' : 'Descartando…';
+        api('/rest/v1/rpc/descartar_email', { metodo: 'POST', corpo: { p_email: id, p_tipo: tipo, p_motivo: motivo } })
+          .then(function () {
+            if (tipo === 'empresa') { aviso('Empresa descartada: saiu de todas as rotinas. O motivo entra na próxima qualificação e na revisão semanal.'); return; }
+            return fn({ acao: 'refazer', email_id: id }).then(function (r) {
+              aviso(r.sem_gancho ? 'Descartado. Não reescrevi: não há algo honesto e novo para dizer a esta empresa (' + (r.motivo || '') + ').' :
+                'Reescrito com o seu motivo: "' + r.assunto + '". Está na lista para aprovar.' + (r.revisar && r.revisar.length ? ' Atenção: ' + r.revisar.join('; ') : ''));
+            }, function (e) { aviso('Descartado com o motivo, mas a nova versão não saiu agora (' + e.message + '). Os robôs tentam de novo na próxima rodada da cadência (dias úteis, de hora em hora).', true); });
+          })
+          .then(function () { return render(); })
+          .catch(function (e) { aviso(e.message, true); b.disabled = false; b.textContent = 'Confirmar descarte'; });
       });
     });
     if (!w) return;

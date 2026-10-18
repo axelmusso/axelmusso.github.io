@@ -4,6 +4,7 @@
 //   { acao: 'qualificar', empresa_id }   → lê o site público, classifica no segmento (a nota vem dele, em config.icp.segmentos) e acha o gancho
 //   { acao: 'redigir', empresa_id }      → escreve o 1º e-mail (prospecção ou retomada de ex-cliente) como rascunho
 //   { acao: 'dados_cnpj', empresa_id }   → completa CNAE, cidade, UF e porte pelo cadastro público do CNPJ (base do perfil de cliente)
+//   { acao: 'refazer', email_id }        → reescreve um rascunho que o dono reprovou, levando o motivo em conta
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { redigirEmail, SOBRE_A_CORQUIMICA } from '../_shared/redacao.ts';
@@ -74,6 +75,10 @@ async function qualificar(id: string) {
     } catch (err) { avisos.push((err as Error).message); }
   }
   const segmentos = (icp.segmentos ?? []) as Segmento[];
+  // O que o dono já ensinou: regras aprovadas (ações do Conselho) e empresas descartadas, com o motivo.
+  const regrasExtras = ((icp.regras_extras ?? []) as { texto: string }[]).map((r) => '- ' + r.texto).join('\n');
+  const descartes = (await banco(`/rest/v1/empresas?select=nome,setor,segmento_icp,descarte_motivo&descartada_em=gte.${q(new Date(Date.now() - 90 * 864e5).toISOString())}&descarte_motivo=not.is.null&order=descartada_em.desc&limit=12`))
+    .map((d: Record<string, string>) => `- ${d.nome} (${d.setor ?? 's/ setor'}; estava como ${d.segmento_icp ?? '?'}): ${d.descarte_motivo}`).join('\n');
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'prospeccao_qualificar', nivel: 'barato', manual: true, maxTokens: 2500,
     instrucoes: `Você classifica empresas para a prospecção da Corquímica. Responda só com JSON.\n${SOBRE_A_CORQUIMICA}\nA nota vem do SEGMENTO: escolha o segmento que descreve o que a empresa FABRICA, pelo texto do site e pelo setor informado.\nSEGMENTOS (id: descrição):\n${segmentos.map((g) => `${g.id}: ${g.nome}`).join('\n')}\n` +
@@ -85,7 +90,9 @@ async function qualificar(id: string) {
       'plastico_tecnico também para rodízios, sapatas, núcleos e chapas estruturais (ex. C-Core) e painéis e chapas de acrílico (ex. Al Componenti). ' +
       'Impressão digital UV é TINTA, não verniz: só conte grafica_uv ou plastico_acabamento se o texto mostrar verniz, laca, pintura, metalização ou hot stamping em peça plástica. ' +
       'injecao_plastica só para quem injeta ou sopra peças plásticas VISÍVEIS (utilidades, brinquedos, tampas, peças de móveis à vista). ' +
-      'Sem site: nome com alumínio/alumi, aço, metal, madeira ou vidro já indica o segmento fora (ex. Alumiconte = ferragens_metalurgia). Sem texto suficiente para decidir, use sem_informacao.',
+      'Sem site: nome com alumínio/alumi, aço, metal, madeira ou vidro já indica o segmento fora (ex. Alumiconte = ferragens_metalurgia). Sem texto suficiente para decidir, use sem_informacao.' +
+      (regrasExtras ? `\nREGRAS APROVADAS PELO DONO (valem sobre os exemplos acima):\n${regrasExtras}` : '') +
+      (descartes ? `\nEMPRESAS QUE O DONO DESCARTOU RECENTEMENTE E POR QUÊ (empresa parecida, pelo mesmo motivo, vai para o segmento que reflete o motivo, nunca para um alvo):\n${descartes}` : ''),
     contexto: `EMPRESA: ${JSON.stringify({ nome: e.nome, site: e.site, cidade: e.cidade, uf: e.uf, setor: e.setor, origem: e.origem, relacao: e.relacao })}
 ${avisos.length ? 'AVISO: ' + avisos.join('; ') + '\n' : ''}${paginas.length ? paginas.map((p) => `--- ${p.url}\n${p.texto}`).join('\n') : '(sem site para ler)'}
 
@@ -187,6 +194,34 @@ async function redigir(id: string, quem: string) {
   return { email_id: em.id, assunto: r.assunto, revisar: r.revisar, custo: r.custo, pedido_por: quem };
 }
 
+// ---------- refazer: o dono reprovou o texto (não a empresa) e escreveu o motivo ----------
+async function refazer(emailId: string, manual: boolean) {
+  const [m] = await banco('/rest/v1/emails?select=*,empresas(*),contatos(*),cadencias(tipo)&id=eq.' + q(emailId));
+  if (!m) throw new Error('Rascunho não encontrado.');
+  if (m.descarte_tipo !== 'refazer') throw new Error('Este rascunho não foi marcado para refazer.');
+  const [ja] = await banco(`/rest/v1/emails?select=id&refeito_de=eq.${q(emailId)}&limit=1`);
+  if (ja) return { ja_refeito: true, email_id: ja.id };
+  const e = m.empresas, contato = m.contatos;
+  if (e.status === 'descartada' || e.relacao === 'cliente_ativo') throw new Error('Empresa descartada ou cliente ativo: não reescrevo.');
+  if ((await banco(`/rest/v1/emails?select=id&empresa_id=eq.${q(e.id)}&status=in.(rascunho,aprovado)&limit=1`)).length) throw new Error('Já existe outro rascunho esperando aprovação para esta empresa.');
+  if (!contato?.email || !contato.pode_contatar) throw new Error('O contato deste rascunho não pode mais receber e-mail.');
+  // Indicação: recupera quem indicou pelo texto reprovado ("por indicação de Fulano").
+  const indicadoPor = m.angulo === 'indicacao' ? (String(m.corpo).match(/indica[çc][ãa]o d[aeo]s?\s+([^.,;!?\n]{2,40})/i)?.[1]?.trim() ?? 'a equipe de vocês') : undefined;
+  const tipo = m.cadencias?.tipo ?? (e.relacao === 'ex_cliente' ? 'retomada' : 'prospeccao');
+  const r = await redigirEmail({ empresa: e, contato, passo: m.passo, tipo, manual, indicadoPor, ajuste: { assunto: m.assunto, corpo: m.corpo, motivo: m.descarte_motivo ?? '' } });
+  if (r.sem_gancho) {
+    // Sem algo honesto e novo para dizer: registra e não tenta de novo (o worker só refaz rascunho sem erro).
+    await banco('/rest/v1/emails?id=eq.' + q(m.id), { metodo: 'PATCH', corpo: { erro: ('Não refeito: ' + r.motivo).slice(0, 500) } });
+    return { sem_gancho: true, motivo: r.motivo, custo: r.custo };
+  }
+  const [novo] = await banco('/rest/v1/emails', {
+    metodo: 'POST',
+    corpo: { cadencia_id: m.cadencia_id, empresa_id: e.id, contato_id: contato.id, para: contato.email, passo: m.passo, angulo: m.angulo === 'indicacao' ? 'indicacao' : r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, refeito_de: m.id, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
+  });
+  await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: e.id, contato_id: contato.id, tipo: 'email', direcao: 'interna', assunto: 'Rascunho refeito: ' + r.assunto, conteudo: 'Reescrito com o motivo do dono: ' + (m.descarte_motivo ?? ''), agente_id: 'redator' } });
+  return { email_id: novo.id, assunto: r.assunto, revisar: r.revisar, custo: r.custo };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors(req) });
   if (req.method !== 'POST') return json(req, 405, { erro: 'Use POST.' });
@@ -200,6 +235,7 @@ Deno.serve(async (req) => {
     if (c.acao === 'qualificar') return json(req, 200, await qualificar(String(c.empresa_id ?? '')));
     if (c.acao === 'dados_cnpj') return json(req, 200, await dadosCnpj(String(c.empresa_id ?? '')));
     if (c.acao === 'redigir') return json(req, 200, await redigir(String(c.empresa_id ?? ''), quem.id ?? ''));
+    if (c.acao === 'refazer') return json(req, 200, await refazer(String(c.email_id ?? ''), quem.papel !== 'sistema'));
     return json(req, 400, { erro: 'Ação desconhecida.' });
   } catch (e) {
     if (e instanceof ErroWeb) return json(req, 422, { erro: e.message });

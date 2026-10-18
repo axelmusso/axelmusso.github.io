@@ -1,5 +1,6 @@
 // Conteúdo e SEO (Fase 8): o agente escreve o rascunho de uma página a partir de uma proposta da análise de mercado.
 //   { acao: 'rascunhar', proposta_id }  → texto pronto em Markdown, só com fatos do site; o que faltar fica marcado
+//     (se o dono pediu para refazer, o último motivo e a versão anterior entram no pedido)
 // O rascunho fica no banco. Publicar é decisão humana: aprovado vira página por PR, nunca direto no site.
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
@@ -51,10 +52,14 @@ async function rascunhar(id: string) {
   if (!p) throw new ErroConteudo('Proposta não encontrada.');
   if (['aprovada', 'publicada', 'descartada'].includes(p.status)) throw new ErroConteudo(`Proposta ${p.status}: não reescrevo.`);
   const fatos = await nossoSite();
+  const ajuste = (p.ajustes ?? []).at(-1) as { motivo: string } | undefined;
+  const refazer = !ajuste ? '' : p.rascunho
+    ? `\n\nVERSÃO ANTERIOR, REPROVADA PELO DONO:\n${String(p.rascunho).slice(0, 12_000)}\n\nMOTIVO DO DONO: ${ajuste.motivo}\nReescreva atendendo ao motivo, mantendo as regras.`
+    : `\n\nPEDIDO DO DONO PARA ESTA PÁGINA: ${ajuste.motivo}`;
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'redator_conteudo', nivel: 'rotina', manual: true, maxTokens: 8000,
     instrucoes: INSTRUCOES,
-    contexto: `PROPOSTA (vinda da análise de concorrência):\n${JSON.stringify({ titulo: p.titulo, tipo: p.tipo, url_sugerida: p.url_sugerida, lacuna: p.lacuna, por_que: p.por_que, esboco: p.esboco, dados_que_faltam: p.dados_que_faltam })}\n\nFATOS DO SITE (corquimica.com.br):\n${JSON.stringify(fatos)}`,
+    contexto: `PROPOSTA (vinda da análise de concorrência):\n${JSON.stringify({ titulo: p.titulo, tipo: p.tipo, url_sugerida: p.url_sugerida, lacuna: p.lacuna, por_que: p.por_que, esboco: p.esboco, dados_que_faltam: p.dados_que_faltam })}\n\nFATOS DO SITE (corquimica.com.br):\n${JSON.stringify(fatos)}${refazer}`,
   });
   if (r.truncado) throw new ErroConteudo('O rascunho foi cortado no limite de tokens. Tente de novo.');
   await banco('/rest/v1/propostas_conteudo?id=eq.' + q(id), {
