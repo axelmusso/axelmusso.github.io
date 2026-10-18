@@ -64,7 +64,7 @@ for (const p of real) {
   if (staging && !/noindex/.test(h)) err(`${u}: rascunho sem noindex`);
   if (!staging && /\[VALIDAR|class="pend"|FOTO REAL/.test(h)) err(`${u}: marca de pendência em produção`);
   for (const [, j] of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) { try { const o = JSON.parse(j); if (!o['@graph']) err(`${u}: JSON-LD sem @graph`); if (/"@type":"Product"/.test(j) && !/"(offers|review|aggregateRating)"/.test(j)) err(`${u}: Product sem offers/review/aggregateRating (o Google rejeita)`); } catch (e) { err(`${u}: JSON-LD inválido`); } }
-  if (!/"@type":"Organization"/.test(h)) err(`${u}: sem Organization`);
+  if (!/"@type":(\[[^\]]*)?"Organization"/.test(h)) err(`${u}: sem Organization`);
   if (!/<meta http-equiv="Content-Security-Policy" content="[^"]*script-src 'self'/.test(h)) err(`${u}: sem política de segurança (CSP)`);
   if (!['/', '/es/', '/en/', '/404.html'].includes(u) && !/"@type":"BreadcrumbList"/.test(h)) err(`${u}: sem BreadcrumbList`);
   const detail = /\/(produtos|segmentos|productos|sectores|products|industries)\/[^/]+\/$/.test(u);
@@ -90,6 +90,10 @@ const need = [
   '/en/', '/en/about/', '/en/contact/', '/en/products/', '/en/industries/', ...['uv-base-coat', 'uv-top-coat', 'lacquers', 'paints-abs-ps', 'floor-paints', 'uv-colorants', '3d-resins', 'solvents-degreasers'].map((x) => `/en/products/${x}/`), ...['fashion', 'furniture', 'automotive', 'cosmetics', 'home-appliances', 'plastics'].map((x) => `/en/industries/${x}/`),
 ];
 for (const u of need) if (!real.some((p) => p.url === u)) err(`falta a página ${u}`);
+// Página órfã (sem nenhum link vindo de outra página) não é encontrada pelo Google nem pelas IAs.
+const linkadas = new Set();
+for (const p of real) for (const [, href] of p.html.matchAll(/<a\b[^>]*href="([^"#?]+)/g)) if (href.startsWith('/') && href !== p.url) linkadas.add(href);
+for (const p of real) { if (/name="robots" content="noindex/.test(p.html) || ['/', '/404.html'].includes(p.url)) continue; if (!linkadas.has(p.url)) err(`${p.url}: página órfã (nenhuma outra página aponta para ela)`); }
 console.log(`Modo: ${staging ? 'RASCUNHO' : 'PRODUÇÃO'} · ${real.length} páginas · ${locs.length} URLs no sitemap`);
 warns.forEach((w) => console.log('aviso:', w));
 if (errs.length) { errs.forEach((e) => console.log('ERRO:', e)); console.log(`\n${errs.length} erro(s)`); process.exit(1); }

@@ -10,8 +10,10 @@ const ld = (obj) =>
 export function orgNode(ctx) {
   const { site, t } = ctx;
   return {
-    '@type': 'Organization',
+    // Também LocalBusiness: tem endereço físico (a fábrica), o que ajuda buscas locais e o Google Maps.
+    '@type': ['Organization', 'LocalBusiness'],
     '@id': abs(site, '/#organizacao'),
+    image: abs(site, '/og-default.png'),
     name: site.name,
     legalName: site.legalName,
     url: abs(site, '/'),
@@ -22,7 +24,7 @@ export function orgNode(ctx) {
     telephone: site.phone,
     address: {
       '@type': 'PostalAddress',
-      streetAddress: site.address.street,
+      streetAddress: site.address.street + ', ' + site.address.district,
       addressLocality: site.address.city,
       addressRegion: site.address.region,
       addressCountry: site.address.country,
