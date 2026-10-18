@@ -47,6 +47,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   async cadencia() {
     await enfileirar('envio_preparar', {}, 7, 'envio_preparar');
     await enfileirar('envio_enviar', {}, 8, 'envio_enviar');
+    await enfileirar('reabastecer_rascunhos', {}, 6, 'reabastecer_rascunhos');
     const novas = await banco('/rest/v1/respostas?select=id&classificacao=is.null&order=recebido_em&limit=20');
     for (const r of novas) await enfileirar('classificar_resposta', { resposta_id: r.id }, 8, 'classificar:' + r.id);
     return { respostas_para_classificar: novas.length };
@@ -64,6 +65,31 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     return r;
   },
   classificar_resposta: (j) => chamar('envio', { acao: 'classificar', resposta_id: j.payload.resposta_id }),
+
+  // Mantém sempre config.rascunhos_alvo (30) e-mails esperando aprovação: escreve só a diferença,
+  // com o 1º e-mail das melhores empresas ainda não contatadas (maior nota primeiro). Nada sai sem aprovação.
+  async reabastecer_rascunhos() {
+    const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.rascunhos_alvo');
+    const alvo = Number(cfg?.valor ?? 30);
+    const esperando = (await banco('/rest/v1/emails?select=id&status=eq.rascunho')).length;
+    const naFila = (await banco('/rest/v1/jobs?select=id&tipo=eq.primeiro_email&status=in.(pendente,rodando)')).length;
+    const falta = alvo - esperando - naFila;
+    if (falta <= 0) return { esperando, na_fila: naFila, aviso: 'Já há rascunhos suficientes.' };
+    const ids: string[] = await banco('/rest/v1/rpc/candidatas_primeiro_email', { metodo: 'POST', corpo: { p_limite: falta } });
+    for (const id of ids) await enfileirar('primeiro_email', { empresa_id: id }, 6, 'primeiro_email:' + id);
+    return { esperando, na_fila: naFila, falta, enfileiradas: ids.length };
+  },
+  // Escreve o 1º e-mail (prospecção ou retomada) como rascunho. Empresa que não deu certo (sem e-mail liberado,
+  // sem gancho) sai da lista por 30 dias, sem gastar as outras tentativas.
+  async primeiro_email(j) {
+    await banco('/rest/v1/empresas?id=eq.' + q(j.payload.empresa_id), { metodo: 'PATCH', corpo: { primeiro_email_tentado_em: new Date().toISOString() } });
+    try { return await chamar('prospeccao', { acao: 'redigir', empresa_id: j.payload.empresa_id }); }
+    catch (e) {
+      const msg = (e as Error).message;
+      if (/teto|parado/i.test(msg)) throw e;
+      return { pulou: msg };
+    }
+  },
 
   // Rotina da manhã: procurar no Maps o site das empresas da Receita que ainda não têm, dentro do limite do dia.
   async descoberta() {

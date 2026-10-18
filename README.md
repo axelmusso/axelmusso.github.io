@@ -173,12 +173,17 @@ O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acres
   | Quando | Rotina | O que faz |
   |---|---|---|
   | Diária, 7h | descoberta | site pelo Maps de até 100 empresas da Receita sem site, dentro do limite do dia |
-  | Seg a sex, 8h às 17h, de hora em hora | cadência | rascunha os próximos e-mails, envia os aprovados, classifica respostas sem classificação |
+  | Seg a sex, 8h às 17h, de hora em hora | cadência | rascunha os próximos e-mails, envia os aprovados, classifica respostas sem classificação e completa a fila até 30 rascunhos para aprovar (`config.rascunhos_alvo`) |
   | Diária, 21h | enriquecimento | qualifica até 40 empresas com site ainda sem nota |
   | Segunda, 6h | concorrência | coleta dos concorrentes; meia hora depois, análise nova se algo mudou ou se a última tem mais de 28 dias |
   | Segunda, 6h | memória | consolidação |
   | Diária, 8h | relatório | e-mail para o dono com enviados, respostas, telefones, aprovações pendentes, gasto e erros |
 
+- **Sempre 30 rascunhos para aprovar:** a cadência conta os e-mails esperando aprovação e escreve só a diferença.
+  - Usa o 1º e-mail das melhores empresas ainda não contatadas, da maior nota para a menor, pela função `candidatas_primeiro_email`.
+  - Segue as regras do botão "Escrever 1º e-mail": nota mínima, gancho e CNPJ ativo; filial de cliente ativo fica de fora.
+  - Empresa que não der certo (sem e-mail liberado ou sem gancho) sai da lista por 30 dias (`primeiro_email_tentado_em`).
+- **Tipo de cada rascunho:** a tela Prospecção mostra se é 1º contato, continuação da cadência, retomada de ex-cliente ou pessoa indicada. As respostas a quem escreveu ficam separadas, na Caixa de respostas.
 - **Nada sai sem aprovação:** o envio só manda e-mails aprovados, no horário e no limite do aquecimento (regras da função `envio`).
 - **Botão de parada:** `config.sistema_ativo`. Desligado, o cron não chama o worker, as rotinas não entram na fila, o worker para antes do próximo job e a IA recusa chamadas automáticas. O botão fica na tela **Operação**, junto com a fila.
 - **Diagnóstico:** o worker chamado com `{"diagnostico": true}` e o segredo testa o acesso como sistema (status do Maps e do envio), mesmo parado. Para testar pelo banco, use `net.http_post` com o segredo do Vault.
