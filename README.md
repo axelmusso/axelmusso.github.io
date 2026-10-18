@@ -78,6 +78,7 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 ## Conselho (Fase 4)
 - Aba Conselho do /app: Claude (estrategista) propõe, ChatGPT (cético) ataca, e Claude (relator) fecha com decisão, três riscos, próximo passo com número e o que precisa de aprovação humana.
 - Os dois recebem o mesmo dossiê, montado por `dossie_conselho()` só com dados do banco; cada bloco traz a fonte. Afirmação sem `[fonte: ...]` tem de vir como HIPÓTESE.
+- O dossiê traz: funil, negócios parados, interações e e-mails (90 dias), perdas, tarefas, empresas por status e setor; prospecção (e-mails por status e passo, respostas por classificação, qualificadas por segmento); concorrência (coleta de cada concorrente, matriz e lacunas da última análise fechada, propostas de conteúdo); site (visitas de 30 dias por canal, origem das visitas de IA, páginas mais vistas, leads do formulário); e os aprendizados da memória parecidos com o tema. Assim dá para perguntar, por exemplo, "como nos posicionar contra a Next Coatings?".
 - Máximo de 3 rodadas; se o cético concordar na primeira, fecha ali. Teto de tokens por sessão em `config.teto_tokens_conselho` (60 mil) força o fechamento.
 - Edge Function `conselho` roda um passo por chamada; entre passos o dono pode mandar uma orientação, que os dois passam a seguir.
 - Cada decisão fechada vira memória com status "proposta" (Fase 5).
