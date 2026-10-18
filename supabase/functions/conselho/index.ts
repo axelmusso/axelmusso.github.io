@@ -5,6 +5,8 @@
 //   { acao: 'abrir', tema, nivel? }      → cria a sessão com o dossiê
 //   { acao: 'avancar', sessao_id }       → roda o próximo passo
 //   { acao: 'intervir', sessao_id, texto } → orientação do dono, que os dois passam a seguir
+// A revisão semanal (worker, papel "sistema") abre e avança sessões sozinha. O relator fecha com até 3 ações
+// de tipos fechados, que vão para acoes_propostas e só valem depois que o dono aprova.
 import { banco, chamarIA, ErroIA, type Nivel, type Provedor } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { buscarMemoria, gravarAprendizado, idCurto } from '../_shared/memoria.ts';
@@ -29,16 +31,44 @@ const PASSOS: Passo[] = [
     pedido: 'Papel: ESTRATEGISTA, rodada 2. Responda às críticas que considerar válidas, corte do plano o que não se sustenta e mostre o plano revisado.' },
   { rodada: 2, provedor: 'openai', papel: 'cetico', maxTokens: 2500,
     pedido: 'Papel: CÉTICO, rodada 2. Aponte o que ainda ficou no ar no plano revisado. Na última linha escreva "CONCORDA: sim" ou "CONCORDA: não".' },
-  { rodada: 3, provedor: 'anthropic', papel: 'relator', maxTokens: 2500,
+  { rodada: 3, provedor: 'anthropic', papel: 'relator', maxTokens: 3500,
     pedido: `Papel: RELATOR. Escreva o fechamento usando só o que se sustentou na conversa, exatamente com estes títulos:
 ## Decisão recomendada
 ## Três maiores riscos
 ## Próximo passo e número que diz se deu certo (com prazo)
 ## Precisa de aprovação humana
-## Hipóteses ainda sem fonte` },
+## Hipóteses ainda sem fonte
+## Ações propostas
+Termine com um bloco \`\`\`json no formato {"acoes":[...]} com no máximo 3 ações que a plataforma aplica sozinha depois que o dono aprovar. Só estes tipos:
+- "icp_nota_segmento": parametros {"segmento": id que existe em regras_atuais.segmentos, "nota": 0 a 100}. Muda a nota do segmento; as empresas dele são recalculadas.
+- "icp_nota_minima": parametros {"nota": 30 a 90}. Nota mínima para receber e-mail.
+- "regra_qualificacao": parametros {"texto": regra objetiva para classificar empresas, até 300 caracteres}. Entra nas instruções do robô que qualifica.
+- "regra_redacao": parametros {"texto": regra objetiva para escrever os e-mails, até 300 caracteres}. Entra nas instruções do robô que escreve.
+- "conteudo": parametros {"titulo", "url_sugerida", "esboco": [seções]}. Vira proposta de página na tela Conteúdo.
+- "tarefa": parametros {"titulo", "descricao"}. Algo que só uma pessoa faz (fornecer um dado, ligar, decidir).
+Cada ação: {"tipo", "titulo" (curto), "parametros", "por_que" (com [fonte: ...]), "metrica" (uma chave de indicadores.atual que a ação deve mover), "meta" (ex.: "descarte_rascunhos abaixo de 15%"), "medir_em_dias" (14 a 90)}.
+Sem evidência suficiente, devolva {"acoes":[]}. Não repita uma ação que o dono recusou (acoes_recentes) sem evidência nova, e respeite o motivo da recusa.` },
 ];
 const RELATOR = PASSOS[4];
 const NOMES: Record<string, string> = { estrategista: 'Claude (estrategista)', cetico: 'ChatGPT (cético)', relator: 'Claude (relator)', dono: 'DONO (orientação, tem prioridade)' };
+
+const TIPOS_ACAO = ['icp_nota_segmento', 'icp_nota_minima', 'regra_qualificacao', 'regra_redacao', 'conteudo', 'tarefa'];
+const BLOCO_JSON = /```json\s*([\s\S]*?)```/i;
+// Ações do fechamento (bloco json). O que não estiver nos tipos fechados é ignorado; parâmetros são conferidos ao aplicar.
+function acoesDe(texto: string, metricas: string[]) {
+  const m = texto.match(BLOCO_JSON);
+  if (!m) return [];
+  let v: { acoes?: Record<string, any>[] };
+  try { v = JSON.parse(m[1]); } catch { return []; }
+  return (Array.isArray(v?.acoes) ? v.acoes : []).filter((a) => TIPOS_ACAO.includes(a?.tipo) && String(a?.titulo ?? '').trim()).slice(0, 3).map((a) => ({
+    tipo: a.tipo, titulo: String(a.titulo).trim().slice(0, 200),
+    parametros: a.parametros && typeof a.parametros === 'object' ? a.parametros : {},
+    por_que: a.por_que ? String(a.por_que).slice(0, 1500) : null,
+    metrica: metricas.includes(a.metrica) ? a.metrica : null,
+    meta: a.meta ? String(a.meta).slice(0, 300) : null,
+    medir_em_dias: Math.min(90, Math.max(14, Number(a.medir_em_dias) || 28)),
+  }));
+}
 
 const fontesDe = (t: string) => [...new Set([...t.matchAll(/\[fonte:\s*([^\]]+)\]/gi)].map((m) => m[1].trim()))];
 const concorda = (t: string) => /CONCORDA:\s*sim/i.test(t.slice(-200));
@@ -56,7 +86,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json(req, 405, { erro: 'Use POST.' });
   const quem = await usuario(req);
   if (!quem) return json(req, 401, { erro: 'Faça login de novo.' });
-  if (quem.papel !== 'dono' && quem.papel !== 'operador') return json(req, 403, { erro: 'Seu papel não pode usar o Conselho.' });
+  if (quem.papel !== 'dono' && quem.papel !== 'operador' && quem.papel !== 'sistema') return json(req, 403, { erro: 'Seu papel não pode usar o Conselho.' });
 
   let c: Record<string, unknown>;
   try { c = await req.json(); } catch { return json(req, 400, { erro: 'Corpo inválido.' }); }
@@ -66,15 +96,17 @@ Deno.serve(async (req) => {
       const tema = String(c.tema ?? '').trim();
       if (tema.length < 3) return json(req, 400, { erro: 'Escreva o tema ou a pergunta.' });
       const nivel = c.nivel === 'dificil' ? 'dificil' : 'rotina';
+      // Só o sistema (revisão semanal) abre sessão com outro gatilho; pela tela é sempre "manual".
+      const gatilho = quem.papel === 'sistema' ? String(c.gatilho ?? 'sistema').slice(0, 60) : 'manual';
       const dossie = await banco('/rest/v1/rpc/dossie_conselho', { metodo: 'POST', corpo: {} });
       // Aprendizados parecidos com o tema (confiança > 0,6, não refutados) entram no dossiê dos dois.
-      const mem = await buscarMemoria(tema, 5);
+      const mem = await buscarMemoria(tema, 5, gatilho === 'manual');
       dossie.memoria = {
         fonte: 'memoria_aprendizados parecidos com o tema (confiança > 0,6, não refutados)',
         ids: mem.map((m) => m.id),
         itens: mem.map((m: Record<string, unknown>) => ({ id: idCurto(m.id as string), hipotese: m.hipotese, confianca: m.confianca, status: m.status, visto_vezes: m.visto_vezes, evidencia: m.evidencia })),
       };
-      const [s] = await banco('/rest/v1/conselho_sessoes', { metodo: 'POST', corpo: { tema: tema.slice(0, 1000), nivel, dossie, gatilho: 'manual' } });
+      const [s] = await banco('/rest/v1/conselho_sessoes', { metodo: 'POST', corpo: { tema: tema.slice(0, 2000), nivel, dossie, gatilho } });
       return json(req, 200, { sessao_id: s.id });
     }
 
@@ -109,11 +141,15 @@ Deno.serve(async (req) => {
       instrucoes: REGRAS + '\n\n' + passo.pedido,
       contexto: `TEMA: ${s.tema}\n\nDOSSIÊ (dados do banco em ${s.dossie.gerado_em}):\n${JSON.stringify(s.dossie)}\n\nCONVERSA ATÉ AGORA:\n${conversa}${aviso}\n\nSua vez: ${NOMES[passo.papel]}.`,
     });
-    const conteudo = r.texto.trim() + (r.truncado ? '\n\n(resposta cortada no limite de tokens)' : '');
+    const bruto = r.texto.trim();
+    const fechou = passo.papel === 'relator';
+    // O bloco json de ações sai do texto (vira linhas em acoes_propostas, mostradas na tela).
+    const acoes = fechou ? acoesDe(bruto, Object.keys(s.dossie?.indicadores?.atual ?? {})) : [];
+    const conteudo = (fechou ? bruto.replace(BLOCO_JSON, '').trim() : bruto) + (r.truncado ? '\n\n(resposta cortada no limite de tokens)' : '');
     await banco('/rest/v1/conselho_mensagens', {
       metodo: 'POST', corpo: { sessao_id: id, rodada: passo.rodada, provedor: passo.provedor, papel: passo.papel, conteudo, fontes: fontesDe(conteudo) },
     });
-    const fechou = passo.papel === 'relator';
+    if (acoes.length) await banco('/rest/v1/acoes_propostas', { metodo: 'POST', corpo: acoes.map((a) => ({ ...a, sessao_id: id })) });
     // Decisão fechada vira memória com status "proposta"; volta a ser tocada quando houver resultado medido.
     let aprendizado: string | null = null;
     if (fechou) {
@@ -136,7 +172,7 @@ Deno.serve(async (req) => {
         ...(fechou ? { status: 'fechada', decisao: conteudo } : {}),
       },
     });
-    return json(req, 200, { status: fechou ? 'fechada' : 'em_andamento', papel: passo.papel, rodada: passo.rodada, forcado, aprendizado });
+    return json(req, 200, { status: fechou ? 'fechada' : 'em_andamento', papel: passo.papel, rodada: passo.rodada, forcado, aprendizado, acoes: acoes.length });
   } catch (e) {
     const codigo = e instanceof ErroIA ? e.codigo : 'http';
     // A sessão continua aberta: dá para tentar de novo quando o problema (teto, rede) passar.

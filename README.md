@@ -210,6 +210,35 @@ O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acres
 - **Como os alertas saem:** o worker confere a cada execução (sem agendamento novo). Cada alerta fica em `alertas` com chave tipo + alvo + dia, então sai no máximo 1 e-mail por dia para cada um.
 - **Limite dos alertas:** com os robôs parados, o cron não chama o worker, então os alertas também não saem. A tela mostra os alertas ativos de qualquer forma.
 
+## Ciclo autônomo (19/10/2026)
+A plataforma questiona o próprio desempenho, propõe ações, mede o resultado e aprende sozinha. Nada novo sai para fora sem aprovação.
+- **Descarte com motivo.** Ao descartar um rascunho, o dono escolhe e escreve o motivo:
+  - "a empresa não serve": a empresa sai de todas as rotinas (descartada, cadências suprimidas, negócio perdido);
+  - "o e-mail não está bom": o robô reescreve na hora, levando o motivo em conta, e o novo rascunho volta para aprovação, marcado "Refeito com o seu motivo".
+  - Propostas de conteúdo funcionam igual: "o tema não serve" ou "refazer com ajuste".
+- **O que o dono ensina vale na hora.** Os motivos recentes de "refazer" entram nas instruções do redator. As empresas descartadas, com o motivo, entram nas instruções de quem qualifica.
+- **Indicadores.** `indicadores(dias)` calcula:
+  - resposta, interesse e bounce;
+  - descarte de rascunhos;
+  - qualidade das empresas que entram (nota ≥ mínima e com gancho);
+  - visitas (total, IA, busca) e leads;
+  - conteúdo parado e páginas de concorrentes que mudaram.
+- **Revisão semanal** (segunda, 3 h depois da coleta dos concorrentes, por volta das 9h):
+  - aprende com os motivos de descarte: padrões que se repetem viram memória com confiança 0,65;
+  - a cada 4 semanas, grava na memória o segmento ou passo com resposta muito fora da média;
+  - compara os indicadores com as 4 semanas anteriores; havendo sinal, abre o Conselho sozinha (`gatilho = revisao_semanal`). O Conselho também critica a qualidade das empresas que entram e a rota de prospecção;
+  - com 3 ações esperando decisão, não abre outra sessão.
+- **Ações propostas** (`acoes_propostas`): o relator fecha com até 3 ações de tipos fechados, que a plataforma aplica sozinha quando o dono aprova:
+  - nota de segmento ou nota mínima: recalcula as empresas;
+  - regra de qualificação (`config.icp.regras_extras`) ou de redação (`config.redacao_regras`);
+  - nova proposta de conteúdo;
+  - tarefa para uma pessoa.
+  - Recusar exige motivo, que o próximo Conselho lê para não repetir.
+- **Medição.** Toda ação guarda o número de antes. Na data (14 a 90 dias), `medir_acoes()` mede de novo; com amostra pequena, adia até 2 vezes. O resultado (melhorou, piorou, igual) vira memória.
+- **Orçamento.** A reflexão (Conselho, descartes, consolidação) tem teto próprio (`config.teto_reflexao_mensal_usd`, US$ 6/mês). Só roda com o gasto do dia abaixo da metade do teto diário; a rotina vem primeiro.
+- **Telas:** Conselho (ações para aprovar, histórico, revisões semanais), Prospecção e Conteúdo (descarte com motivo) e Operação (contagem de ações esperando). O relatório das 8h traz as ações pendentes e as medidas.
+- **Correção da fila.** A trava contra job duplicado passou a valer só para jobs esperando. Antes, a continuação que um job põe na fila (análise de concorrência, preparo e envio em lotes, Conselho) era descartada sem erro.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.

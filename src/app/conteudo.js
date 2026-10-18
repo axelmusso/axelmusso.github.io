@@ -69,7 +69,7 @@
       if (p.status === 'proposta' || p.status === 'rascunho') botoes += '<button type="button" class="prim" data-rascunhar="' + esc(p.id) + '"' + (escrevendo[p.id] ? ' disabled' : '') + '>' + (escrevendo[p.id] ? 'Escrevendo… (até 2 min)' : p.rascunho ? 'Reescrever rascunho' : 'Escrever rascunho') + '</button> ';
       if (p.status === 'rascunho') botoes += '<button type="button" data-status="aprovada" data-id="' + esc(p.id) + '">Aprovar</button> ';
       if (p.status === 'aprovada') botoes += '<button type="button" data-status="publicada" data-id="' + esc(p.id) + '">Marcar como publicada</button> ';
-      if (p.status !== 'descartada' && p.status !== 'publicada') botoes += '<button type="button" class="link" data-status="descartada" data-id="' + esc(p.id) + '">Descartar</button>';
+      if (p.status !== 'descartada' && p.status !== 'publicada') botoes += '<button type="button" class="link" data-descartar="' + esc(p.id) + '">Descartar ou pedir ajuste</button>';
     }
     var faltam = (p.rascunho || '').match(/\[PREENCHER:/g);
     return '<div class="proposta"><b>' + esc(p.titulo) + '</b> <span class="mut">' + esc(p.tipo || '') + ' · ' + esc(p.url_sugerida || '') + ' · ' + esc(STATUS[p.status] || p.status) + '</span>' +
@@ -79,7 +79,15 @@
       ((p.dados_que_faltam || []).length && !p.rascunho ? '<small class="mut">Dados que a Corquímica precisa fornecer</small>' + lista(p.dados_que_faltam) : '') +
       (p.rascunho ? '<details' + (p.status === 'rascunho' ? ' open' : '') + '><summary>Rascunho' + (faltam ? ' · ' + faltam.length + ' dado(s) a preencher' : '') + ' · ' + esc(dataHora(p.atualizado_em)) + '</summary>' +
         '<pre class="resultado rascunho">' + marcar(p.rascunho) + '</pre><p><button type="button" data-copiar="' + esc(p.id) + '">Copiar texto</button></p></details>' : '') +
-      (botoes ? '<p>' + botoes + '</p>' : '') + '</div>';
+      (p.descarte_motivo ? '<p><small class="mut">Motivo do descarte:</small> ' + esc(p.descarte_motivo) + '</p>' : '') +
+      ((p.ajustes || []).length && p.status !== 'descartada' ? '<p><small class="mut">Último ajuste pedido:</small> ' + esc(p.ajustes[p.ajustes.length - 1].motivo) + '</p>' : '') +
+      (botoes ? '<p>' + botoes + '</p>' : '') +
+      // Descarte com motivo: o tema não serve, ou o rascunho volta para o robô com o ajuste pedido.
+      (podeEscrever() && p.status !== 'descartada' && p.status !== 'publicada' ? '<form class="descarte" data-painel="' + esc(p.id) + '" hidden><p><b>O que fazer com esta proposta?</b> O motivo ensina os robôs.</p>' +
+        '<label class="chk"><input type="radio" name="dtipo" value="refazer" checked> ' + (p.rascunho ? 'Refazer o rascunho com ajustes' : 'Seguir, mas escrever com este ajuste') + '</label>' +
+        '<label class="chk"><input type="radio" name="dtipo" value="tema"> O tema não serve: descartar</label>' +
+        '<label>Motivo<input name="dmotivo" maxlength="500" placeholder="Ex.: foque em metalização, não em madeira"></label>' +
+        '<div class="linha"><button type="submit" class="prim">Confirmar</button><button type="button" class="link" data-cancelar>Cancelar</button></div></form>' : '') + '</div>';
   }
 
   function ligar() {
@@ -102,6 +110,28 @@
             return render();
           })
           .catch(function (e) { aviso(e.message, true); });
+      });
+    });
+    tela.querySelectorAll('[data-descartar]').forEach(function (b) {
+      b.addEventListener('click', function () { var f = tela.querySelector('[data-painel="' + b.dataset.descartar + '"]'); f.hidden = false; f.dmotivo.focus(); });
+    });
+    tela.querySelectorAll('form[data-painel]').forEach(function (f) {
+      f.querySelector('[data-cancelar]').addEventListener('click', function () { f.hidden = true; });
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var id = f.dataset.painel, tipo = f.dtipo.value, motivo = f.dmotivo.value.trim();
+        if (motivo.length < 3) { aviso('Escreva brevemente o motivo: é com ele que os robôs aprendem.', true); f.dmotivo.focus(); return; }
+        f.querySelector('button[type=submit]').disabled = true;
+        api('/rest/v1/rpc/descartar_proposta', { metodo: 'POST', corpo: { p_id: id, p_tipo: tipo, p_motivo: motivo } })
+          .then(function () {
+            if (tipo === 'tema') { aviso('Proposta descartada. O motivo entra na próxima revisão semanal.'); return; }
+            escrevendo[id] = true; render();
+            return api('/functions/v1/conteudo', { metodo: 'POST', corpo: { acao: 'rascunhar', proposta_id: id } })
+              .then(function (r) { aviso('Rascunho reescrito com o seu ajuste (US$ ' + Number(r.custo).toFixed(4).replace('.', ',') + ').'); }, function (e) { aviso('Ajuste registrado, mas o rascunho não saiu agora: ' + e.message + '. Use "Reescrever rascunho" para tentar de novo.', true); })
+              .then(function () { delete escrevendo[id]; });
+          })
+          .then(function () { if (location.hash === '#conteudo') return render(); })
+          .catch(function (e) { aviso(e.message, true); f.querySelector('button[type=submit]').disabled = false; });
       });
     });
     tela.querySelectorAll('[data-copiar]').forEach(function (b) {

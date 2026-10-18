@@ -348,17 +348,79 @@
       .replace(/^##\s*(.+)\n+/gm, '<b class="tit">$1</b>')
       .replace(/^CONCORDA:\s*(sim|não|nao)\s*$/gim, '<b class="concorda">CONCORDA: $1</b>');
   }
+  // Ações que o Conselho propõe (ciclo autônomo): só valem com a aprovação do dono, e cada uma é medida depois.
+  var TIPO_ACAO = { icp_nota_segmento: 'Nota de segmento', icp_nota_minima: 'Nota mínima', regra_qualificacao: 'Regra de qualificação', regra_redacao: 'Regra de redação', conteudo: 'Conteúdo', tarefa: 'Tarefa para você' };
+  var STATUS_ACAO = { proposta: 'esperando você', aplicada: 'aplicada, aguardando medição', recusada: 'recusada', medida: 'medida', erro: 'erro ao aplicar' };
+  function oQueMuda(a) {
+    var p = a.parametros || {};
+    if (a.tipo === 'icp_nota_segmento') return 'O segmento ' + p.segmento + ' passa a valer nota ' + p.nota + ' (as empresas dele são recalculadas).';
+    if (a.tipo === 'icp_nota_minima') return 'Nota mínima para receber e-mail passa a ser ' + p.nota + '.';
+    if (a.tipo === 'regra_qualificacao') return 'Nova regra para o robô que qualifica: "' + (p.texto || '') + '"';
+    if (a.tipo === 'regra_redacao') return 'Nova regra para o robô que escreve: "' + (p.texto || '') + '"';
+    if (a.tipo === 'conteudo') return 'Nova proposta de página: ' + (p.titulo || '') + (p.url_sugerida ? ' (' + p.url_sugerida + ')' : '');
+    if (a.tipo === 'tarefa') return 'Tarefa: ' + (p.titulo || a.titulo) + (p.descricao ? ' — ' + p.descricao : '');
+    return JSON.stringify(p);
+  }
+  var TAXA = /^(resposta|interesse|bounce|descarte_rascunhos|descarte_por_empresa|entrada_qualificada)$/;
+  function indicador(k, v) { return v == null ? '—' : TAXA.test(k) ? (100 * v).toFixed(1).replace('.', ',') + '%' : String(v); }
+  function cartaoAcao(a) {
+    return '<div class="item acao"><small class="mut">' + esc(TIPO_ACAO[a.tipo] || a.tipo) + ' · ' + esc(STATUS_ACAO[a.status] || a.status) + ' · ' + esc(dataHora(a.criado_em)) +
+      (a.sessao_id ? ' · <a href="#conselho/' + esc(a.sessao_id) + '">ver a discussão</a>' : '') + '</small>' +
+      '<p><b>' + esc(a.titulo) + '</b></p><p>' + esc(oQueMuda(a)) + '</p>' +
+      (a.por_que ? '<div class="texto">' + marcar(a.por_que) + '</div>' : '') +
+      (a.metrica ? '<small class="mut">Medida por: ' + esc(a.metrica) + (a.meta ? ' · meta: ' + esc(a.meta) : '') + (a.status === 'proposta' ? ' · medida ' + esc(a.medir_em_dias) + ' dias depois de aprovada' : '') + '</small>' : '<small class="mut">Sem métrica: não será medida.</small>') +
+      (a.status === 'aplicada' ? '<br><small>Antes: ' + esc(indicador(a.metrica, a.valor_antes)) + ' (amostra ' + esc(a.amostra_antes) + ') · medir em ' + esc(a.medir_em) + '</small>' : '') +
+      (a.status === 'medida' ? '<br><small><b>' + esc(a.resultado) + '</b>: ' + esc(indicador(a.metrica, a.valor_antes)) + ' → ' + esc(indicador(a.metrica, a.valor_depois)) + ' (amostra ' + esc(a.amostra_antes) + ' → ' + esc(a.amostra_depois) + ')</small>' : '') +
+      (a.status === 'recusada' ? '<br><small class="mut">Você recusou: ' + esc(a.motivo_recusa) + '</small>' : '') +
+      (a.status === 'erro' ? '<br><small class="ruim">' + esc(a.erro) + '</small>' : '') +
+      (a.status === 'proposta' && perfil.papel === 'dono' ? '<form class="linha" data-acao="' + esc(a.id) + '"><button type="submit" name="d" value="aprovar" class="prim">Aprovar e aplicar</button>' +
+        '<input name="motivo" maxlength="500" placeholder="Motivo, se recusar (o Conselho lê e não repete)" style="flex:1 1 240px"><button type="submit" name="d" value="recusar">Recusar</button></form>' : '') + '</div>';
+  }
+  function ligarAcoes(depois) {
+    tela.querySelectorAll('form[data-acao]').forEach(function (f) {
+      // Enter no motivo não envia nada (o primeiro botão do formulário é "Aprovar").
+      f.motivo.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') ev.preventDefault(); });
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var aprovar = ev.submitter && ev.submitter.value === 'aprovar', motivo = f.motivo.value.trim();
+        if (!aprovar && motivo.length < 3) { aviso('Escreva brevemente por que recusa: o Conselho lê e não propõe de novo.', true); f.motivo.focus(); return; }
+        if (aprovar && !confirm('Aprovar e aplicar agora esta ação?')) return;
+        api('/rest/v1/rpc/decidir_acao', { metodo: 'POST', corpo: { p_id: f.dataset.acao, p_aprovar: aprovar, p_motivo: motivo || null } })
+          .then(function (r) { aviso(r.status === 'aplicada' ? 'Aplicada. O número de antes foi guardado; a medição sai sozinha na data.' : r.status === 'recusada' ? 'Recusada. O motivo vai para o próximo Conselho.' : 'Não deu para aplicar: ' + r.erro, r.status === 'erro'); return depois(); })
+          .catch(erro);
+      });
+    });
+  }
+
   function conselho(id) { return id ? sessaoConselho(id) : listaConselho(); }
   function listaConselho() {
-    return api('/rest/v1/conselho_sessoes?select=id,tema,status,custo_usd,criado_em&order=criado_em.desc&limit=50').then(function (lista) {
-      tela.innerHTML = '<h1>Conselho</h1><p class="mut">Claude propõe, ChatGPT ataca, e um relator fecha com decisão, riscos e próximo passo mensurável. Os dois recebem o mesmo dossiê com números reais do banco.</p>' +
+    return Promise.all([
+      api('/rest/v1/conselho_sessoes?select=id,tema,status,custo_usd,criado_em,gatilho&order=criado_em.desc&limit=50'),
+      api('/rest/v1/acoes_propostas?select=*&order=criado_em.desc&limit=60'),
+      api('/rest/v1/revisoes?select=*&order=criado_em.desc&limit=8'),
+    ]).then(function (r) {
+      var lista = r[0], acoes = r[1], revisoes = r[2];
+      var esperando = acoes.filter(function (a) { return a.status === 'proposta'; }), resto = acoes.filter(function (a) { return a.status !== 'proposta'; });
+      tela.innerHTML = '<h1>Conselho</h1><p class="mut">Claude propõe, ChatGPT ataca, e um relator fecha com decisão, riscos, próximo passo mensurável e até 3 ações. Os dois recebem o mesmo dossiê com números reais do banco.</p>' +
+        '<h2>Ações propostas pelos robôs <small class="mut">' + esperando.length + '</small></h2>' +
+        '<p class="mut">Toda segunda, depois da coleta dos concorrentes, a revisão semanal compara os números com as 4 semanas anteriores (e-mails, descartes, qualidade das empresas que entram, site, concorrência) e, se houver sinal, abre o Conselho sozinha. Ação só vale depois que você aprova; cada uma é medida depois e o resultado vira memória.</p>' +
+        (esperando.map(cartaoAcao).join('') || '<p class="mut">Nenhuma ação esperando você.</p>') +
+        (resto.length ? '<details><summary>Aplicadas, medidas e recusadas (' + resto.length + ')</summary>' + resto.map(cartaoAcao).join('') + '</details>' : '') +
+        '<h2>Revisões semanais</h2><table class="tab"><thead><tr><th>Quando</th><th>Sinais</th><th>O que aconteceu</th><th>Aprendeu</th></tr></thead><tbody>' +
+        (revisoes.map(function (v) {
+          var aprendeu = (v.aprendizados || []).filter(function (x) { return x.id; }).length;
+          return '<tr><td>' + esc(dataHora(v.criado_em)) + '</td><td>' + (v.sinais.length ? '<details><summary>' + v.sinais.length + ' sinal(is)</summary><ul>' + v.sinais.map(function (x) { return '<li><small>' + esc(x) + '</small></li>'; }).join('') + '</ul></details>' : '<span class="mut">nenhum</span>') + '</td>' +
+            '<td>' + (v.sessao_id ? '<a href="#conselho/' + esc(v.sessao_id) + '">Conselho discutiu</a>' : '<small class="mut">' + esc(v.pulou_motivo || '') + '</small>') + '</td><td class="num">' + aprendeu + '</td></tr>';
+        }).join('') || '<tr><td colspan="4" class="mut">A primeira revisão roda na próxima segunda, por volta das 9h.</td></tr>') + '</tbody></table>' +
+        '<h2>Sessões</h2>' +
         (podeEscrever() ? '<form class="grade" id="form-conselho"><label class="largo">Tema ou pergunta<textarea name="tema" rows="2" required maxlength="1000" placeholder="Ex.: Por que o funil está parado na etapa contatado?"></textarea></label>' +
           '<label>Profundidade<select name="nivel"><option value="rotina">Rotina (Sonnet + gpt-6.1-sol, ~US$ 0,05–0,15)</option><option value="dificil">Difícil (Opus + gpt-6.1-sol, ~US$ 0,10–0,30)</option></select></label>' +
           '<button type="submit" class="prim">Abrir sessão</button></form>' : '') +
         '<table class="tab"><thead><tr><th>Tema</th><th>Status</th><th class="num">Custo</th><th>Quando</th></tr></thead><tbody>' +
         (lista.map(function (x) {
-          return '<tr><td><a href="#conselho/' + esc(x.id) + '">' + esc(x.tema) + '</a></td><td>' + esc(x.status.replace('_', ' ')) + '</td><td class="num">' + esc(usd(x.custo_usd, 4)) + '</td><td>' + esc(dataHora(x.criado_em)) + '</td></tr>';
+          return '<tr><td><a href="#conselho/' + esc(x.id) + '">' + esc(x.tema.split('\n')[0]) + '</a>' + (x.gatilho && x.gatilho !== 'manual' ? ' <small class="mut">(aberta pelos robôs)</small>' : '') + '</td><td>' + esc(x.status.replace('_', ' ')) + '</td><td class="num">' + esc(usd(x.custo_usd, 4)) + '</td><td>' + esc(dataHora(x.criado_em)) + '</td></tr>';
         }).join('') || '<tr><td colspan="4" class="mut">Nenhuma sessão ainda.</td></tr>') + '</tbody></table>';
+      ligarAcoes(listaConselho);
       enviar('form-conselho', function (d) {
         return api('/functions/v1/conselho', { metodo: 'POST', corpo: { acao: 'abrir', tema: d.tema, nivel: d.nivel } })
           .then(function (r) { conversando[r.sessao_id] = 'iniciar'; location.hash = 'conselho/' + r.sessao_id; });
@@ -369,14 +431,16 @@
     return Promise.all([
       api('/rest/v1/conselho_sessoes?select=*&id=eq.' + q(id)),
       api('/rest/v1/conselho_mensagens?select=*&order=criado_em&sessao_id=eq.' + q(id)),
+      api('/rest/v1/acoes_propostas?select=*&order=criado_em&sessao_id=eq.' + q(id)),
     ]).then(function (r) {
-      var s = r[0][0], msgs = r[1];
+      var s = r[0][0], msgs = r[1], acoes = r[2];
       if (!s) { tela.innerHTML = '<h1>Sessão não encontrada</h1><p><a href="#conselho">Voltar</a></p>'; return; }
       var aberta = s.status === 'em_andamento', rodando = conversando[id] === true;
       tela.innerHTML = '<p><a href="#conselho">← Conselho</a></p><h1>' + esc(s.tema) + '</h1>' +
         '<p class="mut">' + esc(s.status.replace('_', ' ')) + ' · ' + esc(s.nivel) + ' · ' + esc(s.tokens) + ' tokens · ' + esc(usd(s.custo_usd, 4)) + ' · ' + esc(dataHora(s.criado_em)) + '</p>' +
         '<details><summary>Dossiê que os dois receberam</summary><pre class="resultado">' + esc(JSON.stringify(s.dossie, null, 2)) + '</pre></details>' +
         (s.decisao ? '<section class="decisao"><h2>Fechamento</h2><div class="texto">' + marcar(s.decisao) + '</div></section>' : '') +
+        (acoes.length ? '<h2>Ações propostas nesta sessão</h2>' + acoes.map(cartaoAcao).join('') : '') +
         '<ol class="conversa">' + msgs.map(function (m) {
           return '<li class="msg-' + esc(m.papel) + '"><small class="mut">Rodada ' + esc(m.rodada) + ' · ' + esc(NOME_PAPEL[m.papel] || m.papel) + ' · ' + esc(dataHora(m.criado_em)) + '</small>' +
             '<div class="texto">' + marcar(m.conteudo) + '</div>' +
@@ -385,6 +449,7 @@
         (aberta ? '<p id="andamento" class="mut">' + (rodando ? 'Conversando… (cada fala leva de 10 a 60 s)' : '') + '</p>' : '') +
         (aberta && podeEscrever() ? (rodando ? '' : '<p><button type="button" class="prim" id="continuar">Continuar conversa</button></p>') +
           '<form class="grade" id="form-intervir"><label class="largo">Mudar o rumo (os dois leem antes da próxima fala)<textarea name="texto" rows="2" required maxlength="2000"></textarea></label><button type="submit">Enviar orientação</button></form>' : '');
+      ligarAcoes(function () { return sessaoConselho(id); });
       if (!aberta || !podeEscrever()) return;
       enviar('form-intervir', function (d) { return api('/functions/v1/conselho', { metodo: 'POST', corpo: { acao: 'intervir', sessao_id: id, texto: d.texto } }); }, function () { aviso('Orientação registrada. Entra na próxima fala.'); sessaoConselho(id); });
       var b = document.getElementById('continuar');
@@ -504,7 +569,8 @@
         '<li><a href="#prospeccao">' + esc(ap.emails || 0) + ' e-mail(s) para aprovar</a></li>' +
         '<li>' + esc(ap.aprovados_esperando || 0) + ' aprovado(s) esperando o envio <small class="mut">(saem de terça a quinta, das 8h às 18h)</small></li>' +
         '<li><a href="#prospeccao">' + esc(ap.respostas || 0) + ' resposta(s) para aprovar</a></li>' +
-        '<li><a href="#conteudo">' + esc(ap.conteudo || 0) + ' rascunho(s) de conteúdo</a></li></ul></div>' +
+        '<li><a href="#conteudo">' + esc(ap.conteudo || 0) + ' rascunho(s) de conteúdo</a></li>' +
+        '<li><a href="#conselho">' + esc(ap.acoes || 0) + ' ação(ões) proposta(s) pelos robôs</a></li></ul></div>' +
         '<div><h3>Empresas novas por origem</h3><ul>' + ((pn.leads_por_origem || []).map(function (o) { return '<li>' + esc(ORIGEM[o.origem] || o.origem) + ': ' + esc(o.n) + '</li>'; }).join('') || '<li class="mut">Nenhuma.</li>') + '</ul></div></div>' +
         '<h2>Gasto de IA</h2><div class="numeros">' +
         '<div><b>' + usd(g.hoje_usd, 4) + '</b>hoje, de ' + usd(g.teto_diario_usd) + barra(Number(g.hoje_usd), Number(g.teto_diario_usd)) + '</div>' +

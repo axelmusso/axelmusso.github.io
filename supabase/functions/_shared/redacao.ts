@@ -116,14 +116,29 @@ function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null, f
 const REGRAS = `Regras do texto: quem escreve e assina é sempre o Fernando; nunca cite o Áxel nem outra pessoa da Corquímica. Português do Brasil com acentuação correta, inclusive no nome da empresa (ex.: "Parobe" → "Parobé", "Metalurgica" → "Metalúrgica"), sem trocar o nome; o gancho tem de ser atual: evento com data que já passou (feira, lançamento) é citado no passado, nunca como se ainda fosse acontecer; tom de conversa entre profissionais, confiante: nunca insinue que houve ou há problema, algo a ajustar ou a corrigir (no produto, no fornecimento anterior ou no acabamento do cliente), e nunca condicione a conversa a "se a linha ainda usa/segue" o que o perfil já confirma: fale do que a Corquímica oferece para a operação dele; até 110 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura nem despedida (a assinatura é colocada depois). Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação; o assunto também respeita o perfil de produto.
 Responda só com JSON: {"assunto":"","corpo":"","angulo":"nome curto da abordagem"}`;
 
+// O que o dono já ensinou sobre os textos: regras aprovadas (ações do Conselho) e motivos recentes de "refazer".
+async function preferenciasDoDono() {
+  const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.redacao_regras');
+  const regras = ((cfg?.valor ?? []) as { texto: string }[]).map((r) => r.texto);
+  const desde = new Date(Date.now() - 30 * 864e5).toISOString();
+  const motivos = (await banco(`/rest/v1/emails?select=descarte_motivo&descarte_tipo=eq.refazer&descartado_em=gte.${encodeURIComponent(desde)}&order=descartado_em.desc&limit=8`))
+    .map((m: { descarte_motivo: string }) => m.descarte_motivo).filter(Boolean);
+  if (!regras.length && !motivos.length) return '';
+  return 'PREFERÊNCIAS DO DONO (valem sobre o seu estilo; as regras do texto continuam valendo):\n' +
+    regras.map((r: string) => '- Regra aprovada: ' + r).join('\n') + (regras.length && motivos.length ? '\n' : '') +
+    motivos.map((m: string) => '- Motivo de um rascunho reprovado recentemente: ' + m).join('\n') + '\n';
+}
+
 // Escreve o e-mail do passo. Devolve o rascunho conferido (ou "sem gancho"), as memórias usadas e o custo.
-export async function redigirEmail(o: { empresa: Record<string, any>; contato: Record<string, any>; passo: number; tipo: 'prospeccao' | 'retomada'; manual: boolean; jobId?: string | null; indicadoPor?: string }) {
+// ajuste: versão reprovada pelo dono e o motivo; o novo rascunho corrige o que foi apontado.
+export async function redigirEmail(o: { empresa: Record<string, any>; contato: Record<string, any>; passo: number; tipo: 'prospeccao' | 'retomada'; manual: boolean; jobId?: string | null; indicadoPor?: string; ajuste?: { assunto: string; corpo: string; motivo: string } }) {
   const { empresa: e, contato, passo, tipo, manual } = o;
   const retomada = tipo === 'retomada';
   const perfil = PERFIS[e.perfil_produto] ? e.perfil_produto : 'geral';
   const final = o.indicadoPor ? 'telefone' : finalDoPasso(passo, emailGenerico(contato.email));
   const anteriores = await banco(`/rest/v1/emails?select=passo,assunto,corpo&empresa_id=eq.${e.id}&status=eq.enviado&order=enviado_em`);
   const mem = await buscarMemoria(`e-mail de ${tipo}, passo ${passo}, para empresa de ${e.setor ?? 'indústria'}: assunto, ângulo e resposta`, 3, manual);
+  const preferencias = await preferenciasDoDono();
   const meses = e.ultima_compra ? Math.max(1, Math.round((Date.now() - new Date(e.ultima_compra).getTime()) / (30.4 * 864e5))) : null;
   const contexto = `${SOBRE_A_CORQUIMICA}
 HOJE: ${new Date().toISOString().slice(0, 10)}
@@ -131,7 +146,7 @@ HOJE: ${new Date().toISOString().slice(0, 10)}
 EMPRESA: ${JSON.stringify({ nome: e.nome, setor: e.setor, cidade: e.cidade, uf: e.uf, gancho: e.gancho, gancho_fonte: e.gancho_fonte, icp_motivo: e.icp_motivo })}
 PERFIL DE PRODUTO (${perfil}): ${PERFIS[perfil]}
 CONTATO: ${JSON.stringify({ nome: contato.nome, cargo: contato.cargo })}
-${anteriores.length ? 'E-MAILS JÁ ENVIADOS (não repita):\n' + anteriores.map((a: Record<string, unknown>) => `[passo ${a.passo}] ${a.assunto}\n${a.corpo}`).join('\n\n') + '\n' : ''}${mem.length ? 'APRENDIZADOS DA MEMÓRIA (use se ajudarem):\n' + mem.map((m: Record<string, unknown>) => `#${String(m.id).slice(0, 8)} ${m.hipotese}`).join('\n') + '\n' : ''}
+${anteriores.length ? 'E-MAILS JÁ ENVIADOS (não repita):\n' + anteriores.map((a: Record<string, unknown>) => `[passo ${a.passo}] ${a.assunto}\n${a.corpo}`).join('\n\n') + '\n' : ''}${mem.length ? 'APRENDIZADOS DA MEMÓRIA (use se ajudarem):\n' + mem.map((m: Record<string, unknown>) => `#${String(m.id).slice(0, 8)} ${m.hipotese}`).join('\n') + '\n' : ''}${preferencias}${o.ajuste ? `VERSÃO REPROVADA PELO DONO (não repita o que o dono apontou):\nAssunto: ${o.ajuste.assunto}\n${o.ajuste.corpo}\nMOTIVO DO DONO: ${o.ajuste.motivo}\nReescreva atendendo ao motivo.\n` : ''}
 ${pedidoDoPasso(passo, retomada, meses, final, o.indicadoPor)}
 ${REGRAS}`;
   const instrucoes = 'Você escreve e-mails comerciais B2B curtos, honestos e específicos para a Corquímica, assinados por Fernando Gutierrez.';
