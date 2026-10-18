@@ -118,9 +118,9 @@ write('assets/theme.js', fs.readFileSync(R('src/scripts/theme.js')));
 if (fs.existsSync(R('public'))) for (const f of fs.readdirSync(R('public'))) fs.copyFileSync(R('public', f), path.join(OUT, f));
 for (const [, file] of photoFiles) write('img/' + file, fs.readFileSync(R('src/assets/photos', file)));
 // área logada (/app): página própria, fora do layout do site e do sitemap
-const appH = { CSS_HASH: hash('src/app/app.css'), JS_HASH: hash('src/app/app.js'), CRM_HASH: hash('src/app/crm.js'), PROSP_HASH: hash('src/app/prospeccao.js'), SB_URL: esc(SB_URL), SB_KEY: esc(SB_KEY) };
+const appH = { CSS_HASH: hash('src/app/app.css'), JS_HASH: hash('src/app/app.js'), CRM_HASH: hash('src/app/crm.js'), PROSP_HASH: hash('src/app/prospeccao.js'), CONC_HASH: hash('src/app/concorrencia.js'), SB_URL: esc(SB_URL), SB_KEY: esc(SB_KEY) };
 write('app/index.html', fs.readFileSync(R('src/app/index.html'), 'utf8').replace(/\{\{(\w+)\}\}/g, (_, k) => appH[k] ?? ''));
-for (const f of ['app.js', 'crm.js', 'prospeccao.js', 'app.css']) write('app/' + f, fs.readFileSync(R('src/app', f)));
+for (const f of ['app.js', 'crm.js', 'prospeccao.js', 'concorrencia.js', 'app.css']) write('app/' + f, fs.readFileSync(R('src/app', f)));
 // página de confirmação do descadastro (o link do e-mail chega aqui depois de gravar o pedido)
 write('descadastro/index.html', `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'"><meta name="robots" content="noindex, nofollow"><title>Descadastro | Corquímica</title></head><body style="font-family:Arial,sans-serif;max-width:560px;margin:60px auto;padding:0 16px;line-height:1.5;color:#222;background:#fff"><h1 style="font-size:22px">Pronto, você não vai mais receber nossos e-mails.</h1><p>O seu endereço foi retirado da nossa lista de contato comercial na hora.</p><p>Se receber algo depois disto, é porque já estava a caminho. Responda a mensagem com a palavra "descadastrar" que resolvemos.</p><p><a href="/">Corquímica Ind. e Com. Ltda</a> · Estância Velha, RS</p></body></html>`);
 write('.nojekyll', '');

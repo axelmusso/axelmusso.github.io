@@ -137,6 +137,15 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 
 **E-mail do site:** com domínio próprio, só entram e-mails do domínio da empresa (Gmail e afins no site costumam ser de representantes), e a qualificação também lê a página de contato.
 
+## Concorrência (Fase 7)
+Tela **Concorrência** e função `concorrencia`. Tabelas `concorrentes`, `coletas_concorrente` e `analises_mercado`, com RLS (lê quem tem papel; coletas e análises só a função grava).
+- Coleta: home, até 5 páginas de produto, 2 de blog, 1 de preço, 1 institucional e o `llms.txt`, escolhidas pelo sitemap e pelos links da home, só dentro do caminho cadastrado (ex.: `weg.net/tintas/`). Guarda título, H1, descrição, texto e os tipos schema.org. O hash (SHA-256) é do conteúdo visível, não do HTML bruto, que muda a cada carga; só grava uma nova versão quando o hash muda, e marca `mudou`.
+- Respeita robots.txt e se identifica como `CorquimicaBot`. Site que recusa robô fica com o motivo em `ultimo_erro`: não disfarçamos o robô de navegador. Em 18/10/2026, Lechler (HTTP 520 só para robôs) e WEG (HTTP 403 para tudo) bloqueiam.
+- Site montado no navegador (ex.: Sayerlack) devolve a mesma casca em várias páginas: a coleta guarda só uma.
+- Análise: Claude (estrategista) monta matriz, lacunas e propostas; ChatGPT (cético) confere contra o dossiê; Claude (relator) fecha em JSON. Cada passo é uma chamada, como no Conselho. Toda afirmação cita a URL; sem fonte vira "HIPÓTESE:"; o que a Corquímica precisa informar (pedido mínimo, prazo, certificações) vai em "dados que faltam".
+- O dossiê traz também o nosso site (`llms-full.txt`, só português), para a lacuna ser algo que nem nós respondemos.
+- Frequência: mensal e quando alguma página mudar. Até a Fase 9, pelos botões da tela, que mostra quantas páginas mudaram desde a última análise.
+
 ## Segurança
 - Site estático, sem servidor nem login. Nenhuma dependência npm e nenhum script de terceiros.
 - Política de segurança (CSP) em todas as páginas: só scripts do próprio site, fontes do Google e conexão com o Supabase do formulário.

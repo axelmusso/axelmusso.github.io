@@ -62,7 +62,8 @@
     });
     tela.innerHTML = '<p class="mut">Carregando…</p>';
     var telas = { dashboard: dashboard, empresas: empresas, empresa: ficha, funil: funil, tarefas: tarefas, operacao: operacao, conselho: conselho, memoria: memoria,
-      prospeccao: function () { return window.CQ_PROSP.abrir({ api: api, perfil: perfil, tela: tela }); } };
+      prospeccao: function () { return window.CQ_PROSP.abrir({ api: api, perfil: perfil, tela: tela }); },
+      concorrencia: function (id) { return window.CQ_CONC.abrir({ api: api, perfil: perfil, tela: tela }, id); } };
     (telas[partes[0]] || dashboard)(partes[1]).catch(function (e) { tela.innerHTML = ''; erro(e); });
   }
 
