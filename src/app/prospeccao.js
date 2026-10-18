@@ -15,6 +15,15 @@
   var dataHoraBR = function (s) { return s ? new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''; };
   var fn = function (corpo) { return api('/functions/v1/prospeccao', { metodo: 'POST', corpo: corpo }); };
   var envio = function (corpo) { return api('/functions/v1/envio', { metodo: 'POST', corpo: corpo }); };
+  // Que tipo de e-mail é o rascunho (as respostas a clientes ficam na "Caixa de respostas", separada).
+  function tipoRascunho(m) {
+    var ex = m.empresas && m.empresas.relacao === 'ex_cliente';
+    if (m.angulo === 'indicacao') return '1º contato com pessoa indicada';
+    if (m.passo === 1) return ex ? '1º e-mail de retomada (ex-cliente)' : '1º contato (empresa nova)';
+    if (m.passo >= 2 && m.passo <= 4) return 'Continuação ' + m.passo + ' de 4' + (ex ? ' (ex-cliente)' : '') + ': ainda sem resposta';
+    if (m.passo >= 5) return 'Nova tentativa depois de 2 meses sem resposta';
+    return 'E-mail';
+  }
   var CLASSE = { interessado: 'Interessado', pergunta: 'Pergunta', nao_agora: 'Não agora', nao: 'Não', descadastro: 'Descadastro', automatica: 'Resposta automática' };
   var podeEscrever = function () { return perfil.papel === 'dono' || perfil.papel === 'operador'; };
   var pendente = null; // mensagem que precisa sobreviver ao redesenho da tela
@@ -200,8 +209,8 @@
               '<div class="largo linha"><button type="submit" name="acao" value="enviar" class="prim">Aprovar e enviar</button>' + (x.classificacao ? '' : '<button type="submit" name="acao" value="classificar">Classificar e rascunhar</button>') + '<button type="submit" name="acao" value="descartar">Descartar</button></div></form>' : '') + '</div>';
         }).join('') || '<p class="mut">Nenhuma resposta esperando.</p>') +
 
-        '<h2>E-mails para aprovar</h2>' + (rasc.map(function (m) {
-          return '<div class="item email-rasc"><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + (m.contatos && ORIGEM[m.contatos.origem] ? ' (' + ORIGEM[m.contatos.origem] + ')' : '') + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
+        '<h2>E-mails para aprovar</h2><p class="mut">Primeiros contatos, continuações da cadência e retomadas. As respostas a quem escreveu para nós ficam na Caixa de respostas, acima.</p>' + (rasc.map(function (m) {
+          return '<div class="item email-rasc"><p class="tipo-email">' + esc(tipoRascunho(m)) + (m.status === 'aprovado' ? ' · já aprovado, esperando o envio' : '') + '</p><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + (m.contatos && ORIGEM[m.contatos.origem] ? ' (' + ORIGEM[m.contatos.origem] + ')' : '') + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
             (m.erro ? '<p class="ruim">' + esc(m.erro) + '</p>' : '') +
             '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
             '<label class="largo">Corpo<textarea name="corpo" rows="6"' + (w ? '' : ' disabled') + '>' + esc(m.corpo) + '</textarea></label>' +
