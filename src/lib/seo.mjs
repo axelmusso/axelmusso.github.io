@@ -27,6 +27,7 @@ export function orgNode(ctx) {
       streetAddress: site.address.street + ', ' + site.address.district,
       addressLocality: site.address.city,
       addressRegion: site.address.region,
+      postalCode: site.address.postalCode,
       addressCountry: site.address.country,
     },
     areaServed: { '@type': 'Country', name: t.areaServed },

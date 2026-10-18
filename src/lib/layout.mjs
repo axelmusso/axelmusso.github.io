@@ -86,7 +86,7 @@ ${toneSections(page.body, true)}
 <footer class="site"><div class="wrap"><div class="fg">
   <div><a class="logo" href="${r.home}" style="font-size:24px">${LOGO}<span>Corquímica</span></a>
     <p class="fsmall">${esc(site.description)}</p>
-    <address class="fsmall">${esc(site.address.street)}, ${esc(site.address.district)}<br>${esc(site.address.city)}, ${esc(site.address.region)}${country}</address></div>
+    <address class="fsmall">${esc(site.address.street)}, ${esc(site.address.district)}<br>${esc(site.address.city)}, ${esc(site.address.region)}, ${esc(site.address.postalCode)}${country}</address></div>
   <div class="col"><b>${esc(t.fContact)}</b>
     <a class="ci" href="${esc(waUrl(site, t.waDefault))}" target="_blank" rel="noopener" aria-label="WhatsApp: ${esc(site.whatsappDisplay)}">${ICON.wa}${esc(site.whatsappDisplay)}</a>
     <a class="ci" href="tel:${site.phone}" aria-label="${esc(t.fPhone)}: ${esc(site.phoneDisplay)}">${ICON.tel}${esc(site.phoneDisplay)}</a>
