@@ -404,3 +404,22 @@ begin
 end $$;
 revoke all on function public.enfileirar(text, jsonb, integer, text, timestamp with time zone, text) from public, anon, authenticated;
 grant execute on function public.enfileirar(text, jsonb, integer, text, timestamp with time zone, text) to service_role;
+
+-- ---------- ajuste do dossiê (achado na 1ª revisão automática, 18/10) ----------
+-- entrada_empresas contava como "boa" empresa que nunca foi qualificada (base de clientes: 88 "boas" para 1 qualificada)
+-- e usava 30 dias, enquanto indicadores() usa 28. O Conselho apontou a divergência; agora os dois batem.
+do $$
+declare d text;
+begin
+  d := pg_get_functiondef('public.dossie_conselho()'::regprocedure);
+  if position('count(*) filter (where qualificado_em is not null and icp_score' in d) > 0 then return; end if;
+  d := replace(d, 'count(*) filter (where icp_score >= (select (valor ->> ''nota_minima'')::int from public.config where chave = ''icp'') and not coalesce(sem_gancho, false)) b,',
+                  'count(*) filter (where qualificado_em is not null and icp_score >= (select (valor ->> ''nota_minima'')::int from public.config where chave = ''icp'') and not coalesce(sem_gancho, false)) b,');
+  d := replace(d, 'from public.empresas where criado_em > now() - interval ''30 days'' group by 1) x)', 'from public.empresas where criado_em > now() - interval ''28 days'' group by 1) x)');
+  d := replace(d, 'empresas criadas nos últimos 30 dias por origem: qualificadas, com nota ≥ mínima e gancho, descartadas pelo dono',
+                  'empresas criadas nos últimos 28 dias por origem (mesma janela de indicadores): novas, qualificadas, qualificadas com nota ≥ mínima e gancho (boas), descartadas pelo dono');
+  if position('qualificado_em is not null and icp_score' in d) = 0 or position('últimos 28 dias por origem' in d) = 0 then raise exception 'ajuste do dossiê não bateu'; end if;
+  execute d;
+end $$;
+revoke all on function public.dossie_conselho() from public, anon, authenticated;
+grant execute on function public.dossie_conselho() to service_role;
