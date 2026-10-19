@@ -1,6 +1,8 @@
 // Conteúdo e SEO (Fase 8): o agente escreve o rascunho de uma página a partir de uma proposta da análise de mercado.
-//   { acao: 'rascunhar', proposta_id }  → texto pronto em Markdown, só com fatos do site; o que faltar fica marcado
+//   { acao: 'rascunhar', proposta_id }  → texto pronto em Markdown: fatos da Corquímica só do site, explicação técnica geral do setor
 //     (se o dono pediu para refazer, o último motivo e a versão anterior entram no pedido)
+//     Regra do dono (19/10): o rascunho sai pronto, com o que se sabe do site e do setor; o que é particular da
+//     Corquímica e não está no site fica no nível geral (sem [PREENCHER] e sem expor detalhe interno).
 // O rascunho fica no banco. Publicar é decisão humana: aprovado vira página por PR, nunca direto no site.
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
@@ -23,14 +25,17 @@ async function nossoSite() {
 const INSTRUCOES = `Você escreve páginas do site da Corquímica, fabricante de vernizes UV (Base e Top Coat para metalização a vácuo), lacas, tintas para ABS e PS, corantes UV, resinas 3D e solventes, em Estância Velha (RS), desde 1997.
 O leitor é o comprador ou o responsável de produção de uma indústria de plástico. Ele chega pelo Google ou por um assistente de IA (ChatGPT, Perplexity, Gemini) com uma pergunta concreta, antes de escolher fornecedor.
 
-Regras:
-1. Use SOMENTE fatos que estão em FATOS DO SITE. Todo número, prazo, capacidade, certificação, resultado de teste ou nome de cliente que não estiver lá vira um marcador [PREENCHER: o que falta]. Nunca invente.
-2. Assistente de IA cita número e fato, não adjetivo. Frases curtas e específicas; nada de "qualidade incomparável" ou "solução completa".
-3. O primeiro parágrafo responde a pergunta do comprador em 2 ou 3 frases (é o trecho que buscador e IA costumam citar).
-4. Escopo plástico. Metal só em enfeites, bijuterias e pés e puxadores de móveis (zamac ou aço). Não fale de madeira.
-5. Links internos só para URLs que aparecem em FATOS DO SITE, no formato [texto](/caminho/).
-6. Termine com o convite para falar pelo WhatsApp (+55 51 99240-5746) e mandar a peça ou o problema. Sem assinatura de pessoa.
-7. Português do Brasil, direto.
+Regras (do dono, 19/10/2026: o rascunho deve sair pronto, quase sem nada para preencher, e sem expor a empresa):
+1. Sobre a Corquímica (produtos, linhas, o que oferece, cidade, contato), use SOMENTE o que está em FATOS DO SITE.
+2. Para responder a pergunta do comprador com profundidade, use o conhecimento técnico geral e consolidado do setor: causas comuns de um defeito, boas práticas de preparo e aplicação, como funciona um processo, o que avaliar numa homologação. Escreva no nível de princípio, sem números específicos (tempos, temperaturas, espessuras, porcentagens, resultados de teste) e sem citar norma que não esteja no site.
+3. O que é particular da Corquímica e não está no site (prazos, pedido mínimo, capacidade, números de teste, certificações, nomes de clientes, formulações, detalhes de processo interno) NÃO entra no texto e NÃO vira lacuna para preencher: fique no nível geral ou diga que a equipe técnica avalia caso a caso. Detalhe demais expõe a empresa; na dúvida, generalize.
+4. Não use marcadores [PREENCHER]. A única exceção é um dado sem o qual a página ficaria enganosa; mesmo assim, no máximo 1.
+5. Assistente de IA cita fato, não adjetivo. Frases curtas e específicas; nada de "qualidade incomparável" ou "solução completa".
+6. O primeiro parágrafo responde a pergunta do comprador em 2 ou 3 frases (é o trecho que buscador e IA costumam citar).
+7. Escopo plástico. Metal só em enfeites, bijuterias e pés e puxadores de móveis (zamac ou aço). Não fale de madeira.
+8. Links internos só para URLs que aparecem em FATOS DO SITE, no formato [texto](/caminho/).
+9. Termine com o convite para falar pelo WhatsApp (+55 51 99240-5746) e mandar a peça ou o problema. Sem assinatura de pessoa.
+10. Português do Brasil, direto.
 
 Formato de saída (Markdown, exatamente estes campos no topo):
 Título SEO: (até 60 caracteres, termina com " | Corquímica")
@@ -45,7 +50,7 @@ URL: (o caminho sugerido)
 ## Fale com a Corquímica
 (convite)
 ---
-Dados que a Corquímica precisa fornecer: (lista dos [PREENCHER] usados, um por linha)`;
+Para o técnico conferir: (as afirmações técnicas gerais do texto que vale uma olhada de quem conhece o processo, uma por linha; nada para preencher)`;
 
 async function rascunhar(id: string) {
   const [p] = await banco('/rest/v1/propostas_conteudo?select=*&id=eq.' + q(id));
@@ -59,7 +64,7 @@ async function rascunhar(id: string) {
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'redator_conteudo', nivel: 'rotina', manual: true, maxTokens: 8000,
     instrucoes: INSTRUCOES,
-    contexto: `PROPOSTA (vinda da análise de concorrência):\n${JSON.stringify({ titulo: p.titulo, tipo: p.tipo, url_sugerida: p.url_sugerida, lacuna: p.lacuna, por_que: p.por_que, esboco: p.esboco, dados_que_faltam: p.dados_que_faltam })}\n\nFATOS DO SITE (corquimica.com.br):\n${JSON.stringify(fatos)}${refazer}`,
+    contexto: `PROPOSTA (vinda da análise de concorrência):\n${JSON.stringify({ titulo: p.titulo, tipo: p.tipo, url_sugerida: p.url_sugerida, lacuna: p.lacuna, por_que: p.por_que, esboco: p.esboco })}\n\nFATOS DO SITE (corquimica.com.br):\n${JSON.stringify(fatos)}${refazer}`,
   });
   if (r.truncado) throw new ErroConteudo('O rascunho foi cortado no limite de tokens. Tente de novo.');
   await banco('/rest/v1/propostas_conteudo?id=eq.' + q(id), {
