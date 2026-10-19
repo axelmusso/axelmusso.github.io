@@ -189,7 +189,10 @@ async function montarDossie() {
       .filter((s) => s.url && !/\/(es|en)\//.test(s.url))
       .filter((s) => (total += s.texto.length) <= LIMITE_NOSSO_TOTAL);
   } catch { /* segue sem o nosso site; o dossiê avisa */ }
-  return { gerado_em: new Date().toISOString(), concorrentes, nosso_site: nosso.length ? nosso : 'não foi possível ler corquimica.com.br/llms-full.txt' };
+  // O que já foi proposto (inclusive o descartado, com o motivo do dono): a análise só propõe tema novo.
+  const ja = await banco('/rest/v1/propostas_conteudo?select=titulo,lacuna,url_sugerida,status,descarte_motivo&order=criado_em');
+  const ja_propostas = ja.map((p: Record<string, string>) => ({ titulo: p.titulo, lacuna: p.lacuna, url: p.url_sugerida, situacao: p.status, ...(p.descarte_motivo ? { motivo_do_descarte: p.descarte_motivo } : {}) }));
+  return { gerado_em: new Date().toISOString(), concorrentes, nosso_site: nosso.length ? nosso : 'não foi possível ler corquimica.com.br/llms-full.txt', ja_propostas };
 }
 
 const CONTEXTO = `A Corquímica fabrica vernizes UV (Base e Top Coat para metalização a vácuo), lacas, tintas para ABS e PS, corantes UV, resinas 3D e solventes, em Estância Velha (RS), desde 1997.
@@ -203,7 +206,8 @@ Regras:
 3. Concorrente sem páginas no dossiê (bloqueou o robô ou não foi coletado): diga que não há dados; não preencha de memória.
 4. Lacuna é pergunta que o comprador faz antes de escolher fornecedor e que ninguém responde bem, nem os concorrentes nem a Corquímica.
 5. Proposta de conteúdo usa só fatos que a Corquímica pode comprovar; o que faltar (pedido mínimo, prazo, capacidade, certificações, números de teste) vai em "dados_que_faltam". Nunca invente número.
-6. Português direto.`;
+6. Português direto.
+7. O bloco ja_propostas do dossiê lista o que já foi proposto ao dono (em qualquer situação, inclusive descartado). Não proponha de novo o mesmo tema, nem com outro título, formato ou URL; tema descartado também não volta. Lacuna já coberta por uma proposta existente fica fora das propostas.`;
 
 const FORMATO = `Responda SOMENTE com um JSON neste formato:
 {
@@ -212,14 +216,14 @@ const FORMATO = `Responda SOMENTE com um JSON neste formato:
  "lacunas": [{"prioridade": 1, "tema": "", "pergunta_do_comprador": "", "por_que_e_lacuna": "", "evidencia": "", "demanda": "alta|media|baixa", "demanda_motivo": "", "facilidade": "alta|media|baixa", "facilidade_motivo": ""}],
  "propostas": [{"lacuna": "", "tipo": "pagina|artigo|faq", "titulo": "", "url_sugerida": "/caminho/", "esboco": ["seção"], "dados_que_faltam": [""], "por_que": ""}]
 }
-Um item na matriz por concorrente do dossiê. No máximo 8 lacunas, ordenadas por prioridade (demanda e facilidade). De 3 a 6 propostas, cada uma ligada a uma lacuna.`;
+Um item na matriz por concorrente do dossiê. No máximo 8 lacunas, ordenadas por prioridade (demanda e facilidade). Até 6 propostas, só para lacunas que ainda não têm proposta em ja_propostas, cada uma ligada a uma lacuna; nenhuma proposta nova é uma resposta válida.`;
 
 type Passo = { nome: string; provedor: Provedor; papel: string; maxTokens: number; pedido: string };
 const PASSOS: Passo[] = [
   { nome: 'proposta', provedor: 'anthropic', papel: 'mercado_estrategista', maxTokens: 12000,
     pedido: 'Papel: ESTRATEGISTA. Monte a matriz de forte e fraco por concorrente (o que promete, que prova apresenta, que palavras usa para nomear o produto, o que cobre bem), as lacunas e as propostas de conteúdo para o site da Corquímica.\n' + FORMATO },
   { nome: 'critica', provedor: 'openai', papel: 'mercado_cetico', maxTokens: 5000,
-    pedido: 'Papel: CÉTICO. Confira a proposta do estrategista contra o DOSSIÊ: (a) alguma "lacuna" já é respondida por um concorrente ou pelo site da Corquímica? cite a URL; (b) afirmações sem fonte ou com fonte errada; (c) demanda estimada sem base; (d) propostas fora do escopo (plástico) ou que dependem de número inventado. Termine com uma linha por lacuna: "MANTER", "AJUSTAR: motivo" ou "CORTAR: motivo". Não escreva outra análise. Máximo 500 palavras.' },
+    pedido: 'Papel: CÉTICO. Confira a proposta do estrategista contra o DOSSIÊ: (a) alguma "lacuna" já é respondida por um concorrente ou pelo site da Corquímica? cite a URL; (b) afirmações sem fonte ou com fonte errada; (c) demanda estimada sem base; (d) propostas fora do escopo (plástico) ou que dependem de número inventado; (e) proposta que repete um tema de ja_propostas (diga qual). Termine com uma linha por lacuna: "MANTER", "AJUSTAR: motivo" ou "CORTAR: motivo". Não escreva outra análise. Máximo 500 palavras.' },
   { nome: 'final', provedor: 'anthropic', papel: 'mercado_relator', maxTokens: 12000,
     pedido: 'Papel: RELATOR. Reescreva a análise aceitando as críticas válidas do cético (corte ou ajuste o que ele mostrou que não se sustenta; mantenha o que tem fonte).\n' + FORMATO },
 ];
