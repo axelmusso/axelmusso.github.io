@@ -145,6 +145,11 @@ Tela **Concorrência** e função `concorrencia`. Tabelas `concorrentes`, `colet
 - Site montado no navegador (ex.: Sayerlack) devolve a mesma casca em várias páginas: a coleta guarda só uma.
 - Análise: Claude (estrategista) monta matriz, lacunas e propostas; ChatGPT (cético) confere contra o dossiê; Claude (relator) fecha em JSON. Cada passo é uma chamada, como no Conselho. Toda afirmação cita a URL; sem fonte vira "HIPÓTESE:"; o que a Corquímica precisa informar (pedido mínimo, prazo, certificações) vai em "dados que faltam".
 - O dossiê traz também o nosso site (`llms-full.txt`, só português), para a lacuna ser algo que nem nós respondemos.
+- Rascunho de página (regra do dono, 19/10/2026): sai pronto, sem `[PREENCHER]`.
+  - Fato da Corquímica vem só do site; a explicação técnica vem do conhecimento geral do setor, sem números.
+  - O que é particular da empresa e não está no site fica no nível geral, para não expor detalhe interno.
+  - No rodapé, "Para o técnico conferir" lista as afirmações técnicas que valem uma olhada.
+- A análise recebe as propostas já feitas (`ja_propostas`) e só propõe tema novo; o banco barra repetição de URL ou de tema.
 - Frequência: mensal e quando alguma página mudar. Até a Fase 9, pelos botões da tela, que mostra quantas páginas mudaram desde a última análise.
 
 ## Google e IAs (Fase 8)
