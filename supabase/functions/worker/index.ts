@@ -20,16 +20,29 @@ const ACHAR_SITE_POR_DIA = 100;
 
 type Job = { id: string; tipo: string; payload: Record<string, any>; tentativas: number };
 
+// O Supabase limita as chamadas de uma função para outra dentro da mesma execução ("Rate limit exceeded for trace").
+// Por isso: uma pausa curta entre chamadas e, se o limite for atingido, o job volta para a fila sem gastar tentativa.
+const PAUSA_ENTRE_CHAMADAS_MS = 400;
+class LimiteDeChamadas extends Error {}
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 // Chama uma das nossas Edge Functions como "sistema".
 async function chamar(funcao: string, corpo: Record<string, unknown>) {
-  const r = await fetch(`${SB_URL}/functions/v1/${funcao}`, {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + CHAVE, apikey: CHAVE, 'Content-Type': 'application/json' },
-    body: JSON.stringify(corpo),
-    signal: AbortSignal.timeout(140_000),
-  });
+  let r: Response;
+  try {
+    r = await fetch(`${SB_URL}/functions/v1/${funcao}`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + CHAVE, apikey: CHAVE, 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo),
+      signal: AbortSignal.timeout(140_000),
+    });
+  } catch (e) {
+    if (/rate limit/i.test((e as Error).message)) throw new LimiteDeChamadas((e as Error).message);
+    throw e;
+  } finally { await esperar(PAUSA_ENTRE_CHAMADAS_MS); }
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(`${funcao}/${corpo.acao}: ${j.erro ?? 'HTTP ' + r.status}`);
+  if (r.status === 429 && /rate limit/i.test(JSON.stringify(j))) throw new LimiteDeChamadas(`${funcao}: limite de chamadas entre funções`);
+  if (!r.ok) throw new Error(`${funcao}/${corpo.acao}: ${j.erro ?? j.msg ?? 'HTTP ' + r.status}`);
   return j;
 }
 
@@ -95,7 +108,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     try { return await chamar('prospeccao', { acao: 'redigir', empresa_id: j.payload.empresa_id }); }
     catch (e) {
       const msg = (e as Error).message;
-      if (/teto|parado/i.test(msg)) throw e;
+      if (e instanceof LimiteDeChamadas || /teto|parado/i.test(msg)) throw e;
       return { pulou: msg };
     }
   },
@@ -115,7 +128,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     try { return await chamar('prospeccao', { acao: 'refazer', email_id: j.payload.email_id }); }
     catch (e) {
       const msg = (e as Error).message;
-      if (/teto|parado/i.test(msg)) throw e;
+      if (e instanceof LimiteDeChamadas || /teto|parado/i.test(msg)) throw e;
       await banco('/rest/v1/emails?id=eq.' + q(j.payload.email_id), { metodo: 'PATCH', corpo: { erro: ('Não refeito: ' + msg).slice(0, 500) } });
       return { pulou: msg };
     }
@@ -140,7 +153,15 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     await enfileirar('revisao_semanal', {}, 2, 'revisao_semanal', new Date(Date.now() + 3 * 3600_000));
     return { concorrentes: cons.length };
   },
-  concorrencia_coletar: (j) => chamar('concorrencia', { acao: 'coletar', concorrente_id: j.payload.concorrente_id }),
+  // Site que bloqueia robôs (WEG, Lechler): não é falha nossa nem melhora tentando de novo; fica como aviso.
+  async concorrencia_coletar(j) {
+    try { return await chamar('concorrencia', { acao: 'coletar', concorrente_id: j.payload.concorrente_id }); }
+    catch (e) {
+      const msg = (e as Error).message;
+      if (/bloqueia rob|robots\.txt/i.test(msg)) return { aviso: msg };
+      throw e;
+    }
+  },
   // Análise nova se alguma página mudou desde a última, ou se a última tem mais de 28 dias (mensal).
   async analise_verificar() {
     const [ult] = await banco('/rest/v1/analises_mercado?select=criado_em&status=eq.fechada&order=criado_em.desc&limit=1');
@@ -436,6 +457,12 @@ Deno.serve(async (req) => {
       feitos.push({ tipo: j.tipo, ok: true });
     } catch (e) {
       const erro = (e as Error).message;
+      if (e instanceof LimiteDeChamadas || /rate limit exceeded/i.test(erro)) {
+        // Limite da plataforma, não do job: volta para a fila em 2 minutos, sem gastar tentativa, e esta rodada para aqui.
+        await banco('/rest/v1/jobs?id=eq.' + j.id, { metodo: 'PATCH', corpo: { status: 'pendente', tentativas: Math.max(0, j.tentativas - 1), rodar_em: new Date(Date.now() + 120_000).toISOString(), iniciado_em: null, erro: 'Adiado: limite de chamadas entre funções.' } });
+        feitos.push({ tipo: j.tipo, ok: false, erro: 'adiado (limite de chamadas)' });
+        break;
+      }
       await banco('/rest/v1/rpc/terminar_job', { metodo: 'POST', corpo: { p_id: j.id, p_ok: false, p_erro: erro } });
       feitos.push({ tipo: j.tipo, ok: false, erro });
       // Teto de gasto ou sistema parado no meio do job: para tudo, sem gastar as outras tentativas agora.
