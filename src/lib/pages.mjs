@@ -224,6 +224,17 @@ ${chars}
 }
 
 /* ---------------- CONTEÚDO TÉCNICO (só em português) ---------------- */
+// Título da aba e do Google: até 58 letras. Se o título é maior, fica a parte antes dos dois-pontos
+// ou corta na última palavra inteira, sem terminar em "e", "de", "o"...
+function tituloCurto(t) {
+  if (t.length <= 58) return t;
+  const antes = t.split(':')[0].trim();
+  if (antes !== t && antes.length >= 20 && antes.length <= 58) return antes;
+  let c = t.slice(0, 59).replace(/\s+\S*$/, '');
+  while (/\s(e|de|da|do|em|o|a|para|com|ou)$/i.test(c)) c = c.replace(/\s+\S+$/, '');
+  return c.replace(/[\s:,;-]+$/, '');
+}
+
 export function artigosHub(ctx) {
   const { site, articles, r } = ctx;
   const path = r.articles;
@@ -249,7 +260,7 @@ ${md(a.body_md)}
 ${fam ? `<p class="how"><b>Produto relacionado</b><a href="${r.fam(fam)}">${esc(fam.n)}</a></p>` : ''}
 ${faqList.length ? `<h2>Perguntas frequentes</h2>${faq(faqList, false)}` : ''}</article></div>
 ${cta(ctx, 'Quer aplicar isso na sua peça?', 'Fale com a equipe técnica pelo WhatsApp.', `Olá! Li o artigo "${a.title}" e quero falar sobre o meu projeto.`)}`;
-  return { key: 'article:' + a.slug, path, title: `${a.title} | Corquímica`.length > 62 ? `${a.title}`.slice(0, 58) + ' | Corquímica' : `${a.title} | Corquímica`, description: a.description, body, ogType: 'article',
+  return { key: 'article:' + a.slug, path, title: `${tituloCurto(a.title)} | Corquímica`, description: a.description, body, ogType: 'article',
     graph: [pageNode(ctx, { type: 'Article', name: a.title, description: a.description, path, dateModified: modified }), { '@type': 'Article', '@id': abs(site, path) + '#artigo', headline: a.title, description: a.description, datePublished: published, dateModified: modified, inLanguage: 'pt-BR', author: { '@id': abs(site, '/#organizacao') }, publisher: { '@id': abs(site, '/#organizacao') }, mainEntityOfPage: abs(site, path) }, breadcrumbNode(site, bc), ...(faqList.length ? [faqNode(faqList)] : [])] };
 }
 
