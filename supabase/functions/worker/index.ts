@@ -7,8 +7,11 @@
 // Ciclo autônomo: toda segunda, depois da coleta dos concorrentes, a revisão semanal aprende com os descartes do dono
 // e com os números, compara os indicadores com as 4 semanas anteriores e, havendo sinal, abre o Conselho sozinha.
 // As ações que o Conselho propõe esperam o dono; as aprovadas são medidas depois e o resultado vira memória.
+// Respostas de clientes vêm antes de tudo: a cada 5 minutos o worker põe na frente da fila a classificação das que chegaram
+// e o envio das que o dono aprovou (no horário comercial, de segunda a sexta). Enquanto houver resposta na fila para
+// ganhar rascunho, nenhum rascunho novo é escrito, e os rascunhos novos param em 85% do teto do dia para sobrar IA para as respostas.
 import { banco, chamarIA } from '../_shared/ia.ts';
-import { config, enderecoDe, enviarResend } from '../_shared/envio.ts';
+import { config, enderecoDe, enviarResend, horarioComercial } from '../_shared/envio.ts';
 import { gravarAprendizado } from '../_shared/memoria.ts';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
@@ -17,6 +20,10 @@ const q = encodeURIComponent;
 const ORCAMENTO_MS = 100_000;          // depois disso não pega job novo (a função tem 150 s)
 const QUALIFICAR_POR_NOITE = 40;
 const ACHAR_SITE_POR_DIA = 100;
+const PRIORIDADE_RESPOSTA = 10;        // acima de todas as rotinas
+const RESERVA_RESPOSTAS = 0.85;        // rascunhos novos só até 85% do teto do dia
+// Jobs que escrevem rascunhos novos: esperam enquanto houver resposta de cliente sem rascunho.
+const ESCREVEM_RASCUNHO = ['reabastecer_rascunhos', 'primeiro_email', 'envio_preparar', 'refazer_email'];
 
 type Job = { id: string; tipo: string; payload: Record<string, any>; tentativas: number };
 
@@ -53,9 +60,35 @@ async function ligado() {
   const [c] = await banco('/rest/v1/config?select=valor&chave=eq.sistema_ativo');
   return c?.valor === true;
 }
-async function dentroDoTeto() {
+async function gasto() {
   const [g] = await banco('/rest/v1/rpc/gasto_ia', { metodo: 'POST', corpo: {} });
+  return g;
+}
+async function dentroDoTeto() {
+  const g = await gasto();
   return Number(g.hoje_usd) < Number(g.teto_diario_usd) && Number(g.mes_usd) < Number(g.teto_mensal_usd);
+}
+
+// Põe as respostas na frente da fila: classificar (e rascunhar) as que chegaram e enviar as aprovadas.
+async function respostasPrimeiro() {
+  const semRascunho = await banco('/rest/v1/respostas?select=id&status=eq.nova&classificacao=is.null&order=recebido_em&limit=20');
+  if (semRascunho.length) {
+    // A que já falhou 3 vezes fica para o botão "Classificar e rascunhar" na tela (não tenta de novo a cada 5 minutos).
+    const chaves = semRascunho.map((r: { id: string }) => 'classificar:' + r.id);
+    const falharam = new Set((await banco(`/rest/v1/jobs?select=chave&status=eq.erro&chave=in.(${chaves.map((c: string) => `"${c}"`).join(',')})`)).map((x: { chave: string }) => x.chave));
+    for (const c of chaves) if (!falharam.has(c)) await enfileirar('classificar_resposta', { resposta_id: c.slice(12) }, PRIORIDADE_RESPOSTA, c);
+  }
+  if (horarioComercial() && (await banco('/rest/v1/respostas?select=id&status=eq.aprovada&limit=1')).length) {
+    await enfileirar('envio_respostas', {}, PRIORIDADE_RESPOSTA, 'envio_respostas');
+  }
+}
+
+// Motivo para um job de rascunho novo esperar, ou null se pode rodar.
+async function rascunhoEspera(): Promise<string | null> {
+  if ((await banco('/rest/v1/jobs?select=id&tipo=eq.classificar_resposta&status=in.(pendente,rodando)&limit=1')).length) return 'Esperando: há resposta de cliente sem rascunho (respostas vêm primeiro).';
+  const g = await gasto();
+  if (Number(g.hoje_usd) >= RESERVA_RESPOSTAS * Number(g.teto_diario_usd)) return 'Esperando: o resto do teto de IA de hoje fica para as respostas de clientes.';
+  return null;
 }
 
 // ---------- o que cada tipo de job faz ----------
@@ -66,7 +99,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     await enfileirar('envio_enviar', {}, 8, 'envio_enviar');
     await enfileirar('reabastecer_rascunhos', {}, 6, 'reabastecer_rascunhos');
     const novas = await banco('/rest/v1/respostas?select=id&classificacao=is.null&order=recebido_em&limit=20');
-    for (const r of novas) await enfileirar('classificar_resposta', { resposta_id: r.id }, 8, 'classificar:' + r.id);
+    for (const r of novas) await enfileirar('classificar_resposta', { resposta_id: r.id }, PRIORIDADE_RESPOSTA, 'classificar:' + r.id);
     return { respostas_para_classificar: novas.length };
   },
   // Cada chamada escreve até 3 rascunhos (ficam esperando aprovação); se fez 3, deve haver mais.
@@ -82,6 +115,8 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     return r;
   },
   classificar_resposta: (j) => chamar('envio', { acao: 'classificar', resposta_id: j.payload.resposta_id }),
+  // Só as respostas aprovadas: saem na hora, sem esperar a rotina de hora em hora.
+  envio_respostas: () => chamar('envio', { acao: 'enviar_respostas' }),
 
   // Mantém sempre config.rascunhos_alvo (30) e-mails esperando aprovação: escreve só a diferença,
   // com o 1º e-mail das melhores empresas ainda não contatadas (maior nota primeiro). Nada sai sem aprovação.
@@ -204,7 +239,8 @@ async function relatorio() {
     enviados: await conta(`/rest/v1/emails?select=id&enviado_em=gte.${q(ontem)}`),
     respostas: await conta(`/rest/v1/respostas?select=id&recebido_em=gte.${q(ontem)}`),
     aprovar_emails: await conta('/rest/v1/emails?select=id&status=eq.rascunho'),
-    aprovar_respostas: await conta('/rest/v1/respostas?select=id&status=eq.rascunho'),
+    aprovar_respostas: await conta('/rest/v1/respostas?select=id&status=eq.nova'),
+    respostas_esperando: await banco('/rest/v1/respostas?select=de,recebido_em,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em&limit=10'),
     telefones: await conta(`/rest/v1/interacoes?select=id&tipo=eq.mudanca_etapa&conteudo=ilike.*telefone*&ocorrido_em=gte.${q(ontem)}`),
     empresas_novas: await conta(`/rest/v1/empresas?select=id&criado_em=gte.${q(ontem)}`),
     qualificadas: await conta(`/rest/v1/empresas?select=id&qualificado_em=gte.${q(ontem)}`),
@@ -217,12 +253,19 @@ async function relatorio() {
   const visitas = await banco(`/rest/v1/visitas?select=canal&criado_em=gte.${q(ontem)}`);
   const ia = visitas.filter((v: { canal: string }) => v.canal === 'ia').length;
   const linhas = [
+    // Respostas de clientes primeiro: são o que mais importa responder no mesmo dia.
+    ...(n.respostas_esperando.length ? [
+      `RESPOSTAS DE CLIENTES ESPERANDO VOCÊ (${n.respostas_esperando.length}) — aprove hoje para sair hoje:`,
+      ...n.respostas_esperando.map((r: Record<string, any>) => `  - ${r.empresas?.nome ?? r.de} (${r.de}), recebida em ${new Date(r.recebido_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}`),
+      '  Aprovar: https://corquimica.com.br/app/#prospeccao',
+      '',
+    ] : []),
     `Resumo das últimas 24 horas (até ${agora.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}):`,
     '',
     `E-mails enviados: ${n.enviados}`,
     `Respostas recebidas: ${n.respostas}`,
     `Telefones de responsáveis obtidos: ${n.telefones}`,
-    `Esperando sua aprovação: ${n.aprovar_emails} e-mail(s) e ${n.aprovar_respostas} resposta(s)`,
+    `Esperando sua aprovação: ${n.aprovar_respostas} resposta(s) e ${n.aprovar_emails} e-mail(s) novos`,
     `Empresas novas: ${n.empresas_novas} · qualificadas: ${n.qualificadas}`,
     `Visitas no site: ${visitas.length} (${ia} vindas de assistentes de IA)`,
     `Gasto de IA: US$ ${custoOntem.toFixed(2)} nas 24 h · mês US$ ${Number(g.mes_usd).toFixed(2)} de ${Number(g.teto_mensal_usd).toFixed(2)}`,
@@ -240,7 +283,7 @@ async function relatorio() {
   const texto = linhas.join('\n');
   await enviarResend({
     from: `Plataforma Corquímica <${enderecoDe(c.email_remetente)}>`, to: dono.email,
-    subject: `Corquímica: ${n.enviados} enviados, ${n.respostas} respostas, ${n.aprovar_emails + n.aprovar_respostas} para aprovar`,
+    subject: (n.aprovar_respostas ? `Corquímica: ${n.aprovar_respostas} resposta(s) de cliente para aprovar · ` : 'Corquímica: ') + `${n.enviados} enviados, ${n.respostas} respostas, ${n.aprovar_emails} e-mails para aprovar`,
     text: texto, html: `<pre style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5">${texto.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`,
     chave: 'relatorio-' + agora.toISOString().slice(0, 10),
   });
@@ -440,6 +483,9 @@ Deno.serve(async (req) => {
 
   // Alertas primeiro: um problema na conferência não impede a fila de andar.
   try { await alertas(); } catch (e) { console.error('Falha nos alertas:', (e as Error).message); }
+  if (await ligado()) {
+    try { await respostasPrimeiro(); } catch (e) { console.error('Falha ao priorizar respostas:', (e as Error).message); }
+  }
 
   const inicio = Date.now();
   const feitos: { tipo: string; ok: boolean; erro?: string }[] = [];
@@ -450,6 +496,17 @@ Deno.serve(async (req) => {
     const [j]: Job[] = await banco('/rest/v1/rpc/pegar_job', { metodo: 'POST', corpo: {} });
     if (!j) break;
     const fazer = TRABALHOS[j.tipo];
+    if (ESCREVEM_RASCUNHO.includes(j.tipo)) {
+      const espera = await rascunhoEspera();
+      if (espera) {
+        // Adia este e os outros rascunhos novos da fila (10 minutos), sem gastar tentativa.
+        const depois = new Date(Date.now() + 10 * 60_000).toISOString();
+        await banco(`/rest/v1/jobs?status=eq.pendente&tipo=in.(${ESCREVEM_RASCUNHO.join(',')})&rodar_em=lt.${q(depois)}`, { metodo: 'PATCH', corpo: { rodar_em: depois } });
+        await banco('/rest/v1/jobs?id=eq.' + j.id, { metodo: 'PATCH', corpo: { status: 'pendente', tentativas: Math.max(0, j.tentativas - 1), rodar_em: depois, iniciado_em: null, erro: espera } });
+        feitos.push({ tipo: j.tipo, ok: false, erro: espera });
+        continue;
+      }
+    }
     try {
       if (!fazer) throw new Error(`Tipo de job desconhecido: ${j.tipo}`);
       const resultado = await fazer(j);

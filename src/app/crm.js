@@ -566,9 +566,9 @@
         '<div><b class="' + (em.reclamacoes ? 'ruim' : '') + '">' + esc(em.reclamacoes || 0) + '</b>reclamações de spam' + pct(em.reclamacoes || 0, em.entregues) + '</div>' +
         '<div><b>' + esc(em.bounces || 0) + '</b>voltaram (bounce)</div></div>' +
         '<div class="colunas"><div><h3>Aprovações pendentes</h3><ul>' +
+        '<li><a href="#prospeccao"' + (ap.respostas ? ' class="ruim"' : '') + '><b>' + esc(ap.respostas || 0) + ' resposta(s) de cliente para aprovar</b></a>' + (ap.respostas ? ' <small class="mut">(aprove hoje para sair hoje)</small>' : '') + '</li>' +
         '<li><a href="#prospeccao">' + esc(ap.emails || 0) + ' e-mail(s) para aprovar</a></li>' +
         '<li>' + esc(ap.aprovados_esperando || 0) + ' aprovado(s) esperando o envio <small class="mut">(saem de terça a quinta, das 8h às 18h)</small></li>' +
-        '<li><a href="#prospeccao">' + esc(ap.respostas || 0) + ' resposta(s) para aprovar</a></li>' +
         '<li><a href="#conteudo">' + esc(ap.conteudo || 0) + ' rascunho(s) de conteúdo</a></li>' +
         '<li><a href="#conselho">' + esc(ap.acoes || 0) + ' ação(ões) proposta(s) pelos robôs</a></li></ul></div>' +
         '<div><h3>Empresas novas por origem</h3><ul>' + ((pn.leads_por_origem || []).map(function (o) { return '<li>' + esc(ORIGEM[o.origem] || o.origem) + ': ' + esc(o.n) + '</li>'; }).join('') || '<li class="mut">Nenhuma.</li>') + '</ul></div></div>' +
