@@ -29,6 +29,8 @@ const SB_URL = (process.env.SUPABASE_URL || pub.url || '').replace(/\/$/, '');
 const SB_KEY = process.env.SUPABASE_ANON_KEY || pub.anonKey || '';
 
 async function loadArticles() {
+  // Prévia local: ARTIGOS_ARQUIVO=arquivo.json monta o site com os artigos desse arquivo (inclusive rascunhos).
+  if (process.env.ARTIGOS_ARQUIVO) return JSON.parse(fs.readFileSync(process.env.ARTIGOS_ARQUIVO, 'utf8'));
   if (SB_URL && SB_KEY) {
     try {
       const now = new Date().toISOString();

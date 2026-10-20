@@ -35,11 +35,23 @@ export function md(src) {
       .replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/)[^)\s]+)\)/g, (_, a, u) => `<a href="${u}">${a}</a>`);
   const out = [];
   let list = null;
-  const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  let tabela = null; // linhas "| a | b |" acumuladas; a primeira é o cabeçalho
+  const celulas = (l) => l.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+  const fechaTabela = () => {
+    if (!tabela) return;
+    const [cab, ...linhas] = tabela.filter((l) => !/^\|[\s:|-]+\|$/.test(l));
+    const th = celulas(cab).map((c) => `<th scope="col">${inline(c)}</th>`).join('');
+    const tr = linhas.map((l) => `<tr>${celulas(l).map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`).join('');
+    out.push(`<div class="tbl"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
+    tabela = null;
+  };
+  const close = () => { fechaTabela(); if (list) { out.push(`</${list}>`); list = null; } };
   for (const line of String(src ?? '').split(/\r?\n/)) {
     const l = line.trimEnd();
     if (!l.trim()) { close(); continue; }
     let m;
+    if (l.startsWith('|')) { if (list) close(); (tabela ||= []).push(l); continue; }
+    fechaTabela();
     if ((m = l.match(/^###\s+(.*)/))) { close(); out.push(`<h3>${inline(m[1])}</h3>`); }
     else if ((m = l.match(/^##\s+(.*)/))) { close(); out.push(`<h2>${inline(m[1])}</h2>`); }
     else if ((m = l.match(/^[-*]\s+(.*)/))) { if (list !== 'ul') { close(); out.push('<ul>'); list = 'ul'; } out.push(`<li>${inline(m[1])}</li>`); }
