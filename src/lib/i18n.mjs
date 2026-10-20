@@ -35,7 +35,7 @@ const PT = {
   stagingDomain: 'RASCUNHO: esta versão ainda não é indexada pelo Google. A indexação é liberada quando o domínio oficial for configurado.',
   stagingPending: 'RASCUNHO: esta versão não é indexada pelo Google e mostra marcações de itens a validar e fotos pendentes.',
   logoAria: 'Corquímica, página inicial', menuAria: 'Abrir menu', navAria: 'Principal', langAria: 'Idioma',
-  navAbout: 'Sobre', navProducts: 'Produtos', navIndustries: 'Segmentos', navArticles: 'Conteúdo técnico', navContact: 'Contato',
+  navAbout: 'Sobre', navProducts: 'Produtos', navIndustries: 'Segmentos', navArticles: 'Conteúdo', navContact: 'Contato',
   fContact: 'Contato', fPhone: 'Telefone', fAllContacts: 'Todos os contatos', fProducts: 'Produtos', fIndustries: 'Segmentos', fCompany: 'Empresa', fAbout: 'Sobre a Corquímica', fPrivacy: 'Política de privacidade',
   themeToDark: 'Ativar modo escuro', themeToLight: 'Ativar modo claro',
   waFloat: 'Falar no WhatsApp', igFollow: 'Siga a gente no Instagram',

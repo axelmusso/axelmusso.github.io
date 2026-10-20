@@ -290,7 +290,9 @@ footer.site a:hover{text-decoration:underline}
   .mt:focus-visible+.burger{outline:3px solid var(--blue)}
   nav.main{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;background:var(--bg);color:var(--ink);padding:14px 20px 24px;box-shadow:var(--shadow);gap:2px;margin:0;width:auto}
   .mt:checked~nav.main{display:flex}
-  .dd .panel{display:grid;position:static;box-shadow:none;background:transparent;padding:0 0 6px 14px}
+  /* No celular o menu mostra só as seções; a lista de produtos e segmentos fica nas páginas de cada uma. */
+  .dd .panel,.dd:hover .panel,.dd:focus-within .panel{display:none}
+  nav.main{max-height:calc(100vh - 120px);overflow-y:auto}
   header.site .wrap{position:relative}
   header.site{position:relative}
   body.home header.site{position:absolute}
