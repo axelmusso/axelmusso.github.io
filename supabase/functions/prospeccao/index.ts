@@ -55,7 +55,13 @@ async function descobrirUrl(url: string, feiraId?: string) {
 }
 
 // ---------- qualificar: nota de 0 a 100, motivo e gancho ----------
-type Qualif = { segmento: string; evidencia: string; motivo: string; gancho: string; gancho_fonte: string; perfil?: string; perfil_evidencia?: string; cidade: string; uf: string };
+// Regra do dono (20/10/2026): quem só injeta (ou sopra, extruda) e não pinta, não enverniza nem metaliza a peça não é cliente.
+//   acabamento "nao"     → segmento injecao_plastica (fora), em qualquer segmento de peça, salvo impressão 3D
+//   acabamento "incerto" → nos segmentos genéricos de peça plástica, vira sem_informacao (abaixo da nota mínima)
+// Empresa que cai abaixo da nota mínima: rascunhos esperando aprovação são descartados e a cadência para.
+const SEM_ACABAMENTO_NAO_PESA = ['impressao_3d'];
+const PRECISA_PROVA = ['injecao_plastica', 'plastico_auto_linha_branca', 'plastico_acabamento'];
+type Qualif = { segmento: string; evidencia: string; motivo: string; gancho: string; gancho_fonte: string; perfil?: string; perfil_evidencia?: string; acabamento?: string; acabamento_evidencia?: string; cidade: string; uf: string };
 type Segmento = { id: string; nome: string; nota: number; grupo: string; perfil?: string };
 async function qualificar(id: string) {
   const [e] = await banco('/rest/v1/empresas?select=*&id=eq.' + q(id));
@@ -89,7 +95,7 @@ async function qualificar(id: string) {
       'O setor informado pela feira VALE como evidência mesmo sem site: "saltos e solados" = saltos_solados; "acessórios e enfeites" = enfeites_bijuterias; calçadista = calcados_fabricante; injetados para calçados = saltos_solados. TACOS (ponteiras de salto) = plastico_tecnico (o dono descartou a Goldtech). ' +
       'plastico_tecnico também para rodízios, sapatas, núcleos e chapas estruturais (ex. C-Core) e painéis e chapas de acrílico (ex. Al Componenti). ' +
       'Impressão digital UV é TINTA, não verniz: só conte grafica_uv ou plastico_acabamento se o texto mostrar verniz, laca, pintura, metalização ou hot stamping em peça plástica. ' +
-      'injecao_plastica só para quem injeta ou sopra peças plásticas VISÍVEIS (utilidades, brinquedos, tampas, peças de móveis à vista). ' +
+      'REGRA DO DONO: a Corquímica só serve a quem dá ACABAMENTO na peça (pinta, aplica verniz ou laca, metaliza, faz hot stamping ou decoração). Quem só injeta, sopra, extruda ou termoforma e entrega a peça crua NÃO é cliente: segmento injecao_plastica. Quem injeta E pinta, enverniza ou metaliza = plastico_acabamento (ou metalizacao, se metaliza). ' +
       'Sem site: nome com alumínio/alumi, aço, metal, madeira ou vidro já indica o segmento fora (ex. Alumiconte = ferragens_metalurgia). Sem texto suficiente para decidir, use sem_informacao.' +
       (regrasExtras ? `\nREGRAS APROVADAS PELO DONO (valem sobre os exemplos acima):\n${regrasExtras}` : '') +
       (descartes ? `\nEMPRESAS QUE O DONO DESCARTOU RECENTEMENTE E POR QUÊ (empresa parecida, pelo mesmo motivo, vai para o segmento que reflete o motivo, nunca para um alvo):\n${descartes}` : ''),
@@ -97,11 +103,23 @@ async function qualificar(id: string) {
 ${avisos.length ? 'AVISO: ' + avisos.join('; ') + '\n' : ''}${paginas.length ? paginas.map((p) => `--- ${p.url}\n${p.texto}`).join('\n') : '(sem site para ler)'}
 
 Devolva {"segmento":"id da lista","evidencia":"frase curta do texto que mostra o que a empresa fabrica","motivo":"1 a 2 frases sobre a escolha","gancho":"um fato verdadeiro e específico desta empresa visto no texto, útil para abrir um e-mail; vazio se não houver","gancho_fonte":"URL onde viu o gancho","perfil":"verniz | metalizacao | resina3d | geral","perfil_evidencia":"frase do texto que prova o uso; vazio se geral","cidade":"","uf":""}
-Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanoplastia; "verniz" só se mostrar que a empresa aplica verniz, laca ou pintura na própria produção; "resina3d" só se mostrar impressão 3D com resina; sem prova clara, "geral".`,
+Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanoplastia; "verniz" só se mostrar que a empresa aplica verniz, laca ou pintura na própria produção; "resina3d" só se mostrar impressão 3D com resina; sem prova clara, "geral".
+Acrescente ao JSON "acabamento" e "acabamento_evidencia":
+- "sim": o texto mostra que a própria empresa pinta, aplica verniz ou laca, metaliza, faz hot stamping, tampografia, serigrafia ou decoração nas peças, ou vende um produto que já é acabamento (fita de borda, revestimento impresso ou envernizado, gráfica com verniz, metalizadora);
+- "nao": o texto descreve a produção (injeção, sopro, extrusão, termoformagem, ferramentaria) e não mostra nenhum acabamento próprio, ou diz que o acabamento é feito por terceiros;
+- "incerto": o texto não mostra o processo (ou não há site).
+"acabamento_evidencia": frase do texto que sustenta a resposta; vazio se incerto.`,
   });
   const v = jsonDe<Qualif>(r.texto);
   // Correção manual do Áxel vale sobre a IA; segmento fora da lista vira "sem informação".
-  const seg = e.icp_manual && e.segmento_icp ? e.segmento_icp : segmentos.some((g) => g.id === v.segmento) ? v.segmento : 'sem_informacao';
+  let seg = e.icp_manual && e.segmento_icp ? e.segmento_icp : segmentos.some((g) => g.id === v.segmento) ? v.segmento : 'sem_informacao';
+  const acabamento = ['sim', 'nao', 'incerto'].includes(v.acabamento ?? '') ? v.acabamento! : 'incerto';
+  let nota_acabamento = '';
+  if (!e.icp_manual && !SEM_ACABAMENTO_NAO_PESA.includes(seg)) {
+    if (acabamento === 'sim' && seg === 'injecao_plastica') { nota_acabamento = ' | Injeta e dá acabamento'; seg = 'plastico_acabamento'; }
+    else if (acabamento === 'nao' && seg !== 'injecao_plastica') { nota_acabamento = ` | Só fabrica, sem acabamento próprio (era ${seg})`; seg = 'injecao_plastica'; }
+    else if (acabamento === 'incerto' && PRECISA_PROVA.includes(seg) && seg !== 'injecao_plastica') { nota_acabamento = ` | Sem prova de pintura, verniz ou metalização (era ${seg})`; seg = 'sem_informacao'; }
+  }
   const nomeSeg = segmentos.find((g) => g.id === seg)?.nome ?? seg;
   const uf = (v.uf || '').toUpperCase();
   // Domínio só é gravado se nenhuma outra empresa já usa (o domínio é único no cadastro).
@@ -113,7 +131,8 @@ Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanopl
     corpo: {
       // A nota sai do segmento (gatilho no banco, tabela em config.icp.segmentos).
       segmento_icp: seg, icp_criterios: null,
-      icp_motivo: `${nomeSeg}${e.icp_manual ? ' (definido pelo Áxel)' : ''}: ${(v.evidencia || v.motivo || '').slice(0, 600)}` + (avisos.length ? ` (${avisos.join('; ')})` : ''),
+      icp_motivo: `${nomeSeg}${e.icp_manual ? ' (definido pelo Áxel)' : ''}: ${(v.evidencia || v.motivo || '').slice(0, 500)}` + nota_acabamento + (v.acabamento_evidencia?.trim() ? ` | Acabamento: ${v.acabamento_evidencia.trim().slice(0, 200)}` : '') + (avisos.length ? ` (${avisos.join('; ')})` : ''),
+      acabamento,
       setor: e.setor || nomeSeg, gancho: v.gancho?.trim() || null, gancho_fonte: v.gancho_fonte || null,
       sem_gancho: !v.gancho?.trim(), qualificado_em: new Date().toISOString(),
       // Perfil pelo site (o da base de clientes vale mais); o gatilho do segmento pode impor o dele (fita de borda → verniz).
@@ -133,8 +152,17 @@ Perfil: "metalizacao" só se o texto mostrar metalização a vácuo ou galvanopl
     await banco('/rest/v1/contatos', { metodo: 'POST', corpo: { empresa_id: id, email: m, origem: 'site', fonte_url: url, coletado_em: new Date().toISOString(), base_legal: 'Legítimo interesse (contato profissional público)', pode_contatar: true } });
     contatos++;
   }
-  const [atual] = await banco('/rest/v1/empresas?select=icp_score&id=eq.' + q(id));
-  return { nota: atual?.icp_score ?? null, segmento: nomeSeg, motivo: v.evidencia || v.motivo, gancho: v.gancho || null, contatos, custo: r.custoUsd };
+  const [atual] = await banco('/rest/v1/empresas?select=icp_score,relacao&id=eq.' + q(id));
+  // Caiu abaixo da nota mínima (prospect): o que esperava aprovação sai da fila e a cadência para.
+  let retirados = 0;
+  if (atual?.relacao === 'prospect' && (atual.icp_score ?? 0) < Number(icp.nota_minima ?? 50)) {
+    const motivo = `Reavaliada: ${nomeSeg} (nota ${atual.icp_score ?? 0}, abaixo de ${icp.nota_minima}).${nota_acabamento}`.slice(0, 500);
+    retirados = (await banco(`/rest/v1/emails?empresa_id=eq.${q(id)}&status=eq.rascunho`, { metodo: 'PATCH', corpo: { status: 'descartado', erro: motivo } })).length;
+    // Aprovado e ainda não enviado: volta para a aprovação, com o aviso (a decisão é do dono).
+    await banco(`/rest/v1/emails?empresa_id=eq.${q(id)}&status=eq.aprovado`, { metodo: 'PATCH', corpo: { status: 'rascunho', aprovado_em: null, erro: motivo + ' Confira antes de aprovar de novo.' } });
+    await banco(`/rest/v1/cadencias?empresa_id=eq.${q(id)}&status=in.(ativa,pausada)`, { metodo: 'PATCH', corpo: { status: 'encerrada', motivo_fim: 'reavaliada: fora do perfil', proximo_em: null } });
+  }
+  return { nota: atual?.icp_score ?? null, segmento: nomeSeg, acabamento, motivo: v.evidencia || v.motivo, gancho: v.gancho || null, contatos, retirados, custo: r.custoUsd };
 }
 
 // ---------- dados do CNPJ: CNAE, cidade, UF e porte (cadastro público da Receita, via BrasilAPI) ----------
