@@ -11,7 +11,23 @@ import { dominioDe, lerPagina } from './web.ts';
 const q = encodeURIComponent;
 const GRATUITOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'live.com', 'yahoo.com', 'yahoo.com.br', 'bol.com.br', 'uol.com.br', 'terra.com.br', 'ig.com.br', 'icloud.com', 'msn.com'];
 const ORDEM_TIPO: Record<string, number> = { decisor: 0, pessoa: 1, generico: 2, fiscal: 3 };
-const ORDEM_ORIGEM: Record<string, number> = { indicado: 0, resposta: 0, base_clientes: 1, site: 2, receita_federal: 3 };
+const ORDEM_ORIGEM: Record<string, number> = { manual: 0, indicado: 0, resposta: 0, base_clientes: 1, site: 2, receita_federal: 3 };
+// Origens em que uma pessoa confirmou o endereço: valem mesmo com domínio diferente do da empresa.
+const CONFIRMADO = ['manual', 'indicado', 'resposta'];
+const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+// E-mail corporativo de OUTRA empresa (contador, holding, fornecedor): juridico@flamarpar para a Vitesse, vendas1@metalcornh
+// para a Ramarim. Com domínio conhecido, tem de ser o mesmo; sem domínio, o domínio do e-mail tem de lembrar o nome da empresa.
+// Regra do dono (20/10/2026): endereço que não combina com a empresa não faz sentido e não recebe e-mail.
+export function dominioEstranho(email: string, empresa: { nome?: string; dominio?: string | null; site?: string | null }) {
+  const dom = email.split('@')[1]?.toLowerCase() ?? '';
+  if (!dom || GRATUITOS.includes(dom)) return false;
+  const proprio = empresa.dominio || dominioDe(empresa.site);
+  if (proprio) return !(dom === proprio || dom.endsWith('.' + proprio));
+  const rotulo = semAcento(dom.split('.')[0]).replace(/[^a-z0-9]/g, '');
+  const palavras = semAcento(empresa.nome ?? '').split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !/^(ltda|industria|comercio|produtos|plasticos|metais|servicos|grupo)$/.test(w));
+  if (!palavras.length) return false; // nome curto ou só sigla: não dá para julgar
+  return !palavras.some((w) => rotulo.includes(w) || w.includes(rotulo));
+}
 // E-mail do cadastro do CNPJ que parece ser do escritório de contabilidade, não da empresa.
 const DE_TERCEIRO = /contab|contador|escritorio|assessoria|consultoria/i;
 
@@ -22,12 +38,14 @@ async function jaTentados(empresaId: string) {
 }
 
 // dominio: o da empresa; com ele, e-mail gratuito (Gmail, Hotmail...) fica por último, pois costuma ser de terceiro.
-async function escolher(empresaId: string, tentados: Set<string>, dominio?: string | null) {
+async function escolher(e: Record<string, any>, tentados: Set<string>, dominio?: string | null) {
+  const empresaId = e.id;
   const lista = await banco(`/rest/v1/contatos?select=id,nome,cargo,email,origem&empresa_id=eq.${empresaId}&pode_contatar=is.true&email=not.is.null`);
   const livres = [];
   for (const c of lista) {
     const email = c.email.toLowerCase();
     if (tentados.has(email) || tipoEmail(email) === 'bloqueado' || (await suprimido(email))) continue;
+    if (!CONFIRMADO.includes(c.origem) && dominioEstranho(email, e)) continue;
     livres.push(c);
   }
   const gratuitoComDominio = (email: string) => !!dominio && !GRATUITOS.includes(dominio) && GRATUITOS.includes(email.split('@')[1]?.toLowerCase());
@@ -48,9 +66,11 @@ async function gravar(empresaId: string, email: string, origem: string, fonte: s
 // Procura outros e-mails da empresa: site (pelo domínio do e-mail que já temos) e cadastro público do CNPJ.
 export async function buscarContatos(e: Record<string, any>) {
   const achados: string[] = [], avisos: string[] = [];
-  const conhecidos = await banco(`/rest/v1/contatos?select=email&empresa_id=eq.${e.id}&email=not.is.null`);
+  // Domínio para procurar o site: o da empresa ou o de um e-mail dela que ainda vale e combina com o nome.
+  const conhecidos = await banco(`/rest/v1/contatos?select=email,origem&empresa_id=eq.${e.id}&email=not.is.null&pode_contatar=is.true`);
   const dom = e.dominio || dominioDe(e.site) ||
-    conhecidos.map((c: { email: string }) => c.email.split('@')[1]?.toLowerCase()).find((d: string) => d && !GRATUITOS.includes(d)) || null;
+    conhecidos.filter((c: { email: string; origem: string }) => CONFIRMADO.includes(c.origem) || !dominioEstranho(c.email, e))
+      .map((c: { email: string }) => c.email.split('@')[1]?.toLowerCase()).find((d: string) => d && !GRATUITOS.includes(d)) || null;
   if (dom) {
     try {
       const home = await lerPagina(e.site || 'https://' + dom, 15_000);
@@ -75,7 +95,7 @@ export async function buscarContatos(e: Record<string, any>) {
       if (r.ok) {
         const d = await r.json();
         const m = String(d.email ?? '').trim().toLowerCase();
-        if (/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(m) && !DE_TERCEIRO.test(m) && (await gravar(e.id, m, 'receita_federal', fonte, 'Dado público do cadastro CNPJ (Receita Federal)'))) achados.push(m);
+        if (/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(m) && !DE_TERCEIRO.test(m) && !dominioEstranho(m, e) && (await gravar(e.id, m, 'receita_federal', fonte, 'Dado público do cadastro CNPJ (Receita Federal)'))) achados.push(m);
       } else avisos.push(`CNPJ: consulta respondeu ${r.status}`);
     } catch (err) { avisos.push(`CNPJ: ${(err as Error).message}`); }
   }
@@ -87,10 +107,10 @@ export async function buscarContatos(e: Record<string, any>) {
 export async function melhorContato(e: Record<string, any>) {
   const tentados = await jaTentados(e.id);
   const dominio = e.dominio || dominioDe(e.site);
-  let c = await escolher(e.id, tentados, dominio);
+  let c = await escolher(e, tentados, dominio);
   if ((!c || tipoEmail(c.email) === 'fiscal') && podeBuscar(e)) {
     await buscarContatos(e);
-    c = await escolher(e.id, tentados, dominio);
+    c = await escolher(e, tentados, dominio);
   }
   return c;
 }

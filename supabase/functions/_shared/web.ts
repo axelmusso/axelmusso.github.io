@@ -40,6 +40,17 @@ export async function permitido(url: URL): Promise<boolean> {
 
 export type Pagina = { url: string; titulo: string; texto: string; links: string[]; emails: string[] };
 
+// Sites atrás do Cloudflare escondem o e-mail no HTML (data-cfemail="..." ou /cdn-cgi/l/email-protection#...):
+// o 1º byte em hexadecimal é a chave, e cada byte seguinte é um caractere com XOR dessa chave.
+function emailsCloudflare(html: string) {
+  return [...html.matchAll(/(?:data-cfemail=["']|email-protection#)([0-9a-f]{6,})/gi)].map((m) => {
+    const k = parseInt(m[1].slice(0, 2), 16);
+    let s = '';
+    for (let i = 2; i < m[1].length; i += 2) s += String.fromCharCode(parseInt(m[1].slice(i, i + 2), 16) ^ k);
+    return s;
+  }).filter((e) => /^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(e));
+}
+
 // Baixa uma página HTML pública e devolve o texto limpo, os links e os e-mails visíveis.
 export async function lerPagina(endereco: string, limiteTexto = 30_000): Promise<Pagina> {
   let url: URL;
@@ -62,7 +73,7 @@ export async function lerPagina(endereco: string, limiteTexto = 30_000): Promise
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
-  const emails = [...new Set([...(html.matchAll(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g))].map((m) => m[0].toLowerCase().replace(/^(u00[0-9a-f]{2})+/, '')).filter((e) => !/\.(png|jpe?g|gif|webp|svg)$/.test(e) && !/sentry|wixpress|example\.|exemplo\./.test(e)))].slice(0, 20);
+  const emails = [...new Set([...[...(html.matchAll(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g))].map((m) => m[0]), ...emailsCloudflare(html)].map((m) => m.toLowerCase().replace(/^(u00[0-9a-f]{2})+/, '')).filter((e) => !/\.(png|jpe?g|gif|webp|svg)$/.test(e) && !/sentry|wixpress|example\.|exemplo\./.test(e)))].slice(0, 20);
   return { url: final.href, titulo, texto: texto.slice(0, limiteTexto), links, emails };
 }
 
