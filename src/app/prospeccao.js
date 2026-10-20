@@ -221,9 +221,10 @@
             (w ? '<div class="largo linha"><button type="submit" name="acao" value="aprovar" class="prim">' + (m.status === 'aprovado' ? 'Salvar (já aprovado)' : 'Aprovar') + '</button><button type="submit" name="acao" value="salvar">Salvar sem aprovar</button><button type="submit" name="acao" value="descartar">Descartar</button></div>' +
               // Descarte com motivo: o robô aprende com ele (refazer o texto ou tirar a empresa das rotinas).
               '<div class="largo descarte" hidden><p><b>Por que descartar?</b> O motivo ensina os robôs.</p>' +
-              '<label class="chk"><input type="radio" name="dtipo" value="refazer" checked> O e-mail não está bom: refazer com ajustes (a empresa segue)</label>' +
+              '<label class="chk"><input type="radio" name="dtipo" value="refazer" checked> O texto não está bom: refazer com ajustes (mesmo endereço)</label>' +
+              '<label class="chk"><input type="radio" name="dtipo" value="contato"> O endereço de e-mail não serve: procurar outro contato da empresa (a empresa segue)</label>' +
               '<label class="chk"><input type="radio" name="dtipo" value="empresa"> A empresa não serve: tirar de todas as rotinas</label>' +
-              '<label>Motivo<input name="dmotivo" maxlength="500" placeholder="Ex.: genérico demais, cite o produto que aparece no site"></label>' +
+              '<label>Motivo<input name="dmotivo" maxlength="500" placeholder="Ex.: é metalizadora, fale de verniz UV · ou: o certo é compras@empresa.com.br"></label>' +
               '<div class="linha"><button type="button" class="prim" data-confirmar-descarte>Confirmar descarte</button><button type="button" class="link" data-cancelar-descarte>Cancelar</button></div></div>' : '') +
             '</form></div>';
         }).join('') || '<p class="mut">Nenhum rascunho esperando.</p>') +
@@ -336,13 +337,15 @@
       b.addEventListener('click', function () {
         var f = b.closest('form'), id = f.dataset.email, tipo = f.dtipo.value, motivo = f.dmotivo.value.trim();
         if (motivo.length < 3) { aviso('Escreva brevemente o motivo: é com ele que os robôs aprendem.', true); f.dmotivo.focus(); return; }
-        b.disabled = true; b.textContent = tipo === 'refazer' ? 'Reescrevendo… (até 40 s)' : 'Descartando…';
+        b.disabled = true; b.textContent = tipo === 'empresa' ? 'Descartando…' : 'Reescrevendo… (até 40 s)';
         api('/rest/v1/rpc/descartar_email', { metodo: 'POST', corpo: { p_email: id, p_tipo: tipo, p_motivo: motivo } })
           .then(function () {
             if (tipo === 'empresa') { aviso('Empresa descartada: saiu de todas as rotinas. O motivo entra na próxima qualificação e na revisão semanal.'); return; }
+            b.textContent = tipo === 'contato' ? 'Procurando outro e-mail… (até 1 min)' : b.textContent;
             return fn({ acao: 'refazer', email_id: id }).then(function (r) {
-              aviso(r.sem_gancho ? 'Descartado. Não reescrevi: não há algo honesto e novo para dizer a esta empresa (' + (r.motivo || '') + ').' :
-                'Reescrito com o seu motivo: "' + r.assunto + '". Está na lista para aprovar.' + (r.revisar && r.revisar.length ? ' Atenção: ' + r.revisar.join('; ') : ''));
+              aviso(r.sem_contato ? 'Endereço descartado. Não achei outro e-mail que combine com a empresa (procurei no site e no CNPJ). Se souber o certo, escreva no motivo ao descartar ou cadastre na ficha da empresa.' :
+                r.sem_gancho ? 'Descartado. Não reescrevi: não há algo honesto e novo para dizer a esta empresa (' + (r.motivo || '') + ').' :
+                (r.para ? 'Novo rascunho para ' + r.para + ': "' + r.assunto + '".' : 'Reescrito com o seu motivo: "' + r.assunto + '".') + ' Está na lista para aprovar.' + (r.revisar && r.revisar.length ? ' Atenção: ' + r.revisar.join('; ') : ''));
             }, function (e) { aviso('Descartado com o motivo, mas a nova versão não saiu agora (' + e.message + '). Os robôs tentam de novo na próxima rodada da cadência (dias úteis, de hora em hora).', true); });
           })
           .then(function () { return render(); })

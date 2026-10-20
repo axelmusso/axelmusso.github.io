@@ -194,17 +194,71 @@ async function redigir(id: string, quem: string) {
   return { email_id: em.id, assunto: r.assunto, revisar: r.revisar, custo: r.custo, pedido_por: quem };
 }
 
-// ---------- refazer: o dono reprovou o texto (não a empresa) e escreveu o motivo ----------
+// O motivo do dono pode corrigir o que a empresa faz ou o produto a oferecer (ex.: "na verdade é metalizadora,
+// fale de verniz UV"). A correção vale sobre a planilha e sobre o site: sem ela, o perfil antigo (ex.: só resina 3D)
+// proíbe o redator de falar do produto que o dono pediu.
+const PERFIS_VALIDOS = ['verniz', 'metalizacao', 'resina3d', 'geral'];
+async function corrigirClassificacao(e: Record<string, any>, motivo: string, manual: boolean) {
+  const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.icp');
+  const segmentos = (cfg.valor.segmentos ?? []) as Segmento[];
+  const r = await chamarIA({
+    provedor: 'anthropic', papel: 'prospeccao_corrigir', nivel: 'barato', manual, maxTokens: 400,
+    instrucoes: 'Você lê o motivo que o dono da Corquímica escreveu ao reprovar um e-mail e diz se ele corrige o que a empresa faz (segmento) ou o produto a oferecer (perfil). Responda só com JSON. Se o motivo não fala disso (ex.: tom, tamanho, saudação), devolva null nos dois.',
+    contexto: `EMPRESA: ${e.nome} · segmento atual: ${e.segmento_icp ?? '?'} · perfil atual: ${e.perfil_produto ?? '?'}
+MOTIVO DO DONO: ${motivo}
+SEGMENTOS (id: descrição):\n${segmentos.map((g) => `${g.id}: ${g.nome}`).join('\n')}
+PERFIS: verniz (aplica verniz, laca ou pintura na produção), metalizacao (metalizadora: Verniz UV Base e Top Coat), resina3d (só resina para impressão 3D), geral (não se sabe o que usa).
+Devolva {"segmento": "id da lista ou null", "perfil": "verniz|metalizacao|resina3d|geral ou null"}`,
+  });
+  let v: { segmento?: string | null; perfil?: string | null } = {};
+  try { v = jsonDe(r.texto); } catch { return e; }
+  const corpo: Record<string, unknown> = {};
+  if (v.segmento && v.segmento !== e.segmento_icp && segmentos.some((g) => g.id === v.segmento)) {
+    Object.assign(corpo, { segmento_icp: v.segmento, icp_manual: true, icp_motivo: ('Corrigido pelo dono: ' + motivo).slice(0, 600) });
+  }
+  if (v.perfil && v.perfil !== e.perfil_produto && PERFIS_VALIDOS.includes(v.perfil)) {
+    Object.assign(corpo, { perfil_produto: v.perfil, perfil_fonte: ('dono: ' + motivo).slice(0, 300) });
+  }
+  if (!Object.keys(corpo).length) return e;
+  const [nova] = await banco('/rest/v1/empresas?id=eq.' + q(e.id), { metodo: 'PATCH', corpo });
+  await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: e.id, tipo: 'nota', direcao: 'interna', assunto: 'Classificação corrigida pelo dono', conteudo: `Segmento ${e.segmento_icp} → ${nova.segmento_icp}; perfil ${e.perfil_produto} → ${nova.perfil_produto}. Motivo: ${motivo}`.slice(0, 1000), agente_id: 'redator' } });
+  return nova;
+}
+
+// ---------- refazer: o dono reprovou o texto (refazer) ou o endereço (contato), não a empresa ----------
 async function refazer(emailId: string, manual: boolean) {
   const [m] = await banco('/rest/v1/emails?select=*,empresas(*),contatos(*),cadencias(tipo)&id=eq.' + q(emailId));
   if (!m) throw new Error('Rascunho não encontrado.');
-  if (m.descarte_tipo !== 'refazer') throw new Error('Este rascunho não foi marcado para refazer.');
+  if (m.descarte_tipo !== 'refazer' && m.descarte_tipo !== 'contato') throw new Error('Este rascunho não foi marcado para refazer.');
   const [ja] = await banco(`/rest/v1/emails?select=id&refeito_de=eq.${q(emailId)}&limit=1`);
   if (ja) return { ja_refeito: true, email_id: ja.id };
-  const e = m.empresas, contato = m.contatos;
+  let e = m.empresas;
   if (e.status === 'descartada' || e.relacao === 'cliente_ativo') throw new Error('Empresa descartada ou cliente ativo: não reescrevo.');
   if ((await banco(`/rest/v1/emails?select=id&empresa_id=eq.${q(e.id)}&status=in.(rascunho,aprovado)&limit=1`)).length) throw new Error('Já existe outro rascunho esperando aprovação para esta empresa.');
+  if (m.descarte_tipo === 'contato') {
+    // Endereço reprovado: outro e-mail da empresa (o informado pelo dono primeiro; senão site e CNPJ), e um 1º e-mail novo para ele.
+    const novo = await melhorContato(e);
+    if (!novo) {
+      await banco('/rest/v1/emails?id=eq.' + q(m.id), { metodo: 'PATCH', corpo: { erro: 'Não refeito: nenhum outro e-mail que combine com a empresa (procurei no site e no CNPJ).' } });
+      return { sem_contato: true };
+    }
+    const tipoNovo = e.relacao === 'ex_cliente' ? 'retomada' : 'prospeccao';
+    const r = await redigirEmail({ empresa: e, contato: novo, passo: 1, tipo: tipoNovo, manual });
+    if (r.sem_gancho) {
+      await banco('/rest/v1/emails?id=eq.' + q(m.id), { metodo: 'PATCH', corpo: { erro: ('Não refeito: ' + r.motivo).slice(0, 500) } });
+      return { sem_gancho: true, motivo: r.motivo, custo: r.custo };
+    }
+    const [n] = await banco('/rest/v1/emails', {
+      metodo: 'POST',
+      corpo: { empresa_id: e.id, contato_id: novo.id, para: novo.email, passo: 1, angulo: r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, refeito_de: m.id, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
+    });
+    await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: e.id, contato_id: novo.id, tipo: 'email', direcao: 'interna', assunto: 'Novo contato após endereço reprovado', conteudo: `${m.para} reprovado pelo dono; rascunho novo para ${novo.email} (fonte: ${novo.origem ?? 'sem fonte'}).`, agente_id: 'redator' } });
+    return { email_id: n.id, para: novo.email, assunto: r.assunto, revisar: r.revisar, custo: r.custo };
+  }
+  const contato = m.contatos;
   if (!contato?.email || !contato.pode_contatar) throw new Error('O contato deste rascunho não pode mais receber e-mail.');
+  // O motivo pode corrigir segmento e perfil de produto; a correção vale antes de reescrever.
+  e = await corrigirClassificacao(e, m.descarte_motivo ?? '', manual);
   // Indicação: recupera quem indicou pelo texto reprovado ("por indicação de Fulano").
   const indicadoPor = m.angulo === 'indicacao' ? (String(m.corpo).match(/indica[çc][ãa]o d[aeo]s?\s+([^.,;!?\n]{2,40})/i)?.[1]?.trim() ?? 'a equipe de vocês') : undefined;
   const tipo = m.cadencias?.tipo ?? (e.relacao === 'ex_cliente' ? 'retomada' : 'prospeccao');

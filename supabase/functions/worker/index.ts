@@ -87,7 +87,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   // com o 1º e-mail das melhores empresas ainda não contatadas (maior nota primeiro). Nada sai sem aprovação.
   async reabastecer_rascunhos() {
     // Rascunhos que o dono mandou refazer e que ainda não ganharam a versão nova (a tela tenta na hora; aqui é a garantia).
-    const reprovados = await banco(`/rest/v1/emails?select=id&descarte_tipo=eq.refazer&erro=is.null&descartado_em=gte.${q(new Date(Date.now() - 7 * 864e5).toISOString())}&limit=20`);
+    const reprovados = await banco(`/rest/v1/emails?select=id&descarte_tipo=in.(refazer,contato)&erro=is.null&descartado_em=gte.${q(new Date(Date.now() - 7 * 864e5).toISOString())}&limit=20`);
     for (const r of reprovados) {
       if (!(await banco(`/rest/v1/emails?select=id&refeito_de=eq.${r.id}&limit=1`)).length) await enfileirar('refazer_email', { email_id: r.id }, 7, 'refazer:' + r.id);
     }
