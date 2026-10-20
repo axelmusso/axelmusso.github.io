@@ -184,7 +184,7 @@
       api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,refeito_de,empresas(nome,relacao,perfil_produto,perfil_fonte),contatos(origem)&status=in.(rascunho,aprovado)&order=criado_em'),
       api('/rest/v1/config?select=chave,valor&chave=in.(icp,email_assinatura)'),
       api('/rest/v1/empresas?select=relacao,icp_score,qualificado_em,sem_gancho&limit=5000'),
-      api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em.desc'),
+      api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em'),
       api('/rest/v1/emails?select=id,para,assunto,passo,enviado_em,eventos,empresa_id,empresas(nome)&status=eq.enviado&order=enviado_em.desc&limit=15'),
       envio({ acao: 'status' }).catch(function (e) { return { erro: e.message }; }),
       api('/rest/v1/feiras?select=*&order=situacao,nome'),
@@ -192,7 +192,16 @@
       var rasc = r[0], cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), emp = r[2], resps = r[3], enviados = r[4], st = r[5], feiras = r[6];
       var icp = cfg.icp || { criterios: [], nota_minima: 50 };
       var conta = function (f) { return emp.filter(f).length; };
-      tela.innerHTML = '<h1>Prospecção</h1><p id="aviso-prosp" class="aviso" hidden></p>' +
+      // Respostas de clientes ficam no topo: vêm antes de qualquer e-mail novo e saem no mesmo dia quando aprovadas.
+      var caixa = '<section class="caixa-respostas' + (resps.length ? ' tem' : '') + '"><h2>Respostas de clientes <small class="mut">' + resps.length + '</small></h2>' +
+        (resps.length ? '<p class="mut">Responda primeiro. Aprovada de segunda a sexta, das 8h às 18h, a resposta sai na hora; fora disso, sai às 8h do próximo dia útil, antes de qualquer outro e-mail.</p>' : '') +
+        (resps.map(function (x) {
+          return '<div class="item resposta"><small class="mut">' + esc(dataHoraBR(x.recebido_em)) + ' · de ' + esc(x.de) + (x.empresas ? ' · <a href="#empresa/' + esc(x.empresa_id) + '">' + esc(x.empresas.nome) + '</a>' : ' · não ligada a envio') +
+            ' · <b>' + esc(CLASSE[x.classificacao] || 'sem classificação') + '</b>' + (x.status === 'aprovada' ? ' · <b>aprovada, sai sozinha no próximo horário comercial (8h, dia útil)</b>' : '') + '</small><p><b>' + esc(x.assunto) + '</b></p><div class="texto">' + esc(x.texto.slice(0, 3000)) + '</div>' +
+            (w ? '<form class="grade" data-resposta="' + esc(x.id) + '"><label class="largo">Resposta sugerida (edite à vontade)<textarea name="texto" rows="5">' + esc(x.rascunho || '') + '</textarea></label>' +
+              '<div class="largo linha"><button type="submit" name="acao" value="enviar" class="prim">Aprovar e enviar</button>' + (x.classificacao ? '' : '<button type="submit" name="acao" value="classificar">Classificar e rascunhar</button>') + '<button type="submit" name="acao" value="descartar">Descartar</button></div></form>' : '') + '</div>';
+        }).join('') || '<p class="mut">Nenhuma resposta esperando.</p>') + '</section>';
+      tela.innerHTML = '<h1>Prospecção</h1><p id="aviso-prosp" class="aviso" hidden></p>' + caixa +
         '<div class="numeros">' +
         '<div><b>' + conta(function (e) { return e.relacao === 'prospect'; }) + '</b>prospects</div>' +
         '<div><b>' + conta(function (e) { return e.relacao === 'prospect' && e.icp_score >= icp.nota_minima && !e.sem_gancho; }) + '</b>qualificados (nota ≥ ' + icp.nota_minima + ')</div>' +
@@ -202,17 +211,10 @@
         '<h2>Envio</h2>' + (st.erro ? '<p class="ruim">' + esc(st.erro) + '</p>' :
           '<p>Hoje: <b>' + esc(st.enviados) + ' de ' + esc(st.limite) + '</b> e-mails de prospecção (aquecimento: dia ' + esc(st.dias_de_aquecimento + 1) + ', teto ' + esc(st.teto) + '/dia). ' +
           (st.dia_de_iniciais ? '<span>Pode sair tudo agora.</span>' : st.horario_comercial ? '<span class="ruim">Hoje só saem respostas; prospecção e retomada saem de terça a quinta.</span>' : '<span class="ruim">Fora do horário comercial: nada sai agora.</span>') + '</p>' +
-          '<p class="mut">Regra: e-mails de prospecção e retomada de terça a quinta; respostas de segunda a sexta; sempre das 8h às 18h (Brasília). Sem resposta em 14 dias, a cadência passa para outro e-mail da empresa (área de compras ou produção primeiro; nota fiscal e financeiro por último), até alguém responder ou acabarem os e-mails.</p>') +
+          '<p class="mut">Regra: respostas a clientes vêm primeiro e saem no mesmo dia, de segunda a sexta (não contam no limite do dia); e-mails de prospecção e retomada de terça a quinta; sempre das 8h às 18h (Brasília). Sem resposta em 14 dias, a cadência passa para outro e-mail da empresa (área de compras ou produção primeiro; nota fiscal e financeiro por último), até alguém responder ou acabarem os e-mails.</p>') +
         (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button>' + (perfil.papel === 'dono' && !st.erro && !st.horario_comercial ? '<button type="button" id="enviar-teste">Enviar aprovados agora (teste fora do horário)</button>' : '') + '<button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
 
-        '<h2>Caixa de respostas <small class="mut">' + resps.length + '</small></h2>' + (resps.map(function (x) {
-          return '<div class="item resposta"><small class="mut">' + esc(dataHoraBR(x.recebido_em)) + ' · de ' + esc(x.de) + (x.empresas ? ' · <a href="#empresa/' + esc(x.empresa_id) + '">' + esc(x.empresas.nome) + '</a>' : ' · não ligada a envio') +
-            ' · <b>' + esc(CLASSE[x.classificacao] || 'sem classificação') + '</b>' + (x.status === 'aprovada' ? ' · <b>aprovada, sai no próximo horário</b>' : '') + '</small><p><b>' + esc(x.assunto) + '</b></p><div class="texto">' + esc(x.texto.slice(0, 3000)) + '</div>' +
-            (w ? '<form class="grade" data-resposta="' + esc(x.id) + '"><label class="largo">Resposta sugerida (edite à vontade)<textarea name="texto" rows="5">' + esc(x.rascunho || '') + '</textarea></label>' +
-              '<div class="largo linha"><button type="submit" name="acao" value="enviar" class="prim">Aprovar e enviar</button>' + (x.classificacao ? '' : '<button type="submit" name="acao" value="classificar">Classificar e rascunhar</button>') + '<button type="submit" name="acao" value="descartar">Descartar</button></div></form>' : '') + '</div>';
-        }).join('') || '<p class="mut">Nenhuma resposta esperando.</p>') +
-
-        '<h2>E-mails para aprovar</h2><p class="mut">Primeiros contatos, continuações da cadência e retomadas. As respostas a quem escreveu para nós ficam na Caixa de respostas, acima.</p>' + (rasc.map(function (m) {
+        '<h2>E-mails para aprovar</h2><p class="mut">Primeiros contatos, continuações da cadência e retomadas. As respostas a quem escreveu para nós ficam no topo da tela.</p>' + (rasc.map(function (m) {
           return '<div class="item email-rasc"><p class="tipo-email">' + esc(tipoRascunho(m)) + (m.status === 'aprovado' ? ' · já aprovado, esperando o envio' : '') + '</p><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + (m.contatos && ORIGEM[m.contatos.origem] ? ' (' + ORIGEM[m.contatos.origem] + ')' : '') + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
             (m.erro ? '<p class="ruim">' + esc(m.erro) + '</p>' : '') +
             '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +

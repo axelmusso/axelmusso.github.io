@@ -1,10 +1,12 @@
 // Envio e cadência (Fase 6, parte B). Só sai e-mail APROVADO por uma pessoa.
 //   { acao: 'status' }                      → limite de hoje (aquecimento), enviados e se está no horário
 //   { acao: 'enviar_aprovados' }            → manda as respostas aprovadas (seg a sex) e os e-mails aprovados da cadência (ter a qui), no horário comercial e no limite
+//   { acao: 'enviar_respostas' }            → só as respostas aprovadas (o worker chama a cada 5 minutos no horário comercial)
 //   { acao: 'enviar_aprovados', teste: true } → só o dono: o mesmo, fora do horário (para testar), sem iniciar o aquecimento
 //   { acao: 'preparar' }                    → escreve (como rascunho) o próximo e-mail das cadências vencidas
 //   { acao: 'classificar', resposta_id }    → classifica uma resposta recebida e rascunha a continuação
-//   { acao: 'responder', resposta_id, texto } → envia a resposta aprovada, na mesma conversa (fora do horário, fica aprovada e sai no próximo horário)
+//   { acao: 'responder', resposta_id, texto } → envia a resposta aprovada, na mesma conversa (fora do horário, fica aprovada e sai às 8h do próximo dia útil)
+// Respostas vêm sempre antes: saem primeiro, não contam no limite do aquecimento e não esperam o dia de prospecção.
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { classificarResposta, redigirEmail, tipoEmail } from '../_shared/redacao.ts';
@@ -29,11 +31,8 @@ async function marcarContatado(empresa: Record<string, any>) {
 // teste = botão do dono para conferir o envio fora do horário: ignora o horário e não inicia o aquecimento.
 async function enviarAprovados(teste = false) {
   if (!teste && !horarioComercial()) return { enviados: 0, aviso: 'Fora do horário comercial (segunda a sexta, 8h às 18h de Brasília). Os aprovados saem no próximo horário.' };
-  // Primeiro as respostas aprovadas fora do horário (valem de segunda a sexta).
-  let respostas = 0; const problemasResp: string[] = [];
-  for (const r of await banco('/rest/v1/respostas?select=*,emails(contato_id)&status=eq.aprovada&order=recebido_em&limit=' + POR_CHAMADA)) {
-    try { await enviarResposta(r, r.rascunho ?? ''); respostas++; } catch (err) { problemasResp.push(`resposta para ${r.de}: ${(err as Error).message}`); }
-  }
+  // Primeiro as respostas aprovadas (valem de segunda a sexta).
+  const { respostas, problemas: problemasResp } = await enviarRespostas();
   if (!teste && !diaDeIniciais()) {
     return { enviados: 0, respostas, problemas: problemasResp, aviso: (respostas ? `${respostas} resposta(s) enviada(s). ` : '') + 'E-mails de prospecção e retomada só saem de terça a quinta; os aprovados esperam o próximo dia permitido.' };
   }
@@ -78,6 +77,15 @@ async function enviarAprovados(teste = false) {
     await banco('/rest/v1/config?chave=eq.email_aquecimento', { metodo: 'PATCH', corpo: { valor: { ...c.email_aquecimento, primeiro_envio: agoraBrasilia().dia } } });
   }
   return { enviados, respostas, problemas: [...problemasResp, ...problemas], na_fila: fila.length };
+}
+
+// Respostas aprovadas que ainda não saíram (aprovadas fora do horário ou que falharam), da mais antiga para a mais nova.
+async function enviarRespostas() {
+  let respostas = 0; const problemas: string[] = [];
+  for (const r of await banco('/rest/v1/respostas?select=*,emails(contato_id)&status=eq.aprovada&order=recebido_em&limit=' + POR_CHAMADA)) {
+    try { await enviarResposta(r, r.rascunho ?? ''); respostas++; } catch (err) { problemas.push(`resposta para ${r.de}: ${(err as Error).message}`); }
+  }
+  return { respostas, problemas };
 }
 
 async function preparar(manual: boolean) {
@@ -136,7 +144,7 @@ async function responder(id: string, texto: string) {
   if (!texto.trim()) throw new Error('Escreva a resposta.');
   if (!horarioComercial()) {
     await banco('/rest/v1/respostas?id=eq.' + r.id, { metodo: 'PATCH', corpo: { status: 'aprovada', rascunho: texto } });
-    return { ok: true, agendada: true, aviso: 'Aprovada. Fora do horário comercial: sai no próximo "Enviar aprovados" de segunda a sexta, das 8h às 18h.' };
+    return { ok: true, agendada: true, aviso: 'Aprovada. Fora do horário comercial: sai sozinha às 8h do próximo dia útil (segunda a sexta), antes de qualquer outro e-mail.' };
   }
   await enviarResposta(r, texto);
   return { ok: true };
@@ -169,6 +177,10 @@ Deno.serve(async (req) => {
     if (c.acao === 'enviar_aprovados') {
       if (c.teste && quem.papel !== 'dono') return json(req, 403, { erro: 'Só o dono pode enviar fora do horário.' });
       return json(req, 200, await enviarAprovados(c.teste === true));
+    }
+    if (c.acao === 'enviar_respostas') {
+      if (!horarioComercial()) return json(req, 200, { respostas: 0, aviso: 'Fora do horário comercial.' });
+      return json(req, 200, await enviarRespostas());
     }
     if (c.acao === 'preparar') return json(req, 200, await preparar(quem.papel !== 'sistema'));
     if (c.acao === 'classificar') return json(req, 200, await classificar(String(c.resposta_id ?? ''), quem.papel !== 'sistema'));
