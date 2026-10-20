@@ -10,7 +10,7 @@ update public.config set valor = jsonb_set(valor, '{segmentos}', (
   select jsonb_agg(case
     when s ->> 'id' = 'injecao_plastica' then s || '{"nome": "Só injeção, sopro ou extrusão, sem pintura, verniz ou metalização", "nota": 0, "grupo": "fora"}'::jsonb
     when s ->> 'id' = 'plastico_auto_linha_branca' then s || '{"nome": "Peças plásticas automotivas e de eletrodomésticos, com pintura, verniz ou metalização"}'::jsonb
-    when s ->> 'id' = 'plastico_acabamento' then s || '{"nome": "Peças plásticas injetadas com pintura, verniz, metalização, hot stamping ou decoração"}'::jsonb
+    when s ->> 'id' = 'plastico_acabamento' then s || '{"nome": "Peças plásticas injetadas com pintura, verniz ou metalização"}'::jsonb
     else s end order by i)
   from jsonb_array_elements(valor -> 'segmentos') with ordinality as t(s, i)))
 where chave = 'icp';
