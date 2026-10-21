@@ -2,6 +2,7 @@
 // Usa a Places API (New), Text Search. Cada consulta devolve até 20 lugares e conta como 1 no limite do dia.
 //   { acao: 'status' }                         → consultas usadas hoje e o limite (config.maps_limite_dia)
 //   { acao: 'buscar', termo, paginas? }        → busca "injeção de plástico em Caxias do Sul" e cadastra as empresas novas
+//   { acao: 'buscar_segmento', segmento, cidade } → a mesma busca, montada como "<segmento> em <cidade>" (usada pela rotina descoberta)
 //   { acao: 'achar_site', empresa_id }         → procura a empresa pelo nome e cidade e grava site e telefone
 // Nada sai daqui para o mundo: as empresas entram como prospect e passam pela qualificação de sempre.
 import { banco } from '../_shared/ia.ts';
@@ -144,6 +145,11 @@ Deno.serve(async (req) => {
   try {
     if (c.acao === 'status') return json(req, 200, { usadas_hoje: await usadasHoje(), limite_dia: await limiteDia() });
     if (c.acao === 'buscar') return json(req, 200, await buscar(String(c.termo ?? ''), Number(c.paginas ?? 1)));
+    if (c.acao === 'buscar_segmento') {
+      const segmento = String(c.segmento ?? '').trim(), cidade = String(c.cidade ?? '').trim();
+      if (!segmento || !cidade) throw new ErroMaps('Informe o segmento e a cidade.');
+      return json(req, 200, await buscar(`${segmento} em ${cidade}`));
+    }
     if (c.acao === 'achar_site') return json(req, 200, await acharSite(String(c.empresa_id ?? '')));
     return json(req, 400, { erro: 'Ação desconhecida.' });
   } catch (e) {

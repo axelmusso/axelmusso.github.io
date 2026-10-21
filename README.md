@@ -133,7 +133,7 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - Regras do prompt vindas das correções do Áxel: tacos de salto, núcleos estruturais e painéis acrílicos = plástico técnico (fora); pés de sofá, pés de cama e puxadores de móveis (plástico, zamac ou aço) = alvo prioritário, mas rodízios e sapatas não; impressão digital UV é tinta, não verniz; o setor informado pela feira vale como evidência; sem site, nome com alumínio/aço/metal/madeira/vidro já indica segmento fora.
 - Metalização é só em plástico (vácuo ou galvanoplastia em plástico). Galvanização, zincagem, anodização e cromo em metal ficam fora (ferragens e metalurgia), regra do Áxel.
 - Dados do CNPJ: a ação `dados_cnpj` da prospecção completa CNAE principal e secundários, situação cadastral, cidade, UF e porte (cadastro público via BrasilAPI). Empresa com CNPJ baixado, inapto, suspenso ou nulo não recebe rascunho.
-- Google Maps (função `maps`, Places API New): `buscar` cadastra empresas de uma busca como "metalização em plástico Novo Hamburgo RS" (origem `maps:<termo>`); `achar_site` procura o site de quem não tem, pelo nome e cidade. Limite próprio de 150 consultas por dia (`config.maps_limite_dia`), contadas em `execucoes_agente` (provedor `google_maps`, custo 0), porque o Google não deixou travar a cota nesta conta. Instagram, Facebook e Linktree não contam como site. A chave fica no segredo `GOOGLE_MAPS_API_KEY`, restrita à Places API. O teste grátis do Google (US$ 300) vence 90 dias após 17/10/2026: antes de ativar a conta paga, revisar o limite.
+- Google Maps (função `maps`, Places API New): `buscar` cadastra empresas de uma busca como "metalização em plástico Novo Hamburgo RS" (origem `maps:<termo>`); `achar_site` procura o site de quem não tem, pelo nome e cidade. Limite próprio de 150 consultas por dia (`config.maps_limite_dia`), contadas em `execucoes_agente` (provedor `google_maps`, custo 0), porque o Google não deixou travar a cota nesta conta. Instagram, Facebook e Linktree não contam como site. A chave fica no segredo `GOOGLE_MAPS_API_KEY`, restrita à Places API. Busca por segmento (21/10/2026): a rotina descoberta monta "<segmento> em <cidade>" com `config.maps_segmentos` e `config.maps_cidades` (editáveis), cidade por cidade, e a mesma busca só se repete depois de 90 dias (conta pelos jobs `maps_buscar_segmento`). As empresas novas passam pelo dedupe de sempre (id do Google, domínio, nome sem acento, lista de supressão) e entram como prospect para a qualificação. O teste grátis do Google (US$ 300) vence 90 dias após 17/10/2026: antes de ativar a conta paga, revisar o limite.
 - Busca de feiras: tarefa agendada no app (dias 1 e 15 de cada mês) procura feiras novas e listas de expositores, e atualiza a tabela `feiras`; a importação continua no botão "Ler lista".
 
 **E-mail do site:** com domínio próprio, só entram e-mails do domínio da empresa (Gmail e afins no site costumam ser de representantes), e a qualificação também lê a página de contato.
@@ -178,9 +178,9 @@ O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acres
 
   | Quando | Rotina | O que faz |
   |---|---|---|
-  | Diária, 7h | descoberta | site pelo Maps de até 100 empresas da Receita sem site, dentro do limite do dia |
+  | Diária, 7h | descoberta | site pelo Maps de até 100 empresas da Receita sem site; o que sobra do limite do dia (até 30) vai para buscas por segmento e cidade |
   | Seg a sex, 8h às 17h, de hora em hora | cadência | rascunha os próximos e-mails, envia os aprovados, classifica respostas sem classificação e completa a fila até 30 rascunhos para aprovar (`config.rascunhos_alvo`) |
-  | Diária, 21h | enriquecimento | qualifica até 40 empresas com site ainda sem nota |
+  | Diária, 21h | enriquecimento | qualifica até 120 empresas com site ainda sem nota |
   | Segunda, 6h | concorrência | coleta dos concorrentes; meia hora depois, análise nova se algo mudou ou se a última tem mais de 28 dias |
   | Segunda, 6h | memória | consolidação |
   | Diária, 8h | relatório | e-mail para o dono com enviados, respostas, telefones, aprovações pendentes, gasto e erros |

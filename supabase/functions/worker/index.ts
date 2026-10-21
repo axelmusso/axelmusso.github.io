@@ -18,8 +18,10 @@ const SB_URL = Deno.env.get('SUPABASE_URL')!;
 const CHAVE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const q = encodeURIComponent;
 const ORCAMENTO_MS = 100_000;          // depois disso não pega job novo (a função tem 150 s)
-const QUALIFICAR_POR_NOITE = 40;
+const QUALIFICAR_POR_NOITE = 120;
 const ACHAR_SITE_POR_DIA = 100;
+const BUSCAS_SEGMENTO_POR_DIA = 30;   // o que sobra do Maps depois do achar site, até este número
+const REPETIR_BUSCA_DIAS = 90;        // a mesma busca (segmento e cidade) só volta depois disso
 const PRIORIDADE_RESPOSTA = 10;        // acima de todas as rotinas
 const RESERVA_RESPOSTAS = 0.85;        // rascunhos novos só até 85% do teto do dia
 // Jobs que escrevem rascunhos novos: esperam enquanto houver resposta de cliente sem rascunho.
@@ -149,14 +151,17 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   },
 
   // Rotina da manhã: procurar no Maps o site das empresas da Receita que ainda não têm, dentro do limite do dia.
+  // O que sobra vai para buscas por segmento e cidade (config.maps_segmentos x config.maps_cidades), que trazem empresas novas.
   async descoberta() {
     const st = await chamar('maps', { acao: 'status' });
     const livre = Math.max(0, Number(st.limite_dia) - Number(st.usadas_hoje) - 10);
     const n = Math.min(livre, ACHAR_SITE_POR_DIA);
-    if (!n) return { aviso: 'Sem consultas do Maps sobrando hoje.' };
-    const lista = await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&order=icp_score.desc.nullslast,criado_em&limit=${n}`);
+    if (!livre) return { aviso: 'Sem consultas do Maps sobrando hoje.' };
+    const lista = n ? await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&order=icp_score.desc.nullslast,criado_em&limit=${n}`) : [];
     for (const e of lista) await enfileirar('maps_achar_site', { empresa_id: e.id }, 4, 'achar_site:' + e.id);
-    return { enfileiradas: lista.length };
+    const buscas = await proximasBuscas(Math.min(livre - lista.length, BUSCAS_SEGMENTO_POR_DIA));
+    for (const b of buscas) await enfileirar('maps_buscar_segmento', b, 4, `buscar:${b.segmento} em ${b.cidade}`);
+    return { enfileiradas: lista.length, buscas_segmento: buscas.length };
   },
   // Reescreve o rascunho reprovado com o motivo do dono. Sem conserto possível, marca o erro e não tenta de novo.
   async refazer_email(j) {
@@ -170,6 +175,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   },
 
   maps_achar_site: (j) => chamar('maps', { acao: 'achar_site', empresa_id: j.payload.empresa_id }),
+  maps_buscar_segmento: (j) => chamar('maps', { acao: 'buscar_segmento', segmento: j.payload.segmento, cidade: j.payload.cidade }),
 
   // Rotina da noite: qualificar (nota do ICP) as empresas com site que ainda não foram avaliadas.
   async enriquecimento() {
@@ -227,6 +233,24 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   relatorio: async () => { await enfileirar('medir_acoes', {}, 3, 'medir_acoes'); return relatorio(); },
   teste: async (j) => ({ ok: true, eco: j.payload }),
 };
+
+// Próximas buscas por segmento: cidade por cidade (na ordem da config), todos os segmentos de cada uma,
+// pulando as que já rodaram (ou estão na fila) nos últimos REPETIR_BUSCA_DIAS dias.
+async function proximasBuscas(n: number) {
+  if (n <= 0) return [];
+  const [seg] = await banco('/rest/v1/config?select=valor&chave=eq.maps_segmentos');
+  const [cid] = await banco('/rest/v1/config?select=valor&chave=eq.maps_cidades');
+  const desde = new Date(Date.now() - REPETIR_BUSCA_DIAS * 864e5).toISOString();
+  const feitas = new Set((await banco(`/rest/v1/jobs?select=chave&tipo=eq.maps_buscar_segmento&status=in.(pendente,rodando,feito)&criado_em=gte.${q(desde)}`)).map((x: { chave: string }) => x.chave));
+  const out: { segmento: string; cidade: string }[] = [];
+  for (const cidade of (cid?.valor ?? []) as string[]) {
+    for (const segmento of (seg?.valor ?? []) as string[]) {
+      if (out.length >= n) return out;
+      if (!feitas.has(`buscar:${segmento} em ${cidade}`)) out.push({ segmento, cidade });
+    }
+  }
+  return out;
+}
 
 // ---------- relatório das 8h para o dono ----------
 async function relatorio() {
