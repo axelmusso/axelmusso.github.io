@@ -178,6 +178,7 @@
   // ---------- tela ----------
   var NOME_REL = { prospect: 'Prospect', cliente_ativo: 'Cliente ativo', ex_cliente: 'Ex-cliente' };
   var filtroProsp = 'fila';
+  var filtroRasc = 'pendentes'; // e-mails para aprovar: pendentes (ainda não aprovados), aprovados ou todos
   function render() {
     var w = podeEscrever();
     return Promise.all([
@@ -207,14 +208,18 @@
         '<div><b>' + conta(function (e) { return e.relacao === 'prospect' && e.icp_score >= icp.nota_minima && !e.sem_gancho; }) + '</b>qualificados (nota ≥ ' + icp.nota_minima + ')</div>' +
         '<div><b>' + conta(function (e) { return e.relacao === 'ex_cliente'; }) + '</b>ex-clientes (retomada)</div>' +
         '<div><b>' + conta(function (e) { return e.relacao === 'cliente_ativo'; }) + '</b>clientes ativos (protegidos)</div>' +
-        '<div><b>' + rasc.length + '</b>e-mails aguardando você</div></div>' +
+        '<div><b>' + rasc.filter(function (m) { return m.status !== 'aprovado'; }).length + '</b>e-mails aguardando você</div></div>' +
         '<h2>Envio</h2>' + (st.erro ? '<p class="ruim">' + esc(st.erro) + '</p>' :
           '<p>Hoje: <b>' + esc(st.enviados) + ' de ' + esc(st.limite) + '</b> e-mails de prospecção (aquecimento: dia ' + esc(st.dias_de_aquecimento + 1) + ', teto ' + esc(st.teto) + '/dia). ' +
           (st.dia_de_iniciais ? '<span>Pode sair tudo agora.</span>' : st.horario_comercial ? '<span class="ruim">Hoje só saem respostas; prospecção e retomada saem de terça a quinta.</span>' : '<span class="ruim">Fora do horário comercial: nada sai agora.</span>') + '</p>' +
           '<p class="mut">Regra: respostas a clientes vêm primeiro e saem no mesmo dia, de segunda a sexta (não contam no limite do dia); e-mails de prospecção e retomada de terça a quinta; sempre das 8h às 18h (Brasília). Sem resposta em 14 dias, a cadência passa para outro e-mail da empresa (área de compras ou produção primeiro; nota fiscal e financeiro por último), até alguém responder ou acabarem os e-mails.</p>') +
         (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button>' + (perfil.papel === 'dono' && !st.erro && !st.horario_comercial ? '<button type="button" id="enviar-teste">Enviar aprovados agora (teste fora do horário)</button>' : '') + '<button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
 
-        '<h2>E-mails para aprovar</h2><p class="mut">Primeiros contatos, continuações da cadência e retomadas. As respostas a quem escreveu para nós ficam no topo da tela.</p>' + (rasc.map(function (m) {
+        '<h2>E-mails para aprovar</h2><p class="mut">Primeiros contatos, continuações da cadência e retomadas. As respostas a quem escreveu para nós ficam no topo da tela.</p>' +
+        '<div class="linha abas">' + [['pendentes', 'Não aprovados', rasc.filter(function (m) { return m.status !== 'aprovado'; }).length], ['aprovados', 'Aprovados, esperando o envio', rasc.filter(function (m) { return m.status === 'aprovado'; }).length], ['todos', 'Todos', rasc.length]].map(function (a) {
+          return '<button type="button" data-filtro-rasc="' + a[0] + '"' + (filtroRasc === a[0] ? ' class="prim"' : '') + '>' + a[1] + ' (' + a[2] + ')</button>';
+        }).join('') + '</div>' +
+        (rasc.filter(function (m) { return filtroRasc === 'todos' || (filtroRasc === 'aprovados') === (m.status === 'aprovado'); }).map(function (m) {
           return '<div class="item email-rasc"><p class="tipo-email">' + esc(tipoRascunho(m)) + (m.status === 'aprovado' ? ' · já aprovado, esperando o envio' : '') + '</p><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + (m.contatos && ORIGEM[m.contatos.origem] ? ' (' + ORIGEM[m.contatos.origem] + ')' : '') + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
             (m.erro ? '<p class="ruim">' + esc(m.erro) + '</p>' : '') +
             '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
@@ -229,7 +234,7 @@
               '<label>Motivo<input name="dmotivo" maxlength="500" placeholder="Ex.: é metalizadora, fale de verniz UV · ou: o certo é compras@empresa.com.br"></label>' +
               '<div class="linha"><button type="button" class="prim" data-confirmar-descarte>Confirmar descarte</button><button type="button" class="link" data-cancelar-descarte>Cancelar</button></div></div>' : '') +
             '</form></div>';
-        }).join('') || '<p class="mut">Nenhum rascunho esperando.</p>') +
+        }).join('') || '<p class="mut">' + (filtroRasc === 'aprovados' ? 'Nenhum e-mail aprovado esperando o envio.' : 'Nenhum rascunho esperando.') + '</p>') +
 
         '<h2>Empresas</h2><div class="linha abas">' +
         [['fila', 'A qualificar'], ['qualificadas', 'Prontas para escrever'], ['retomada', 'Ex-clientes'], ['abaixo', 'Abaixo da nota / sem gancho']].map(function (a) {
@@ -316,6 +321,7 @@
 
   function ligar(w) {
     document.querySelectorAll('[data-aba]').forEach(function (b) { b.addEventListener('click', function () { filtroProsp = b.dataset.aba; render(); }); });
+    document.querySelectorAll('[data-filtro-rasc]').forEach(function (b) { b.addEventListener('click', function () { filtroRasc = b.dataset.filtroRasc; render(); }); });
     document.querySelectorAll('[data-email]').forEach(function (f) {
       f.addEventListener('submit', function (ev) {
         ev.preventDefault();

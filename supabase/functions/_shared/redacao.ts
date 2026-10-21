@@ -14,7 +14,7 @@ export const PERFIS: Record<string, string> = {
   verniz: 'A empresa USA vernizes na linha (confirmado). Fale com segurança, sem perguntar se usa. Pode citar Verniz UV Base, Verniz UV Top Coat, Lacas, Corantes UV e Solventes, e ganhos de acabamento (aderência, brilho, cura).',
   metalizacao: 'A empresa é METALIZADORA e usa verniz UV (confirmado). Fale com segurança, sem perguntar se usa. Cite SÓ Verniz UV (Base e Top Coat), Solventes e Tintas para ABS. NÃO fale de laca, corante nem resina.',
   resina3d: 'A empresa usa resinas para impressão 3D (confirmado). Fale com segurança, sem perguntar se usa. Fale apenas de Resinas 3D. NÃO fale de verniz, laca, corante, tinta nem acabamento de peças.',
-  geral: 'NÃO se sabe se a empresa usa algum produto da Corquímica. NÃO afirme nem suponha que ela usa verniz, laca, tinta ou resina. Mensagem mais geral: para dizer o que a Corquímica faz, use só algo como "indústria química de Estância Velha (RS), desde 1997", sem citar produtos; e pergunte, sem pressupor, se faz sentido conversar.',
+  geral: 'Ainda NÃO se sabe se a empresa compra esses produtos de alguém. NÃO afirme que ela usa nem que tem algum fornecedor. Mas diga com clareza o que a Corquímica FABRICA, ligado ao segmento do cliente (ex.: "fabricamos vernizes UV, lacas e tintas para o acabamento de saltos e solados"), para quem lê entender de primeira se o contato faz sentido; e pergunte, sem pressupor, se faz sentido conversar. NÃO fale de resina 3D.',
 };
 
 // Palavras de produto que cada perfil NÃO pode usar (a máquina confere).
@@ -22,7 +22,7 @@ const FORA_DO_PERFIL: Record<string, RegExp> = {
   verniz: /\b(resinas?)\b/i,
   metalizacao: /\b(lacas?|corantes?|resinas?)\b/i,
   resina3d: /\b(verniz|vernizes|lacas?|corantes?|tintas?)\b/i,
-  geral: /\b(verniz|vernizes|lacas?|corantes?|resinas?|tintas?)\b/i,
+  geral: /\b(resinas?)\b/i,
 };
 // Dúvida sobre o que o cliente usa (perfil confirmado) e insinuação de problema: passam insegurança.
 const DUVIDA = /\bse (a |o )?(linha|produção|fábrica|operação|voc[êe]s|empresa)\b[^.?!]{0,40}\b(ainda|segue|seguem|continua|continuam|usa|usam|trabalha|trabalham|imprime|imprimem|aplica|aplicam)\b/i;
@@ -95,7 +95,7 @@ function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null, f
   const fim = FIM[final];
   const quem = retomada
     ? 'Apresente-se em uma frase curta: Fernando Gutierrez, executivo comercial da Corquímica. NÃO apresente a Corquímica (ele já foi cliente).'
-    : 'Apresente-se em uma frase curta (Fernando Gutierrez, executivo comercial da Corquímica) e apresente a Corquímica em outra frase curta (fabricante de Estância Velha/RS desde 1997, com o que for relevante para o perfil).';
+    : 'Apresente-se em uma frase curta (Fernando Gutierrez, executivo comercial da Corquímica) e, em outra frase curta, diga O QUE a Corquímica fabrica e para quê, ligado ao SEGMENTO DO CLIENTE (ex.: "fabricante de Estância Velha/RS, desde 1997, de vernizes UV, lacas e tintas para o acabamento de saltos e solados"). Nunca diga só "indústria química".';
   const lembrete = 'Comece lembrando em poucas palavras quem escreve (ex.: "Aqui é o Fernando, da Corquímica, de novo.").';
   if (indicadoPor) return `Escreva o PRIMEIRO e-mail para a pessoa que a própria empresa indicou como responsável (indicação feita por: ${indicadoPor}). Abra citando a indicação em uma frase (ex.: "Recebi seu contato por indicação de ${indicadoPor}..."). ${quem} Diga em uma frase por que a Corquímica quer conversar, dentro do que o perfil permite. ${fim}`;
   if (passo >= 5) return `Escreva uma RETOMADA depois de cerca de 2 meses sem resposta aos e-mails anteriores. ${quem} Traga um motivo NOVO para falar agora (diferente dos e-mails anteriores), reconheça com leveza que já escreveu antes, sem cobrar. ${fim}`;
@@ -113,7 +113,7 @@ function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null, f
   ][passo - 1];
 }
 
-const REGRAS = `Regras do texto: quem escreve e assina é sempre o Fernando; nunca cite o Áxel nem outra pessoa da Corquímica. Português do Brasil com acentuação correta, inclusive no nome da empresa (ex.: "Parobe" → "Parobé", "Metalurgica" → "Metalúrgica"), sem trocar o nome; o gancho tem de ser atual: evento com data que já passou (feira, lançamento) é citado no passado, nunca como se ainda fosse acontecer; tom de conversa entre profissionais, confiante: nunca insinue que houve ou há problema, algo a ajustar ou a corrigir (no produto, no fornecimento anterior ou no acabamento do cliente), e nunca condicione a conversa a "se a linha ainda usa/segue" o que o perfil já confirma: fale do que a Corquímica oferece para a operação dele; até 110 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura nem despedida (a assinatura é colocada depois). Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação; o assunto também respeita o perfil de produto.
+const REGRAS = `Regras do texto: quem escreve e assina é sempre o Fernando; nunca cite o Áxel nem outra pessoa da Corquímica. Português do Brasil com acentuação correta, inclusive no nome da empresa (ex.: "Parobe" → "Parobé", "Metalurgica" → "Metalúrgica"), sem trocar o nome; o gancho tem de ser atual: evento com data que já passou (feira, lançamento) é citado no passado, nunca como se ainda fosse acontecer; tom de conversa entre profissionais, confiante: nunca insinue que houve ou há problema, algo a ajustar ou a corrigir (no produto, no fornecimento anterior ou no acabamento do cliente), e nunca condicione a conversa a "se a linha ainda usa/segue" o que o perfil já confirma: fale do que a Corquímica oferece para a operação dele; até 110 palavras no corpo, sem saudação genérica ("espero que esteja bem"), sem adjetivo de vendedor, sem lista, sem link, sem assinatura nem despedida (a assinatura é colocada depois). Ao dizer o que a Corquímica faz, cite só o segmento do cliente: não liste os outros segmentos atendidos. Comece por "Olá" + nome do contato se houver, senão "Olá, pessoal da <empresa>". Uma pergunta só, e ela é a última frase. Assunto curto (até 60 caracteres), sem caixa alta e sem ponto de exclamação; o assunto também respeita o perfil de produto.
 Responda só com JSON: {"assunto":"","corpo":"","angulo":"nome curto da abordagem"}`;
 
 // O que o dono já ensinou sobre os textos: regras aprovadas (ações do Conselho) e motivos recentes de "refazer".
@@ -129,6 +129,14 @@ async function preferenciasDoDono() {
     motivos.map((m: string) => '- Motivo de um rascunho reprovado recentemente: ' + m).join('\n') + '\n';
 }
 
+// Nome do segmento do cliente (config.icp.segmentos), para o e-mail dizer o que a Corquímica faz para aquele segmento.
+async function nomeDoSegmento(id?: string | null) {
+  if (!id) return null;
+  const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.icp');
+  const seg = ((cfg?.valor?.segmentos ?? []) as { id: string; nome: string }[]).find((g) => g.id === id);
+  return seg && !['sem_informacao', 'injecao_plastica'].includes(id) ? seg.nome : null;
+}
+
 // Escreve o e-mail do passo. Devolve o rascunho conferido (ou "sem gancho"), as memórias usadas e o custo.
 // ajuste: versão reprovada pelo dono e o motivo; o novo rascunho corrige o que foi apontado.
 export async function redigirEmail(o: { empresa: Record<string, any>; contato: Record<string, any>; passo: number; tipo: 'prospeccao' | 'retomada'; manual: boolean; jobId?: string | null; indicadoPor?: string; ajuste?: { assunto: string; corpo: string; motivo: string } }) {
@@ -139,11 +147,13 @@ export async function redigirEmail(o: { empresa: Record<string, any>; contato: R
   const anteriores = await banco(`/rest/v1/emails?select=passo,assunto,corpo&empresa_id=eq.${e.id}&status=eq.enviado&order=enviado_em`);
   const mem = await buscarMemoria(`e-mail de ${tipo}, passo ${passo}, para empresa de ${e.setor ?? 'indústria'}: assunto, ângulo e resposta`, 3, manual);
   const preferencias = await preferenciasDoDono();
+  const segmento = await nomeDoSegmento(e.segmento_icp);
   const meses = e.ultima_compra ? Math.max(1, Math.round((Date.now() - new Date(e.ultima_compra).getTime()) / (30.4 * 864e5))) : null;
   const contexto = `${SOBRE_A_CORQUIMICA}
 HOJE: ${new Date().toISOString().slice(0, 10)}
 
 EMPRESA: ${JSON.stringify({ nome: e.nome, setor: e.setor, cidade: e.cidade, uf: e.uf, gancho: e.gancho, gancho_fonte: e.gancho_fonte, icp_motivo: e.icp_motivo })}
+SEGMENTO DO CLIENTE: ${segmento ?? e.setor ?? 'indústria de peças'}
 PERFIL DE PRODUTO (${perfil}): ${PERFIS[perfil]}
 CONTATO: ${JSON.stringify({ nome: contato.nome, cargo: contato.cargo })}
 ${anteriores.length ? 'E-MAILS JÁ ENVIADOS (não repita):\n' + anteriores.map((a: Record<string, unknown>) => `[passo ${a.passo}] ${a.assunto}\n${a.corpo}`).join('\n\n') + '\n' : ''}${mem.length ? 'APRENDIZADOS DA MEMÓRIA (use se ajudarem):\n' + mem.map((m: Record<string, unknown>) => `#${String(m.id).slice(0, 8)} ${m.hipotese}`).join('\n') + '\n' : ''}${preferencias}${o.ajuste ? `VERSÃO REPROVADA PELO DONO (não repita o que o dono apontou):\nAssunto: ${o.ajuste.assunto}\n${o.ajuste.corpo}\nMOTIVO DO DONO: ${o.ajuste.motivo}\nReescreva atendendo ao motivo.\n` : ''}
