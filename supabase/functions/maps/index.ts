@@ -21,6 +21,8 @@ const nomeChave = (nome: string) => nome.normalize('NFD').replace(/[̀-ͯ]/g, ''
 const REDE_SOCIAL = /(^|\.)(instagram\.com|facebook\.com|fb\.com|linktr\.ee|wa\.me|whatsapp\.com|linkedin\.com|youtube\.com|tiktok\.com|google\.com|business\.site|negocio\.site)$/i;
 const siteProprio = (uri?: string | null) => { try { return uri && !REDE_SOCIAL.test(new URL(uri).hostname) ? uri : null; } catch { return null; } };
 const dominioDe = (site?: string | null) => { try { return site ? new URL(site).hostname.replace(/^www\./, '').toLowerCase() : null; } catch { return null; } };
+// Lojas, revendas e oficinas de carro não são cliente: a busca por segmento pula pelo tipo que o Google dá ao lugar.
+const NAO_CLIENTE = /loja|mec[aâ]nica|oficina|funilaria|autope[cç]as|concession[aá]ria|entrega|est[eé]tica automotiva|distribuidor/i;
 const VAZIAS = new Set(['ltda', 'me', 'epp', 'eireli', 'sa', 'de', 'da', 'do', 'das', 'dos', 'e', 'industria', 'comercio', 'industrial', 'comercial', 'ind', 'com', 'importacao', 'exportacao', 'brasil']);
 const palavras = (nome: string) => nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter((p) => p.length > 2 && !VAZIAS.has(p));
 
@@ -76,13 +78,14 @@ async function existente(p: Record<string, any>, dominio: string | null) {
 
 async function buscar(termo: string, paginas = 1) {
   if (termo.trim().length < 5) throw new ErroMaps('Escreva o que buscar, com a cidade (ex.: "injeção de plástico em Caxias do Sul").');
-  let token: string | undefined, consultas = 0, novas = 0, repetidas = 0, fechadas = 0;
+  let token: string | undefined, consultas = 0, novas = 0, repetidas = 0, fechadas = 0, fora = 0;
   const nomes: string[] = [];
   for (let i = 0; i < Math.min(Math.max(paginas, 1), 3); i++) {
     const r = await consultar(termo, token);
     consultas++;
     for (const p of r.places ?? []) {
       if (p.businessStatus && p.businessStatus !== 'OPERATIONAL') { fechadas++; continue; }
+      if (NAO_CLIENTE.test(p.primaryTypeDisplayName?.text ?? '')) { fora++; continue; }
       const site = siteProprio(p.websiteUri);
       const dominio = dominioDe(site);
       const { empresa, suprimida } = await existente(p, dominio);
@@ -102,7 +105,7 @@ async function buscar(termo: string, paginas = 1) {
     token = r.nextPageToken;
     if (!token) break;
   }
-  return { consultas, novas, repetidas, fechadas, nomes };
+  return { consultas, novas, repetidas, fechadas, fora, nomes };
 }
 
 // Site de uma empresa já cadastrada: busca pelo nome e cidade e só aceita se o nome e a cidade baterem.
