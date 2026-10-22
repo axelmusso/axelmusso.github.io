@@ -28,8 +28,8 @@ export function horarioComercial() {
   const a = agoraBrasilia();
   return !['Sat', 'Sun'].includes(a.semana) && a.hora >= 8 && a.hora < 18;
 }
-// E-mails de prospecção e retomada (cadência): só de terça a quinta, no horário comercial. Segunda e sexta são dias ruins para receber.
-// Respostas a quem escreveu seguem o horário comercial normal (segunda a sexta).
+// 1º e-mail (prospecção ou retomada): só de terça a quinta, no horário comercial. Segunda e sexta são dias ruins para receber.
+// Respostas a quem escreveu e follow-ups da cadência seguem o horário comercial normal (segunda a sexta).
 export function diaDeIniciais() {
   return horarioComercial() && ['Tue', 'Wed', 'Thu'].includes(agoraBrasilia().semana);
 }

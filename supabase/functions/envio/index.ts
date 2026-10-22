@@ -1,6 +1,6 @@
 // Envio e cadência (Fase 6, parte B). Só sai e-mail APROVADO por uma pessoa.
 //   { acao: 'status' }                      → limite de hoje (aquecimento), enviados e se está no horário
-//   { acao: 'enviar_aprovados' }            → manda as respostas aprovadas (seg a sex) e os e-mails aprovados da cadência (ter a qui), no horário comercial e no limite
+//   { acao: 'enviar_aprovados' }            → manda as respostas e os follow-ups aprovados (seg a sex) e os 1º e-mails aprovados (ter a qui), no horário comercial e no limite
 //   { acao: 'enviar_respostas' }            → só as respostas aprovadas (o worker chama a cada 5 minutos no horário comercial)
 //   { acao: 'enviar_aprovados', teste: true } → só o dono: o mesmo, fora do horário (para testar), sem iniciar o aquecimento
 //   { acao: 'preparar' }                    → escreve (como rascunho) o próximo e-mail das cadências vencidas
@@ -9,6 +9,7 @@
 // Respostas vêm sempre antes: saem primeiro, não contam no limite do aquecimento e não esperam o dia de prospecção.
 // Ordem do dono (22/10/2026): 1) respostas; 2) follow-ups da cadência; 3) 1º contato com empresas novas, da maior nota ICP
 // para a menor; 4) 1º contato com ex-clientes, no máximo 15% do limite do dia.
+// Follow-ups saem de segunda a sexta, como as respostas; só o 1º e-mail espera de terça a quinta.
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { classificarResposta, redigirEmail, tipoEmail } from '../_shared/redacao.ts';
@@ -36,9 +37,7 @@ async function enviarAprovados(teste = false) {
   if (!teste && !horarioComercial()) return { enviados: 0, aviso: 'Fora do horário comercial (segunda a sexta, 8h às 18h de Brasília). Os aprovados saem no próximo horário.' };
   // Primeiro as respostas aprovadas (valem de segunda a sexta).
   const { respostas, problemas: problemasResp } = await enviarRespostas();
-  if (!teste && !diaDeIniciais()) {
-    return { enviados: 0, respostas, problemas: problemasResp, aviso: (respostas ? `${respostas} resposta(s) enviada(s). ` : '') + 'E-mails de prospecção e retomada só saem de terça a quinta; os aprovados esperam o próximo dia permitido.' };
-  }
+  const soFollowups = !teste && !diaDeIniciais(); // segunda e sexta: só follow-ups
   const lim = await limiteDeHoje();
   if (lim.restante <= 0) return { enviados: 0, respostas, problemas: problemasResp, aviso: `Limite de hoje atingido (${lim.enviados} de ${lim.limite}, aquecimento dia ${lim.dias_de_aquecimento + 1}).` };
   const c = await config(['email_remetente', 'email_assinatura', 'email_aquecimento', 'apresentacao_url']);
@@ -52,6 +51,7 @@ async function enviarAprovados(teste = false) {
   const fila: Record<string, any>[] = [];
   for (const m of aprovados) {
     if (fila.length >= Math.min(lim.restante, POR_CHAMADA)) break;
+    if (soFollowups && ordem(m) !== 0) continue;
     if (ordem(m) === 2) { if (exVagas <= 0) continue; exVagas--; }
     fila.push(m);
   }
@@ -92,7 +92,10 @@ async function enviarAprovados(teste = false) {
     await banco('/rest/v1/config?chave=eq.email_aquecimento', { metodo: 'PATCH', corpo: { valor: { ...c.email_aquecimento, primeiro_envio: agoraBrasilia().dia } } });
   }
   const exAdiados = aprovados.filter((m: Record<string, any>) => ordem(m) === 2).length - fila.filter((m) => ordem(m) === 2).length;
-  return { enviados, respostas, problemas: [...problemasResp, ...problemas], na_fila: fila.length, ...(exAdiados > 0 ? { aviso: `${exAdiados} e-mail(s) de ex-cliente aprovado(s) esperam: no máximo 15% dos e-mails do dia vão para ex-clientes.` } : {}) };
+  const aviso = soFollowups
+    ? (aprovados.some((m: Record<string, any>) => ordem(m) !== 0) ? '1º e-mails (empresas novas e ex-clientes) só saem de terça a quinta; os aprovados esperam o próximo dia permitido.' : null)
+    : exAdiados > 0 ? `${exAdiados} e-mail(s) de ex-cliente aprovado(s) esperam: no máximo 15% dos e-mails do dia vão para ex-clientes.` : null;
+  return { enviados, respostas, problemas: [...problemasResp, ...problemas], na_fila: fila.length, ...(aviso ? { aviso } : {}) };
 }
 
 // Respostas aprovadas que ainda não saíram (aprovadas fora do horário ou que falharam), da mais antiga para a mais nova.
