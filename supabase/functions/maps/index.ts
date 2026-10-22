@@ -2,6 +2,7 @@
 // Usa a Places API (New), Text Search. Cada consulta devolve até 20 lugares e conta como 1 no limite do dia.
 //   { acao: 'status' }                         → consultas usadas hoje e o limite (config.maps_limite_dia)
 //   { acao: 'buscar', termo, paginas? }        → busca "injeção de plástico em Caxias do Sul" e cadastra as empresas novas
+//   { acao: 'buscar_segmento', segmento, cidade } → a mesma busca, montada como "<segmento> em <cidade>" (usada pela rotina descoberta)
 //   { acao: 'achar_site', empresa_id }         → procura a empresa pelo nome e cidade e grava site e telefone
 // Nada sai daqui para o mundo: as empresas entram como prospect e passam pela qualificação de sempre.
 import { banco } from '../_shared/ia.ts';
@@ -20,6 +21,8 @@ const nomeChave = (nome: string) => nome.normalize('NFD').replace(/[̀-ͯ]/g, ''
 const REDE_SOCIAL = /(^|\.)(instagram\.com|facebook\.com|fb\.com|linktr\.ee|wa\.me|whatsapp\.com|linkedin\.com|youtube\.com|tiktok\.com|google\.com|business\.site|negocio\.site)$/i;
 const siteProprio = (uri?: string | null) => { try { return uri && !REDE_SOCIAL.test(new URL(uri).hostname) ? uri : null; } catch { return null; } };
 const dominioDe = (site?: string | null) => { try { return site ? new URL(site).hostname.replace(/^www\./, '').toLowerCase() : null; } catch { return null; } };
+// Lojas, revendas e oficinas de carro não são cliente: a busca por segmento pula pelo tipo que o Google dá ao lugar.
+const NAO_CLIENTE = /loja|mec[aâ]nica|oficina|funilaria|autope[cç]as|concession[aá]ria|entrega|est[eé]tica automotiva|distribuidor/i;
 const VAZIAS = new Set(['ltda', 'me', 'epp', 'eireli', 'sa', 'de', 'da', 'do', 'das', 'dos', 'e', 'industria', 'comercio', 'industrial', 'comercial', 'ind', 'com', 'importacao', 'exportacao', 'brasil']);
 const palavras = (nome: string) => nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter((p) => p.length > 2 && !VAZIAS.has(p));
 
@@ -75,13 +78,14 @@ async function existente(p: Record<string, any>, dominio: string | null) {
 
 async function buscar(termo: string, paginas = 1) {
   if (termo.trim().length < 5) throw new ErroMaps('Escreva o que buscar, com a cidade (ex.: "injeção de plástico em Caxias do Sul").');
-  let token: string | undefined, consultas = 0, novas = 0, repetidas = 0, fechadas = 0;
+  let token: string | undefined, consultas = 0, novas = 0, repetidas = 0, fechadas = 0, fora = 0;
   const nomes: string[] = [];
   for (let i = 0; i < Math.min(Math.max(paginas, 1), 3); i++) {
     const r = await consultar(termo, token);
     consultas++;
     for (const p of r.places ?? []) {
       if (p.businessStatus && p.businessStatus !== 'OPERATIONAL') { fechadas++; continue; }
+      if (NAO_CLIENTE.test(p.primaryTypeDisplayName?.text ?? '')) { fora++; continue; }
       const site = siteProprio(p.websiteUri);
       const dominio = dominioDe(site);
       const { empresa, suprimida } = await existente(p, dominio);
@@ -101,7 +105,7 @@ async function buscar(termo: string, paginas = 1) {
     token = r.nextPageToken;
     if (!token) break;
   }
-  return { consultas, novas, repetidas, fechadas, nomes };
+  return { consultas, novas, repetidas, fechadas, fora, nomes };
 }
 
 // Site de uma empresa já cadastrada: busca pelo nome e cidade e só aceita se o nome e a cidade baterem.
@@ -144,6 +148,11 @@ Deno.serve(async (req) => {
   try {
     if (c.acao === 'status') return json(req, 200, { usadas_hoje: await usadasHoje(), limite_dia: await limiteDia() });
     if (c.acao === 'buscar') return json(req, 200, await buscar(String(c.termo ?? ''), Number(c.paginas ?? 1)));
+    if (c.acao === 'buscar_segmento') {
+      const segmento = String(c.segmento ?? '').trim(), cidade = String(c.cidade ?? '').trim();
+      if (!segmento || !cidade) throw new ErroMaps('Informe o segmento e a cidade.');
+      return json(req, 200, await buscar(`${segmento} em ${cidade}`));
+    }
     if (c.acao === 'achar_site') return json(req, 200, await acharSite(String(c.empresa_id ?? '')));
     return json(req, 400, { erro: 'Ação desconhecida.' });
   } catch (e) {
