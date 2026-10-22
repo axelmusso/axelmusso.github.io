@@ -4,7 +4,7 @@
   var api, perfil, tela;
   var ETAPAS = [
     // O sucesso da prospecção é o telefone do responsável: daí em diante quem conduz é o Áxel, por telefone/WhatsApp.
-    ['novo', 'Novo'], ['qualificado', 'Qualificado'], ['contatado', 'Contatado'], ['respondeu', 'Respondeu'],
+    ['novo', 'Novo'], ['qualificado', 'Qualificado'], ['contatado', 'Contatado'], ['follow_up', 'Follow-up'], ['respondeu', 'Respondeu'],
     ['telefone', 'Telefone obtido'], ['com_axel', 'Com o Áxel'], ['ganho', 'Cliente'], ['perdido', 'Perdido'],
   ];
   var NOME_ETAPA = Object.fromEntries(ETAPAS);
