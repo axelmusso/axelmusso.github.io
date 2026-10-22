@@ -26,6 +26,7 @@ const PRIORIDADE_RESPOSTA = 10;        // acima de todas as rotinas
 const RESERVA_RESPOSTAS = 0.85;        // rascunhos novos só até 85% do teto do dia
 // Jobs que escrevem rascunhos novos: esperam enquanto houver resposta de cliente sem rascunho.
 const ESCREVEM_RASCUNHO = ['reabastecer_rascunhos', 'primeiro_email', 'envio_preparar', 'refazer_email'];
+const PARTE_EX_CLIENTES = 0.15;        // 1º contato com ex-cliente: no máximo 15% da fila de rascunhos
 
 type Job = { id: string; tipo: string; payload: Record<string, any>; tentativas: number };
 
@@ -122,6 +123,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
 
   // Mantém sempre config.rascunhos_alvo (30) e-mails esperando aprovação: escreve só a diferença,
   // com o 1º e-mail das melhores empresas ainda não contatadas (maior nota primeiro). Nada sai sem aprovação.
+  // Empresa nova vem antes de ex-cliente; 1º contato com ex-cliente fica em no máximo 15% da fila (regra do dono, 22/10/2026).
   async reabastecer_rascunhos() {
     // Rascunhos que o dono mandou refazer (texto ou endereço) e que ainda não ganharam a versão nova (a tela tenta na hora; aqui é a garantia).
     const reprovados = await banco(`/rest/v1/emails?select=id&descarte_tipo=in.(refazer,contato)&erro=is.null&descartado_em=gte.${q(new Date(Date.now() - 7 * 864e5).toISOString())}&limit=20`);
@@ -134,9 +136,17 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     const naFila = (await banco('/rest/v1/jobs?select=id&tipo=eq.primeiro_email&status=in.(pendente,rodando)')).length;
     const falta = alvo - esperando - naFila;
     if (falta <= 0) return { esperando, na_fila: naFila, aviso: 'Já há rascunhos suficientes.' };
-    const ids: string[] = await banco('/rest/v1/rpc/candidatas_primeiro_email', { metodo: 'POST', corpo: { p_limite: falta } });
-    for (const id of ids) await enfileirar('primeiro_email', { empresa_id: id }, 6, 'primeiro_email:' + id);
-    return { esperando, na_fila: naFila, falta, enfileiradas: ids.length };
+    const ids: string[] = await banco('/rest/v1/rpc/candidatas_primeiro_email', { metodo: 'POST', corpo: { p_limite: falta + 100 } });
+    const empresas: { id: string; relacao: string; icp_score: number | null }[] = ids.length ? await banco(`/rest/v1/empresas?select=id,relacao,icp_score&id=in.(${ids.join(',')})`) : [];
+    const novas = empresas.filter((e) => e.relacao !== 'ex_cliente').sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0)).slice(0, falta);
+    // Ex-clientes: só o que cabe nos 15% da fila, contando os que já esperam aprovação ou envio (e os já na fila de escrita).
+    const exEsperando = (await banco('/rest/v1/emails?select=id,empresas!inner(relacao)&passo=eq.1&status=in.(rascunho,aprovado)&empresas.relacao=eq.ex_cliente')).length;
+    const exNaFila = (await banco('/rest/v1/jobs?select=id&tipo=eq.primeiro_email&prioridade=eq.5&status=in.(pendente,rodando)')).length; // ex-cliente entra com prioridade 5
+    const exVagas = Math.max(0, Math.ceil(PARTE_EX_CLIENTES * alvo) - exEsperando - exNaFila);
+    const ex = empresas.filter((e) => e.relacao === 'ex_cliente').slice(0, Math.min(exVagas, falta - novas.length));
+    for (const e of novas) await enfileirar('primeiro_email', { empresa_id: e.id }, 6, 'primeiro_email:' + e.id);
+    for (const e of ex) await enfileirar('primeiro_email', { empresa_id: e.id }, 5, 'primeiro_email:' + e.id);
+    return { esperando, na_fila: naFila, falta, novas: novas.length, ex_clientes: ex.length, ex_esperando: exEsperando };
   },
   // Escreve o 1º e-mail (prospecção ou retomada) como rascunho. Empresa que não deu certo (sem e-mail liberado,
   // sem gancho) sai da lista por 30 dias, sem gastar as outras tentativas.
