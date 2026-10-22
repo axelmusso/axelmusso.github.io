@@ -7,6 +7,8 @@
 //   { acao: 'classificar', resposta_id }    → classifica uma resposta recebida e rascunha a continuação
 //   { acao: 'responder', resposta_id, texto } → envia a resposta aprovada, na mesma conversa (fora do horário, fica aprovada e sai às 8h do próximo dia útil)
 // Respostas vêm sempre antes: saem primeiro, não contam no limite do aquecimento e não esperam o dia de prospecção.
+// Ordem do dono (22/10/2026): 1) respostas; 2) follow-ups da cadência; 3) 1º contato com empresas novas, da maior nota ICP
+// para a menor; 4) 1º contato com ex-clientes, no máximo 15% do limite do dia.
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { classificarResposta, redigirEmail, tipoEmail } from '../_shared/redacao.ts';
@@ -16,6 +18,7 @@ import { agoraBrasilia, config, diaDeIniciais, enviarResend, ErroEnvio, horarioC
 
 const q = encodeURIComponent;
 const POR_CHAMADA = 10; // limite por clique, para caber no tempo da função
+const PARTE_EX_CLIENTES = 0.15; // 1º contato com ex-cliente: no máximo 15% dos e-mails do dia
 
 async function registrar(empresa_id: string, contato_id: string | null, assunto: string, conteudo: string, direcao: 'saida' | 'entrada' | 'interna', agente = 'envio') {
   await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id, contato_id, tipo: 'email', direcao, assunto, conteudo: conteudo.slice(0, 4000), agente_id: agente } });
@@ -39,7 +42,19 @@ async function enviarAprovados(teste = false) {
   const lim = await limiteDeHoje();
   if (lim.restante <= 0) return { enviados: 0, respostas, problemas: problemasResp, aviso: `Limite de hoje atingido (${lim.enviados} de ${lim.limite}, aquecimento dia ${lim.dias_de_aquecimento + 1}).` };
   const c = await config(['email_remetente', 'email_assinatura', 'email_aquecimento', 'apresentacao_url']);
-  const fila = await banco(`/rest/v1/emails?select=*,empresas(*)&status=eq.aprovado&order=aprovado_em&limit=${Math.min(lim.restante, POR_CHAMADA)}`);
+  // Ordem: follow-ups, 1º contato com empresa nova (maior nota primeiro) e, por último, 1º contato com ex-cliente, até 15% do dia.
+  const inicioDia = new Date(`${agoraBrasilia().dia}T00:00:00-03:00`).toISOString();
+  const exHoje = (await banco(`/rest/v1/emails?select=id,empresas!inner(relacao)&status=eq.enviado&passo=eq.1&enviado_em=gte.${q(inicioDia)}&empresas.relacao=eq.ex_cliente`)).length;
+  let exVagas = Math.max(1, Math.floor(PARTE_EX_CLIENTES * lim.limite)) - exHoje;
+  const ordem = (m: Record<string, any>) => (m.passo > 1 ? 0 : m.empresas.relacao === 'ex_cliente' ? 2 : 1);
+  const aprovados = (await banco('/rest/v1/emails?select=*,empresas(*)&status=eq.aprovado&order=aprovado_em&limit=300'))
+    .sort((a: Record<string, any>, b: Record<string, any>) => ordem(a) - ordem(b) || (ordem(a) === 1 ? (b.empresas.icp_score ?? 0) - (a.empresas.icp_score ?? 0) : 0));
+  const fila: Record<string, any>[] = [];
+  for (const m of aprovados) {
+    if (fila.length >= Math.min(lim.restante, POR_CHAMADA)) break;
+    if (ordem(m) === 2) { if (exVagas <= 0) continue; exVagas--; }
+    fila.push(m);
+  }
   let enviados = 0; const problemas: string[] = [];
   for (const m of fila) {
     const e = m.empresas;
@@ -76,7 +91,8 @@ async function enviarAprovados(teste = false) {
   if (enviados && !teste && !c.email_aquecimento?.primeiro_envio) {
     await banco('/rest/v1/config?chave=eq.email_aquecimento', { metodo: 'PATCH', corpo: { valor: { ...c.email_aquecimento, primeiro_envio: agoraBrasilia().dia } } });
   }
-  return { enviados, respostas, problemas: [...problemasResp, ...problemas], na_fila: fila.length };
+  const exAdiados = aprovados.filter((m: Record<string, any>) => ordem(m) === 2).length - fila.filter((m) => ordem(m) === 2).length;
+  return { enviados, respostas, problemas: [...problemasResp, ...problemas], na_fila: fila.length, ...(exAdiados > 0 ? { aviso: `${exAdiados} e-mail(s) de ex-cliente aprovado(s) esperam: no máximo 15% dos e-mails do dia vão para ex-clientes.` } : {}) };
 }
 
 // Respostas aprovadas que ainda não saíram (aprovadas fora do horário ou que falharam), da mais antiga para a mais nova.

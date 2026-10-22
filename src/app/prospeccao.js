@@ -182,7 +182,7 @@
   function render() {
     var w = podeEscrever();
     return Promise.all([
-      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,refeito_de,empresas(nome,relacao,perfil_produto,perfil_fonte),contatos(origem)&status=in.(rascunho,aprovado)&order=criado_em'),
+      api('/rest/v1/emails?select=id,empresa_id,para,passo,angulo,assunto,corpo,status,erro,criado_em,memorias,refeito_de,empresas(nome,relacao,perfil_produto,perfil_fonte,icp_score),contatos(origem)&status=in.(rascunho,aprovado)&order=criado_em'),
       api('/rest/v1/config?select=chave,valor&chave=in.(icp,email_assinatura)'),
       api('/rest/v1/empresas?select=relacao,icp_score,qualificado_em,sem_gancho&limit=5000'),
       api('/rest/v1/respostas?select=*,empresas(nome)&status=in.(nova,aprovada)&order=recebido_em'),
@@ -190,6 +190,9 @@
       envio({ acao: 'status' }).catch(function (e) { return { erro: e.message }; }),
       api('/rest/v1/feiras?select=*&order=situacao,nome'),
     ]).then(function (r) {
+      // Mesma ordem do envio: follow-ups, 1º contato com empresa nova (maior nota primeiro), 1º contato com ex-cliente.
+      var ordemRasc = function (m) { return m.passo > 1 ? 0 : (m.empresas && m.empresas.relacao === 'ex_cliente') ? 2 : 1; };
+      r[0].sort(function (a, b) { return ordemRasc(a) - ordemRasc(b) || ((b.empresas && b.empresas.icp_score) || 0) - ((a.empresas && a.empresas.icp_score) || 0); });
       var rasc = r[0], cfg = Object.fromEntries(r[1].map(function (c) { return [c.chave, c.valor]; })), emp = r[2], resps = r[3], enviados = r[4], st = r[5], feiras = r[6];
       var icp = cfg.icp || { criterios: [], nota_minima: 50 };
       var conta = function (f) { return emp.filter(f).length; };
@@ -212,7 +215,7 @@
         '<h2>Envio</h2>' + (st.erro ? '<p class="ruim">' + esc(st.erro) + '</p>' :
           '<p>Hoje: <b>' + esc(st.enviados) + ' de ' + esc(st.limite) + '</b> e-mails de prospecção (aquecimento: dia ' + esc(st.dias_de_aquecimento + 1) + ', teto ' + esc(st.teto) + '/dia). ' +
           (st.dia_de_iniciais ? '<span>Pode sair tudo agora.</span>' : st.horario_comercial ? '<span class="ruim">Hoje só saem respostas; prospecção e retomada saem de terça a quinta.</span>' : '<span class="ruim">Fora do horário comercial: nada sai agora.</span>') + '</p>' +
-          '<p class="mut">Regra: respostas a clientes vêm primeiro e saem no mesmo dia, de segunda a sexta (não contam no limite do dia); e-mails de prospecção e retomada de terça a quinta; sempre das 8h às 18h (Brasília). Sem resposta em 14 dias, a cadência passa para outro e-mail da empresa (área de compras ou produção primeiro; nota fiscal e financeiro por último), até alguém responder ou acabarem os e-mails.</p>') +
+          '<p class="mut">Regra: respostas a clientes vêm primeiro e saem no mesmo dia, de segunda a sexta (não contam no limite do dia). Depois, de terça a quinta, das 8h às 18h (Brasília): follow-ups, 1º contato com empresas novas (maior nota primeiro) e, por último, 1º contato com ex-clientes, no máximo 15% dos e-mails do dia. Sem resposta em 14 dias, a cadência passa para outro e-mail da empresa (área de compras ou produção primeiro; nota fiscal e financeiro por último), até alguém responder ou acabarem os e-mails.</p>') +
         (w ? '<div class="linha"><button type="button" class="prim" id="enviar-agora">Enviar aprovados agora</button>' + (perfil.papel === 'dono' && !st.erro && !st.horario_comercial ? '<button type="button" id="enviar-teste">Enviar aprovados agora (teste fora do horário)</button>' : '') + '<button type="button" id="preparar">Preparar próximos e-mails da cadência</button></div>' : '') +
 
         '<h2>E-mails para aprovar</h2><p class="mut">Primeiros contatos, continuações da cadência e retomadas. As respostas a quem escreveu para nós ficam no topo da tela.</p>' +
