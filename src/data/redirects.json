@@ -69,5 +69,6 @@
  "/produtos/page/2/": "/produtos/",
  "/produtos/page/3/": "/produtos/",
  "/produtos/page/4/": "/produtos/",
- "/categoria-produto/linha-calcadista/page/2/": "/segmentos/moda/"
+ "/categoria-produto/linha-calcadista/page/2/": "/segmentos/moda/",
+ "/page/2/": "/"
 }
