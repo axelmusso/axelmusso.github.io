@@ -64,5 +64,10 @@
  "/produto/base-injecao-direta/": "/produtos/",
  "/produto/impermeabilizantes-para-tecidos/": "/produtos/",
  "/produto/tinta-para-zamac/": "/produtos/",
- "/produto/verniz-epoxi-para-betoneira/": "/produtos/"
+ "/produto/verniz-epoxi-para-betoneira/": "/produtos/",
+ "/site/": "/",
+ "/produtos/page/2/": "/produtos/",
+ "/produtos/page/3/": "/produtos/",
+ "/produtos/page/4/": "/produtos/",
+ "/categoria-produto/linha-calcadista/page/2/": "/segmentos/moda/"
 }
