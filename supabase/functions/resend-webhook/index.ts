@@ -35,11 +35,11 @@ async function eventoDeEnvio(tipo: string, d: Record<string, any>) {
   }
 }
 
-// A empresa respondeu: a cadência para, rascunhos pendentes saem da fila e o negócio vai para "Respondeu".
+// A empresa respondeu (ao 1º e-mail ou a um follow-up): a cadência para, rascunhos pendentes saem da fila e o negócio vai para "Respondeu".
 async function pararCadencia(orig: Record<string, any>, classe: string | null) {
   if (orig.cadencia_id) await banco(`/rest/v1/cadencias?id=eq.${orig.cadencia_id}&status=in.(ativa,pausada)`, { metodo: 'PATCH', corpo: { status: 'respondeu' } });
   await banco(`/rest/v1/emails?empresa_id=eq.${orig.empresa_id}&status=in.(rascunho,aprovado)`, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'A empresa respondeu: cadência parada.' } });
-  const [n] = await banco(`/rest/v1/negocios?select=id,etapa&empresa_id=eq.${orig.empresa_id}&etapa=in.(novo,qualificado,contatado)&limit=1`);
+  const [n] = await banco(`/rest/v1/negocios?select=id,etapa&empresa_id=eq.${orig.empresa_id}&etapa=in.(novo,qualificado,contatado,follow_up)&limit=1`);
   const perdeu = classe === 'nao' || classe === 'descadastro';
   if (n) await banco('/rest/v1/negocios?id=eq.' + n.id, { metodo: 'PATCH', corpo: { etapa: perdeu ? 'perdido' : 'respondeu', ...(perdeu ? { motivo_perda: 'Respondeu que não tem interesse' } : {}) } });
 }

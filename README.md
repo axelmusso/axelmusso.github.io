@@ -64,7 +64,7 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - A página `/app/` é pública mas vazia: os dados só saem do banco para quem entrou **e** tem papel em `perfis` (`dono`, `operador` ou `leitura`). Quem bate na URL sem login vê só a tela de entrada.
 - O primeiro usuário criado vira `dono`. Os seguintes nascem sem papel (sem acesso) até o dono liberar em `perfis`.
 - Fica fora do Google: `noindex` e `Disallow: /app/` no robots.txt.
-- CRM (Fase 2): empresas, contatos, negócios no funil (8 etapas), linha do tempo de interações e tarefas. Mudar a etapa de um negócio grava sozinho na linha do tempo da empresa. Tabela `config` guarda o botão de parada (`sistema_ativo`, começa desligado) e os tetos de gasto (US$ 1,30/dia, US$ 40/mês).
+- CRM (Fase 2): empresas, contatos, negócios no funil (9 etapas: Novo, Qualificado, Contatado, Follow-up, Respondeu, Telefone obtido, Com o Áxel, Cliente, Perdido; Follow-up desde 22/10/2026: recebeu um e-mail seguinte da cadência sem responder; respondendo ao 1º e-mail ou a um follow-up, vai para Respondeu), linha do tempo de interações e tarefas. Mudar a etapa de um negócio grava sozinho na linha do tempo da empresa. Tabela `config` guarda o botão de parada (`sistema_ativo`, começa desligado) e os tetos de gasto (US$ 1,30/dia, US$ 40/mês).
 - Configuração no painel do Supabase (Authentication → URL Configuration): *Site URL* `https://corquimica.com.br/app/` e, em *Redirect URLs*, `https://corquimica.com.br/app/` e `http://localhost:4173/app/`. Depois de criar a conta do dono, desligue *Allow new users to sign up* (Authentication → Sign In / Providers).
 
 ## Camada de IA (Fase 3)

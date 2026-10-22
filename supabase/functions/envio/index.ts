@@ -25,11 +25,14 @@ async function registrar(empresa_id: string, contato_id: string | null, assunto:
   await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id, contato_id, tipo: 'email', direcao, assunto, conteudo: conteudo.slice(0, 4000), agente_id: agente } });
 }
 
-// Negócio da empresa avança para "contatado" no primeiro envio (ou nasce nessa etapa).
-async function marcarContatado(empresa: Record<string, any>) {
+// Negócio da empresa no funil: "contatado" no 1º e-mail; "follow_up" quando sai um e-mail seguinte da cadência
+// sem resposta. Só avança (nunca volta): quem já respondeu ou está com o Áxel fica onde está.
+async function marcarEtapa(empresa: Record<string, any>, passo: number) {
+  const etapa = passo > 1 ? 'follow_up' : 'contatado';
+  const antes = passo > 1 ? ['novo', 'qualificado', 'contatado'] : ['novo', 'qualificado'];
   const [n] = await banco(`/rest/v1/negocios?select=id,etapa&empresa_id=eq.${empresa.id}&etapa=not.in.(ganho,perdido)&limit=1`);
-  if (!n) await banco('/rest/v1/negocios', { metodo: 'POST', corpo: { empresa_id: empresa.id, titulo: (empresa.relacao === 'ex_cliente' ? 'Retomada: ' : 'Prospecção: ') + empresa.nome, etapa: 'contatado' } });
-  else if (['novo', 'qualificado'].includes(n.etapa)) await banco('/rest/v1/negocios?id=eq.' + n.id, { metodo: 'PATCH', corpo: { etapa: 'contatado' } });
+  if (!n) await banco('/rest/v1/negocios', { metodo: 'POST', corpo: { empresa_id: empresa.id, titulo: (empresa.relacao === 'ex_cliente' ? 'Retomada: ' : 'Prospecção: ') + empresa.nome, etapa } });
+  else if (antes.includes(n.etapa)) await banco('/rest/v1/negocios?id=eq.' + n.id, { metodo: 'PATCH', corpo: { etapa } });
 }
 
 // teste = botão do dono para conferir o envio fora do horário: ignora o horário e não inicia o aquecimento.
@@ -80,7 +83,7 @@ async function enviarAprovados(teste = false) {
       await banco('/rest/v1/cadencias?id=eq.' + cad.id, { metodo: 'PATCH', corpo: { passo: m.passo, retomadas: Math.max(0, m.passo - 4), proximo_em: fim ? null : proximoEm(m.passo, new Date(cad.iniciada_em)).toISOString(), status: fim ? 'encerrada' : 'ativa' } });
       await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { status: 'enviado', enviado_em: agora.toISOString(), resend_id: resendId, cadencia_id: cad.id, erro: null } });
       await registrar(e.id, m.contato_id, m.assunto, m.corpo, 'saida');
-      if (m.passo === 1) await marcarContatado(e);
+      await marcarEtapa(e, m.passo);
       enviados++;
     } catch (err) {
       await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { erro: (err as Error).message.slice(0, 500) } });
