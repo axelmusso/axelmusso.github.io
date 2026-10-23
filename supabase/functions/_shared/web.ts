@@ -73,7 +73,9 @@ export async function lerPagina(endereco: string, limiteTexto = 30_000): Promise
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
-  const emails = [...new Set([...[...(html.matchAll(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g))].map((m) => m[0]), ...emailsCloudflare(html)].map((m) => m.toLowerCase().replace(/^(u00[0-9a-f]{2})+/, '')).filter((e) => !/\.(png|jpe?g|gif|webp|svg)$/.test(e) && !/sentry|wixpress|example\.|exemplo\./.test(e)))].slice(0, 20);
+  // Partes do e-mail com tamanho máximo: sem limite, um bloco longo de letras (imagem embutida em base64) deixa a busca
+  // lenta demais (400 ms por página) e a função estoura o limite de CPU do Supabase (HTTP 546).
+  const emails = [...new Set([...[...(html.matchAll(/[\w.+-]{1,64}@[\w-]{1,63}(\.[\w-]{1,63})+/g))].map((m) => m[0]), ...emailsCloudflare(html)].map((m) => m.toLowerCase().replace(/^(u00[0-9a-f]{2})+/, '')).filter((e) => !/\.(png|jpe?g|gif|webp|svg)$/.test(e) && !/sentry|wixpress|example\.|exemplo\./.test(e)))].slice(0, 20);
   return { url: final.href, titulo, texto: texto.slice(0, limiteTexto), links, emails };
 }
 
