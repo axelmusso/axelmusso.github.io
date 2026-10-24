@@ -6,6 +6,7 @@
 //   { acao: 'dados_cnpj', empresa_id }   → completa CNAE, cidade, UF e porte pelo cadastro público do CNPJ (base do perfil de cliente)
 //   { acao: 'refazer', email_id }        → reescreve um rascunho que o dono reprovou, levando o motivo em conta
 //   { acao: 'buscar_ia', segmento, uf }  → pesquisa na web empresas de um segmento prioritário num estado; entram sem nota e vão para a qualificação
+//   { acao: 'sugerir_ia', segmento, uf, gravar? } → a IA lista as empresas que conhece do segmento no estado e o robô confere o site de cada uma
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { redigirEmail, SOBRE_A_CORQUIMICA } from '../_shared/redacao.ts';
@@ -225,6 +226,68 @@ async function buscarIa(segmentoId: string, uf: string, jobId: string | null) {
   return { segmento: seg.nome, uf, encontradas: lista.length, novas, repetidas, fora, custo: r.custoUsd, pesquisas: r.pesquisas, ...(lista.length ? {} : { resposta_ia: r.texto.slice(-800) }) };
 }
 
+// ---------- sugerir com IA: o que o modelo conhece, conferido no site ----------
+// Decisão do dono (24/10/2026): a pesquisa na web da API traz pouco para nicho industrial no Brasil (diretórios, vagas,
+// empresas de fora). Aqui a IA lista as empresas que conhece (nome, cidade e site; sem e-mail, que de memória costuma vir
+// inventado ou antigo) e o robô abre o site de cada uma: só vale a que tem site no ar falando do processo. O e-mail sai do
+// site, na qualificação. gravar=false só devolve a lista conferida, para o dono ver antes; gravar=true grava as confirmadas.
+const PROVA: Record<string, RegExp> = {
+  metalizacao: /metaliza|v[áa]cuo|\bpvd\b|cromagem|croma[çc][ãa]o/i,
+  revestimento_pet_pvc: /\bpet\b|\bpvc\b|revestimento|pain[ée]is|laminad/i,
+  embalagem_cosmetica: /cosm[ée]tic|frasco|tampa|embalage/i,
+  plastico_acabamento: /pintura|pintad|verniz|metaliza|acabamento/i,
+};
+type Sugerida = { nome?: string; cidade?: string; site?: string };
+async function sugerirIa(segmentoId: string, uf: string, gravar: boolean, manual: boolean) {
+  const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.busca_ia');
+  const conf = cfg?.valor ?? {};
+  const seg = ((conf.segmentos ?? []) as { id: string; nome: string; termos: string[] }[]).find((s) => s.id === segmentoId);
+  if (!seg) throw new Error('Segmento fora da lista da busca com IA (config.busca_ia).');
+  const prova = PROVA[seg.id] ?? new RegExp(seg.termos.map((t) => t.split(' ')[0]).join('|'), 'i');
+  const r = await chamarIA({
+    provedor: 'anthropic', papel: 'prospeccao_sugerir_ia', nivel: 'rotina', manual, maxTokens: 6000,
+    instrucoes: `Você conhece a indústria brasileira e ajuda a prospecção da Corquímica. ${SOBRE_A_CORQUIMICA}\n` +
+      'Liste só empresas que você conhece de verdade. Se não lembrar o site, deixe vazio: o robô confere cada site depois. Responda só com JSON.',
+    contexto: `SEGMENTO: ${seg.nome}\nESTADO: ${uf}\nO QUE O SEGMENTO FAZ: ${seg.termos.join('; ')}\n` +
+      `Liste até ${Number(conf.sugerir_por_vez ?? 30)} FABRICANTES deste segmento com fábrica no estado ${uf}. Fora: revendas, distribuidores, fornecedores de máquinas ou de tintas, e serviços só em metal (galvanização, zincagem, cromo duro em aço).\n` +
+      'Devolva {"empresas":[{"nome":"","cidade":"","site":""}]}',
+  });
+  const lista = (jsonDe<{ empresas?: Sugerida[] }>(r.texto).empresas ?? []).filter((e) => e.nome?.trim());
+  const conferir = async (e: Sugerida) => {
+    const item = { nome: e.nome!.trim(), cidade: e.cidade?.trim() || null, site: e.site?.trim() || null, situacao: '', trecho: '' };
+    const dominio = dominioDe(item.site);
+    const [ja] = await banco(`/rest/v1/empresas?select=nome,relacao&${dominio ? `or=(dominio.eq.${q(dominio)},nome_chave.eq.${q(nomeChave(item.nome))})` : 'nome_chave=eq.' + q(nomeChave(item.nome))}&limit=1`);
+    if (ja) return { ...item, situacao: `já na base (${ja.relacao}: ${ja.nome})` };
+    if (!dominio || SITE_QUE_NAO_E_DA_EMPRESA.test(dominio)) return { ...item, situacao: 'sem site próprio' };
+    if ((await banco(`/rest/v1/lista_supressao?select=id&dominio=ilike.${q(dominio)}&limit=1`)).length) return { ...item, situacao: 'na lista de não contatar' };
+    let pag: Pagina;
+    try { pag = await lerPagina(item.site!, 20_000); } catch (err) { return { ...item, situacao: 'site não abre: ' + (err as Error).message }; }
+    const m = pag.texto.match(prova);
+    if (!m) return { ...item, site: pag.url, situacao: 'site sem o processo' };
+    const i = m.index ?? 0;
+    return { ...item, site: pag.url, situacao: 'confirmada', trecho: pag.texto.slice(Math.max(0, i - 60), i + 80).replace(/\s+/g, ' ').trim() };
+  };
+  // Dez sites por vez: cada leitura leva até 15 s, e a função tem 150 s.
+  const conferidas: Awaited<ReturnType<typeof conferir>>[] = [];
+  for (let i = 0; i < lista.length; i += 10) conferidas.push(...(await Promise.all(lista.slice(i, i + 10).map(conferir))));
+  let gravadas = 0;
+  if (gravar) {
+    for (const e of conferidas.filter((x) => x.situacao === 'confirmada')) {
+      const [nova] = await banco('/rest/v1/empresas', {
+        metodo: 'POST',
+        corpo: {
+          nome: e.nome.slice(0, 200), site: e.site, dominio: dominioDe(e.site), cidade: e.cidade, uf, setor: seg.nome, origem: 'ia:' + seg.id,
+          fonte_url: e.site, coletado_em: new Date().toISOString(), icp_motivo: ('Sugerida pela IA e conferida no site: ' + e.trecho).slice(0, 500),
+          status: 'prospect', relacao: 'prospect',
+        },
+      });
+      await banco('/rest/v1/rpc/enfileirar', { metodo: 'POST', corpo: { p_tipo: 'qualificar', p_payload: { empresa_id: nova.id }, p_prioridade: 5, p_chave: 'qualificar:' + nova.id, p_origem: 'sugerir_ia' } });
+      gravadas++;
+    }
+  }
+  return { segmento: seg.nome, uf, sugeridas: lista.length, confirmadas: conferidas.filter((x) => x.situacao === 'confirmada').length, gravadas, custo: r.custoUsd, lista: conferidas };
+}
+
 // ---------- dados do CNPJ: CNAE, cidade, UF e porte (cadastro público da Receita, via BrasilAPI) ----------
 // Serve para conhecer o perfil dos clientes (quais CNAEs e cidades) e achar empresas parecidas. Não sobrescreve o que já foi preenchido.
 async function dadosCnpj(id: string) {
@@ -376,6 +439,7 @@ Deno.serve(async (req) => {
     if (c.acao === 'descobrir_url') return json(req, 200, await descobrirUrl(String(c.url ?? ''), c.feira_id ? String(c.feira_id) : undefined));
     if (c.acao === 'qualificar') return json(req, 200, await qualificar(String(c.empresa_id ?? '')));
     if (c.acao === 'buscar_ia') return json(req, 200, await buscarIa(String(c.segmento ?? ''), String(c.uf ?? '').toUpperCase(), null));
+    if (c.acao === 'sugerir_ia') return json(req, 200, await sugerirIa(String(c.segmento ?? ''), String(c.uf ?? '').toUpperCase(), c.gravar === true, quem.papel !== 'sistema'));
     if (c.acao === 'dados_cnpj') return json(req, 200, await dadosCnpj(String(c.empresa_id ?? '')));
     if (c.acao === 'redigir') return json(req, 200, await redigir(String(c.empresa_id ?? ''), quem.id ?? ''));
     if (c.acao === 'refazer') return json(req, 200, await refazer(String(c.email_id ?? ''), quem.papel !== 'sistema'));
