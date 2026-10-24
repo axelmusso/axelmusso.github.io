@@ -178,7 +178,7 @@ O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acres
 
   | Quando | Rotina | O que faz |
   |---|---|---|
-  | Diária, 6h | busca com IA | pesquisa na web empresas dos 4 segmentos prioritários (metalizadoras a vácuo, revestimentos PET/PVC, embalagens de cosméticos, injetoras que pintam ou metalizam), 3 combinações de segmento e estado por dia nos 6 estados de foco (`config.busca_ia`); cada empresa achada entra sem nota e vai para a qualificação. Teto próprio de US$ 0,45/dia, dentro do teto geral |
+  | Diária, 6h | busca com IA | pesquisa na web empresas dos 4 segmentos prioritários (metalizadoras a vácuo, revestimentos PET/PVC, embalagens de cosméticos, injetoras que pintam ou metalizam), 3 combinações de segmento e estado por dia nos 6 estados de foco (`config.busca_ia`); cada empresa achada entra sem nota e vai para a qualificação. Teto próprio de US$ 0,45/dia, dentro do teto geral. **Desligada desde 24/10/2026** (`config.busca_ia.ativo = false`): em 4 testes custou US$ 0,94 e achou 1 empresa; a pesquisa da API traz diretórios e empresas de fora, e a lista de memória da IA (`acao: 'sugerir_ia'`) inventa nomes. Para nicho industrial a fonte é a Receita por CNAE (`importar_receita`, em ondas) |
   | Diária, 7h | descoberta | site pelo Maps de até 100 empresas da Receita sem site; o que sobra do limite do dia (até 30) vai para buscas por segmento e cidade |
   | Seg a sex, 8h às 17h, de hora em hora | cadência | rascunha os próximos e-mails, envia os aprovados, classifica respostas sem classificação e completa a fila até 30 rascunhos para aprovar (`config.rascunhos_alvo`) |
   | Diária, 21h | enriquecimento | qualifica até 120 empresas com site ainda sem nota |
@@ -186,7 +186,7 @@ O site já nasceu com a base técnica (veja o topo deste README). A Fase 8 acres
   | Segunda, 6h | memória | consolidação |
   | Diária, 8h | relatório | e-mail para o dono com enviados, respostas, telefones, aprovações pendentes, gasto e erros |
 
-- **Regiões da prospecção** (regra do dono, 15/10/2026): Brasil todo, com foco em RS, SC, PR, SP, MG e RJ. Receita, Maps (`config.maps_cidades`, 51 polos alternando os estados desde 24/10/2026) e busca com IA cobrem os 6 estados.
+- **Regiões da prospecção** (regra do dono, 15/10/2026): Brasil todo, com foco em RS, SC, PR, SP, MG e RJ. Receita, Maps (`config.maps_cidades`, 51 polos alternando os estados desde 24/10/2026) cobrem os 6 estados. 1ª onda da Receita em 24/10/2026: 1.405 metalizadoras (CNAE 2539-0/02, sem os nomes de serviço só em metal).
 - **Sempre 30 rascunhos para aprovar:** a cadência conta os e-mails esperando aprovação e escreve só a diferença.
   - Usa o 1º e-mail das melhores empresas ainda não contatadas, da maior nota para a menor, pela função `candidatas_primeiro_email`.
   - Segue as regras do botão "Escrever 1º e-mail": nota mínima, gancho e CNPJ ativo; filial de cliente ativo fica de fora.
