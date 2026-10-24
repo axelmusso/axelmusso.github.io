@@ -161,13 +161,14 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   },
 
   // Rotina da manhã: procurar no Maps o site das empresas da Receita que ainda não têm, dentro do limite do dia.
+  // A onda mais recente vem primeiro (cada onda é a prioridade do dono naquele momento; em 24/10, as metalizadoras).
   // O que sobra vai para buscas por segmento e cidade (config.maps_segmentos x config.maps_cidades), que trazem empresas novas.
   async descoberta() {
     const st = await chamar('maps', { acao: 'status' });
     const livre = Math.max(0, Number(st.limite_dia) - Number(st.usadas_hoje) - 10);
     const n = Math.min(livre, ACHAR_SITE_POR_DIA);
     if (!livre) return { aviso: 'Sem consultas do Maps sobrando hoje.' };
-    const lista = n ? await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&order=icp_score.desc.nullslast,criado_em&limit=${n}`) : [];
+    const lista = n ? await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&order=icp_score.desc.nullslast,criado_em.desc&limit=${n}`) : [];
     for (const e of lista) await enfileirar('maps_achar_site', { empresa_id: e.id }, 4, 'achar_site:' + e.id);
     const buscas = await proximasBuscas(Math.min(livre - lista.length, BUSCAS_SEGMENTO_POR_DIA));
     for (const b of buscas) await enfileirar('maps_buscar_segmento', b, 4, `buscar:${b.segmento} em ${b.cidade}`);
