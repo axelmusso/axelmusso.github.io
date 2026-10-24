@@ -190,6 +190,7 @@ async function buscarIa(segmentoId: string, uf: string, jobId: string | null) {
     provedor: 'anthropic', papel: 'prospeccao_busca_ia', nivel: 'rotina', manual: false, maxTokens: 4000, jobId,
     ferramentas: [{ type: 'web_search_20260209', name: 'web_search', max_uses: Number(conf.buscas_por_vez ?? 5), user_location: { type: 'approximate', country: 'BR' } }],
     instrucoes: `Você pesquisa na web empresas brasileiras para a prospecção da Corquímica. ${SOBRE_A_CORQUIMICA}\n` +
+      'Faça várias pesquisas diferentes, cada uma com um termo e uma cidade industrial do estado (ex.: \"metalização a vácuo Guarulhos\"), e aproveite todos os fabricantes que aparecerem nos resultados, não só o primeiro. ' +
       'Só liste empresa cujo site oficial apareceu nos resultados da pesquisa; nunca invente nome, site ou cidade. ' +
       'Queremos FABRICANTES que fazem o processo na própria fábrica. Fora: revendas, lojas, distribuidores, representantes, fornecedores de máquinas ou de tintas, e serviços em metal (galvanização, zincagem, cromo duro em aço). ' +
       'No fim, responda só com o JSON pedido.',
