@@ -221,7 +221,8 @@ async function buscarIa(segmentoId: string, uf: string, jobId: string | null) {
     await banco('/rest/v1/rpc/enfileirar', { metodo: 'POST', corpo: { p_tipo: 'qualificar', p_payload: { empresa_id: nova.id }, p_prioridade: 5, p_chave: 'qualificar:' + nova.id, p_origem: 'busca_ia' } });
     novas++;
   }
-  return { segmento: seg.nome, uf, encontradas: lista.length, novas, repetidas, fora, custo: r.custoUsd };
+  // Sem nenhuma empresa: guarda o fim da resposta da IA no resultado do job, para entender o porquê.
+  return { segmento: seg.nome, uf, encontradas: lista.length, novas, repetidas, fora, custo: r.custoUsd, ...(lista.length ? {} : { resposta_ia: r.texto.slice(-800) }) };
 }
 
 // ---------- dados do CNPJ: CNAE, cidade, UF e porte (cadastro público da Receita, via BrasilAPI) ----------
