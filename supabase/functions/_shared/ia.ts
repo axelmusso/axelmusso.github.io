@@ -16,6 +16,7 @@ export interface PedidoIA {
   jobId?: string | null;
   manual?: boolean;         // pedido feito por uma pessoa na tela: não depende do botão de parada
   memorias?: string[];      // ids de memoria_aprendizados que entraram no contexto (fica no log)
+  ferramentas?: Record<string, unknown>[]; // ferramentas que rodam no servidor da Anthropic (ex.: pesquisa na web)
 }
 
 export interface RespostaIA {
@@ -26,6 +27,7 @@ export interface RespostaIA {
   custoUsd: number;
   duracaoMs: number;
   truncado: boolean;        // bateu no maxTokens antes de terminar
+  pesquisas?: string[];     // pesquisas na web feitas pelo modelo: "termo → N resultados" ou "termo → erro"
 }
 
 export class ErroIA extends Error {
@@ -52,6 +54,7 @@ const PRECOS: Record<string, [number, number, number]> = {
   'gpt-6-astra': [10, 50, 1],
   'text-embedding-3-small': [0.02, 0, 0],
 };
+const PRECO_BUSCA_WEB = 0.01; // US$ por pesquisa na web (US$ 10 por 1.000), além dos tokens
 // Modelo sem preço conhecido (ex.: substituto automático): conta pelo mais caro, para nunca subestimar.
 const PRECO_DESCONHECIDO: [number, number, number] = [10, 50, 1];
 const preco = (modelo: string) => PRECOS[modelo] ?? PRECO_DESCONHECIDO;
@@ -116,17 +119,28 @@ async function anthropic(modelo: string, p: PedidoIA, nivel: Nivel) {
     system: p.instrucoes,
     messages: [{ role: 'user', content: p.contexto }],
     output_config: { effort: ESFORCO[nivel] },
+    ...(p.ferramentas?.length ? { tools: p.ferramentas } : {}),
   };
   const cab: Record<string, string> = { 'x-api-key': chave, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
   if (comSubstituto) { corpo.fallbacks = 'default'; cab['anthropic-beta'] = 'server-side-fallback-2026-07-01'; }
-  const res = await comRepeticao(() => fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: cab, body: JSON.stringify(corpo), signal: AbortSignal.timeout(110_000) }));
-  const r = await res.json();
-  if (!res.ok) throw new ErroIA('http', `Anthropic ${res.status}: ${r?.error?.message ?? JSON.stringify(r).slice(0, 300)}`);
 
   // Custo: com troca de modelo, usage.iterations traz cada tentativa; senão, usage do topo.
   type Uso = { model?: string; input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number };
-  const partes: Uso[] = Array.isArray(r.usage?.iterations) && r.usage.iterations.length ? r.usage.iterations : [{ ...r.usage, model: r.model }];
-  let entrada = 0, saida = 0, custo = 0;
+  const partes: Uso[] = [];
+  const conteudo: { type: string; text?: string; id?: string; tool_use_id?: string; input?: { query?: string }; content?: any }[] = [];
+  let r: Record<string, any> = {}, buscas = 0;
+  // Com pesquisa na web o servidor pode pausar o turno (pause_turn): reenvia o que veio para ele continuar, até 3 vezes.
+  for (let volta = 0; ; volta++) {
+    const res = await comRepeticao(() => fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: cab, body: JSON.stringify(corpo), signal: AbortSignal.timeout(110_000) }));
+    r = await res.json();
+    if (!res.ok) throw new ErroIA('http', `Anthropic ${res.status}: ${r?.error?.message ?? JSON.stringify(r).slice(0, 300)}`);
+    partes.push(...(Array.isArray(r.usage?.iterations) && r.usage.iterations.length ? r.usage.iterations : [{ ...r.usage, model: r.model }]));
+    buscas += Number(r.usage?.server_tool_use?.web_search_requests ?? 0);
+    conteudo.push(...(r.content ?? []));
+    if (r.stop_reason !== 'pause_turn' || volta >= 3) break;
+    corpo.messages = [{ role: 'user', content: p.contexto }, { role: 'assistant', content: conteudo }];
+  }
+  let entrada = 0, saida = 0, custo = buscas * PRECO_BUSCA_WEB;
   for (const u of partes) {
     const [pe, ps, pc] = preco(u.model ?? r.model ?? modelo);
     const ent = (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
@@ -135,8 +149,13 @@ async function anthropic(modelo: string, p: PedidoIA, nivel: Nivel) {
   }
   const base = { modelo: r.model ?? modelo, tokensEntrada: entrada, tokensSaida: saida, custoUsd: custo };
   if (r.stop_reason === 'refusal') return { ...base, erro: 'Recusado pelo modelo' + (r.stop_details?.category ? ` (${r.stop_details.category})` : '') };
-  const texto = (r.content ?? []).filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('');
-  return { ...base, texto, truncado: r.stop_reason === 'max_tokens' };
+  const texto = conteudo.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
+  // O que cada pesquisa na web trouxe (para entender uma busca que volta vazia).
+  const pesquisas = conteudo.filter((b) => b.type === 'server_tool_use' && b.input?.query).map((b) => {
+    const res = conteudo.find((x) => x.type === 'web_search_tool_result' && x.tool_use_id === b.id)?.content;
+    return `${b.input!.query} → ${Array.isArray(res) ? res.length + ' resultados' : 'erro ' + (res?.error_code ?? 'sem resposta')}`;
+  });
+  return { ...base, texto, truncado: r.stop_reason === 'max_tokens', pesquisas };
 }
 
 // ---------- OpenAI (Responses API) ----------
@@ -198,7 +217,7 @@ export async function chamarIA(p: PedidoIA): Promise<RespostaIA> {
       custo_usd: Number(r.custoUsd.toFixed(6)), duracao_ms: duracaoMs, sucesso: !('erro' in r), erro: 'erro' in r ? r.erro : null,
     });
     if ('erro' in r) throw new ErroIA('recusa', r.erro as string);
-    return { texto: r.texto as string, modelo: r.modelo, tokensEntrada: r.tokensEntrada, tokensSaida: r.tokensSaida, custoUsd: r.custoUsd, duracaoMs, truncado: !!r.truncado };
+    return { texto: r.texto as string, modelo: r.modelo, tokensEntrada: r.tokensEntrada, tokensSaida: r.tokensSaida, custoUsd: r.custoUsd, duracaoMs, truncado: !!r.truncado, pesquisas: 'pesquisas' in r ? r.pesquisas : undefined };
   } catch (e) {
     if (e instanceof ErroIA && e.codigo === 'recusa') throw e; // já registrado acima
     await registrar({ ...linha, sucesso: false, erro: (e as Error).message.slice(0, 500), duracao_ms: Date.now() - inicio });

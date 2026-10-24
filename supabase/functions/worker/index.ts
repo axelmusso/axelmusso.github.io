@@ -161,13 +161,14 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   },
 
   // Rotina da manhã: procurar no Maps o site das empresas da Receita que ainda não têm, dentro do limite do dia.
+  // A onda mais recente vem primeiro (cada onda é a prioridade do dono naquele momento; em 24/10, as metalizadoras).
   // O que sobra vai para buscas por segmento e cidade (config.maps_segmentos x config.maps_cidades), que trazem empresas novas.
   async descoberta() {
     const st = await chamar('maps', { acao: 'status' });
     const livre = Math.max(0, Number(st.limite_dia) - Number(st.usadas_hoje) - 10);
     const n = Math.min(livre, ACHAR_SITE_POR_DIA);
     if (!livre) return { aviso: 'Sem consultas do Maps sobrando hoje.' };
-    const lista = n ? await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&order=icp_score.desc.nullslast,criado_em&limit=${n}`) : [];
+    const lista = n ? await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&order=icp_score.desc.nullslast,criado_em.desc&limit=${n}`) : [];
     for (const e of lista) await enfileirar('maps_achar_site', { empresa_id: e.id }, 4, 'achar_site:' + e.id);
     const buscas = await proximasBuscas(Math.min(livre - lista.length, BUSCAS_SEGMENTO_POR_DIA));
     for (const b of buscas) await enfileirar('maps_buscar_segmento', b, 4, `buscar:${b.segmento} em ${b.cidade}`);
@@ -181,6 +182,34 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
       if (e instanceof LimiteDeChamadas || /teto|parado/i.test(msg)) throw e;
       await banco('/rest/v1/emails?id=eq.' + q(j.payload.email_id), { metodo: 'PATCH', corpo: { erro: ('Não refeito: ' + msg).slice(0, 500) } });
       return { pulou: msg };
+    }
+  },
+
+  // Rotina diária (6h): busca com IA nos segmentos prioritários do dono, algumas combinações de segmento e estado por dia
+  // (config.busca_ia), pulando as que rodaram nos últimos repetir_dias. Estados na ordem da config: os que faltavam primeiro.
+  async busca_ia() {
+    const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.busca_ia');
+    const conf = cfg?.valor ?? {};
+    if (!conf.ativo) return { aviso: 'Busca com IA desligada (config.busca_ia.ativo).' };
+    const desde = new Date(Date.now() - Number(conf.repetir_dias ?? 30) * 864e5).toISOString();
+    const feitas = new Set((await banco(`/rest/v1/jobs?select=chave&tipo=eq.busca_ia_executar&status=in.(pendente,rodando,feito)&criado_em=gte.${q(desde)}`)).map((x: { chave: string }) => x.chave));
+    const escolhidas: { segmento: string; uf: string }[] = [];
+    for (const uf of (conf.ufs ?? []) as string[]) {
+      for (const s of (conf.segmentos ?? []) as { id: string }[]) {
+        if (escolhidas.length < Number(conf.por_dia ?? 3) && !feitas.has(`busca_ia:${s.id}:${uf}`)) escolhidas.push({ segmento: s.id, uf });
+      }
+    }
+    // Uma por vez, com 3 minutos entre elas (cada busca leva até 2 minutos).
+    for (const [i, b] of escolhidas.entries()) await enfileirar('busca_ia_executar', b, 4, `busca_ia:${b.segmento}:${b.uf}`, new Date(Date.now() + i * 180_000));
+    return { buscas: escolhidas };
+  },
+  // A busca pode passar do tempo de espera do worker e ainda assim terminar e gravar: nesse caso não repete (custaria de novo).
+  async busca_ia_executar(j) {
+    try { return await chamar('prospeccao', { acao: 'buscar_ia', segmento: j.payload.segmento, uf: j.payload.uf }); }
+    catch (e) {
+      const msg = (e as Error).message;
+      if (/timeout|aborted|abort/i.test(msg)) return { aviso: 'Passou do tempo de espera; o resultado pode ter sido gravado mesmo assim.' };
+      throw e;
     }
   },
 
