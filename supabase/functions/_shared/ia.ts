@@ -27,6 +27,7 @@ export interface RespostaIA {
   custoUsd: number;
   duracaoMs: number;
   truncado: boolean;        // bateu no maxTokens antes de terminar
+  pesquisas?: string[];     // pesquisas na web feitas pelo modelo: "termo → N resultados" ou "termo → erro"
 }
 
 export class ErroIA extends Error {
@@ -126,7 +127,7 @@ async function anthropic(modelo: string, p: PedidoIA, nivel: Nivel) {
   // Custo: com troca de modelo, usage.iterations traz cada tentativa; senão, usage do topo.
   type Uso = { model?: string; input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number };
   const partes: Uso[] = [];
-  const conteudo: { type: string; text?: string }[] = [];
+  const conteudo: { type: string; text?: string; id?: string; tool_use_id?: string; input?: { query?: string }; content?: any }[] = [];
   let r: Record<string, any> = {}, buscas = 0;
   // Com pesquisa na web o servidor pode pausar o turno (pause_turn): reenvia o que veio para ele continuar, até 3 vezes.
   for (let volta = 0; ; volta++) {
@@ -149,7 +150,12 @@ async function anthropic(modelo: string, p: PedidoIA, nivel: Nivel) {
   const base = { modelo: r.model ?? modelo, tokensEntrada: entrada, tokensSaida: saida, custoUsd: custo };
   if (r.stop_reason === 'refusal') return { ...base, erro: 'Recusado pelo modelo' + (r.stop_details?.category ? ` (${r.stop_details.category})` : '') };
   const texto = conteudo.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
-  return { ...base, texto, truncado: r.stop_reason === 'max_tokens' };
+  // O que cada pesquisa na web trouxe (para entender uma busca que volta vazia).
+  const pesquisas = conteudo.filter((b) => b.type === 'server_tool_use' && b.input?.query).map((b) => {
+    const res = conteudo.find((x) => x.type === 'web_search_tool_result' && x.tool_use_id === b.id)?.content;
+    return `${b.input!.query} → ${Array.isArray(res) ? res.length + ' resultados' : 'erro ' + (res?.error_code ?? 'sem resposta')}`;
+  });
+  return { ...base, texto, truncado: r.stop_reason === 'max_tokens', pesquisas };
 }
 
 // ---------- OpenAI (Responses API) ----------
@@ -211,7 +217,7 @@ export async function chamarIA(p: PedidoIA): Promise<RespostaIA> {
       custo_usd: Number(r.custoUsd.toFixed(6)), duracao_ms: duracaoMs, sucesso: !('erro' in r), erro: 'erro' in r ? r.erro : null,
     });
     if ('erro' in r) throw new ErroIA('recusa', r.erro as string);
-    return { texto: r.texto as string, modelo: r.modelo, tokensEntrada: r.tokensEntrada, tokensSaida: r.tokensSaida, custoUsd: r.custoUsd, duracaoMs, truncado: !!r.truncado };
+    return { texto: r.texto as string, modelo: r.modelo, tokensEntrada: r.tokensEntrada, tokensSaida: r.tokensSaida, custoUsd: r.custoUsd, duracaoMs, truncado: !!r.truncado, pesquisas: 'pesquisas' in r ? r.pesquisas : undefined };
   } catch (e) {
     if (e instanceof ErroIA && e.codigo === 'recusa') throw e; // já registrado acima
     await registrar({ ...linha, sucesso: false, erro: (e as Error).message.slice(0, 500), duracao_ms: Date.now() - inicio });
