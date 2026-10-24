@@ -5,6 +5,7 @@
 //   { acao: 'redigir', empresa_id }      → escreve o 1º e-mail (prospecção ou retomada de ex-cliente) como rascunho
 //   { acao: 'dados_cnpj', empresa_id }   → completa CNAE, cidade, UF e porte pelo cadastro público do CNPJ (base do perfil de cliente)
 //   { acao: 'refazer', email_id }        → reescreve um rascunho que o dono reprovou, levando o motivo em conta
+//   { acao: 'buscar_ia', segmento, uf }  → pesquisa na web empresas de um segmento prioritário num estado; entram sem nota e vão para a qualificação
 import { banco, chamarIA, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { redigirEmail, SOBRE_A_CORQUIMICA } from '../_shared/redacao.ts';
@@ -165,6 +166,63 @@ Acrescente ao JSON "acabamento" e "acabamento_evidencia":
   return { nota: atual?.icp_score ?? null, segmento: nomeSeg, acabamento, motivo: v.evidencia || v.motivo, gancho: v.gancho || null, contatos, retirados, custo: r.custoUsd };
 }
 
+// ---------- buscar com IA: pesquisa na web empresas de um segmento prioritário num estado ----------
+// Pedido do dono (23/10/2026): achar as empresas dos segmentos prioritários que a Receita e o Maps não trazem, em todo o foco
+// (RS, SC, PR, SP, MG, RJ). A IA só sugere: cada empresa entra sem nota e passa pela qualificação de sempre (leitura do site).
+// Teto próprio por dia (config.busca_ia.teto_dia_usd), dentro do teto geral, para não tirar verba dos rascunhos e das respostas.
+type Achada = { nome?: string; site?: string; cidade?: string; uf?: string; evidencia?: string; fonte?: string };
+const SITE_QUE_NAO_E_DA_EMPRESA = /(mercadolivre|mercadolibre|facebook|instagram|linkedin|google|youtube|wikipedia|cnpj|empresaqui|econodata|solutudo|guiamais|apontador|olx|telelistas|gov\.br|reclameaqui|indeed|infojobs)/i;
+async function buscarIa(segmentoId: string, uf: string, jobId: string | null) {
+  const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.busca_ia');
+  const conf = cfg?.valor ?? {};
+  const seg = ((conf.segmentos ?? []) as { id: string; nome: string; termos: string[] }[]).find((s) => s.id === segmentoId);
+  if (!seg) throw new Error('Segmento fora da lista da busca com IA (config.busca_ia).');
+  const inicioDia = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }) + 'T00:00:00-03:00').toISOString();
+  const gastoHoje = (await banco(`/rest/v1/execucoes_agente?select=custo_usd&papel=eq.prospeccao_busca_ia&criado_em=gte.${q(inicioDia)}`))
+    .reduce((s: number, x: { custo_usd: number }) => s + Number(x.custo_usd ?? 0), 0);
+  const teto = Number(conf.teto_dia_usd ?? 0.45);
+  if (gastoHoje >= teto) return { pulou: `Teto do dia da busca com IA atingido (US$ ${gastoHoje.toFixed(2)} de ${teto.toFixed(2)}).` };
+  // Quem já conhecemos neste estado e segmento não volta (a IA procura outras).
+  const conhecidas = [...new Set((await banco(`/rest/v1/empresas?select=nome&uf=eq.${q(uf)}&or=(segmento_icp.eq.${q(seg.id)},origem.eq.${q('ia:' + seg.id)})&limit=120`))
+    .map((e: { nome: string }) => e.nome))];
+  const n = Number(conf.empresas_por_vez ?? 10);
+  const r = await chamarIA({
+    provedor: 'anthropic', papel: 'prospeccao_busca_ia', nivel: 'rotina', manual: false, maxTokens: 4000, jobId,
+    ferramentas: [{ type: 'web_search_20260209', name: 'web_search', max_uses: Number(conf.buscas_por_vez ?? 5), user_location: { type: 'approximate', country: 'BR' } }],
+    instrucoes: `Você pesquisa na web empresas brasileiras para a prospecção da Corquímica. ${SOBRE_A_CORQUIMICA}\n` +
+      'Só liste empresa cujo site oficial apareceu nos resultados da pesquisa; nunca invente nome, site ou cidade. ' +
+      'Queremos FABRICANTES que fazem o processo na própria fábrica. Fora: revendas, lojas, distribuidores, representantes, fornecedores de máquinas ou de tintas, e serviços em metal (galvanização, zincagem, cromo duro em aço). ' +
+      'No fim, responda só com o JSON pedido.',
+    contexto: `SEGMENTO: ${seg.nome}\nESTADO: ${uf}\nTERMOS PARA PESQUISAR (combine com o estado e cidades industriais dele): ${seg.termos.join('; ')}\n` +
+      `${conhecidas.length ? 'JÁ CONHECEMOS (não repita):\n' + conhecidas.join('; ') + '\n' : ''}\n` +
+      `Ache até ${n} empresas deste segmento com fábrica no estado ${uf}.\n` +
+      'Devolva {"empresas":[{"nome":"","site":"https://...","cidade":"","uf":"","evidencia":"frase curta do resultado que mostra o processo (pintura, verniz, metalização, revestimento ou embalagem)","fonte":"URL onde viu"}]}',
+  });
+  const ini = r.texto.lastIndexOf('{"empresas"');
+  const lista = (jsonDe<{ empresas?: Achada[] }>(ini >= 0 ? r.texto.slice(ini) : r.texto).empresas ?? []).filter((e) => e.nome?.trim() && e.site?.trim());
+  let novas = 0, repetidas = 0, fora = 0;
+  for (const e of lista) {
+    const dominio = dominioDe(e.site);
+    if (!dominio || SITE_QUE_NAO_E_DA_EMPRESA.test(dominio) || /corqu[ií]mica/i.test(e.nome!)) { fora++; continue; }
+    const chave = nomeChave(e.nome!);
+    if ((await banco(`/rest/v1/empresas?select=id&or=(dominio.eq.${q(dominio)},nome_chave.eq.${q(chave)})&limit=1`)).length) { repetidas++; continue; }
+    if ((await banco(`/rest/v1/lista_supressao?select=id&dominio=ilike.${q(dominio)}&limit=1`)).length) { repetidas++; continue; }
+    const ufE = (e.uf ?? '').trim().toUpperCase();
+    const [nova] = await banco('/rest/v1/empresas', {
+      metodo: 'POST',
+      corpo: {
+        nome: e.nome!.trim().slice(0, 200), site: e.site!.trim(), dominio, cidade: e.cidade?.trim() || null, uf: /^[A-Z]{2}$/.test(ufE) ? ufE : uf,
+        setor: seg.nome, origem: 'ia:' + seg.id, fonte_url: e.fonte || e.site, coletado_em: new Date().toISOString(),
+        icp_motivo: e.evidencia ? ('Achada pela busca com IA: ' + e.evidencia).slice(0, 500) : null, status: 'prospect', relacao: 'prospect',
+      },
+    });
+    // A nota vem da qualificação de sempre, que lê o site; entra na fila na frente da qualificação da noite.
+    await banco('/rest/v1/rpc/enfileirar', { metodo: 'POST', corpo: { p_tipo: 'qualificar', p_payload: { empresa_id: nova.id }, p_prioridade: 5, p_chave: 'qualificar:' + nova.id, p_origem: 'busca_ia' } });
+    novas++;
+  }
+  return { segmento: seg.nome, uf, encontradas: lista.length, novas, repetidas, fora, custo: r.custoUsd };
+}
+
 // ---------- dados do CNPJ: CNAE, cidade, UF e porte (cadastro público da Receita, via BrasilAPI) ----------
 // Serve para conhecer o perfil dos clientes (quais CNAEs e cidades) e achar empresas parecidas. Não sobrescreve o que já foi preenchido.
 async function dadosCnpj(id: string) {
@@ -315,6 +373,7 @@ Deno.serve(async (req) => {
   try {
     if (c.acao === 'descobrir_url') return json(req, 200, await descobrirUrl(String(c.url ?? ''), c.feira_id ? String(c.feira_id) : undefined));
     if (c.acao === 'qualificar') return json(req, 200, await qualificar(String(c.empresa_id ?? '')));
+    if (c.acao === 'buscar_ia') return json(req, 200, await buscarIa(String(c.segmento ?? ''), String(c.uf ?? '').toUpperCase(), null));
     if (c.acao === 'dados_cnpj') return json(req, 200, await dadosCnpj(String(c.empresa_id ?? '')));
     if (c.acao === 'redigir') return json(req, 200, await redigir(String(c.empresa_id ?? ''), quem.id ?? ''));
     if (c.acao === 'refazer') return json(req, 200, await refazer(String(c.email_id ?? ''), quem.papel !== 'sistema'));

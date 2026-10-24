@@ -184,6 +184,34 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     }
   },
 
+  // Rotina diária (6h): busca com IA nos segmentos prioritários do dono, algumas combinações de segmento e estado por dia
+  // (config.busca_ia), pulando as que rodaram nos últimos repetir_dias. Estados na ordem da config: os que faltavam primeiro.
+  async busca_ia() {
+    const [cfg] = await banco('/rest/v1/config?select=valor&chave=eq.busca_ia');
+    const conf = cfg?.valor ?? {};
+    if (!conf.ativo) return { aviso: 'Busca com IA desligada (config.busca_ia.ativo).' };
+    const desde = new Date(Date.now() - Number(conf.repetir_dias ?? 30) * 864e5).toISOString();
+    const feitas = new Set((await banco(`/rest/v1/jobs?select=chave&tipo=eq.busca_ia_executar&status=in.(pendente,rodando,feito)&criado_em=gte.${q(desde)}`)).map((x: { chave: string }) => x.chave));
+    const escolhidas: { segmento: string; uf: string }[] = [];
+    for (const uf of (conf.ufs ?? []) as string[]) {
+      for (const s of (conf.segmentos ?? []) as { id: string }[]) {
+        if (escolhidas.length < Number(conf.por_dia ?? 3) && !feitas.has(`busca_ia:${s.id}:${uf}`)) escolhidas.push({ segmento: s.id, uf });
+      }
+    }
+    // Uma por vez, com 3 minutos entre elas (cada busca leva até 2 minutos).
+    for (const [i, b] of escolhidas.entries()) await enfileirar('busca_ia_executar', b, 4, `busca_ia:${b.segmento}:${b.uf}`, new Date(Date.now() + i * 180_000));
+    return { buscas: escolhidas };
+  },
+  // A busca pode passar do tempo de espera do worker e ainda assim terminar e gravar: nesse caso não repete (custaria de novo).
+  async busca_ia_executar(j) {
+    try { return await chamar('prospeccao', { acao: 'buscar_ia', segmento: j.payload.segmento, uf: j.payload.uf }); }
+    catch (e) {
+      const msg = (e as Error).message;
+      if (/timeout|aborted|abort/i.test(msg)) return { aviso: 'Passou do tempo de espera; o resultado pode ter sido gravado mesmo assim.' };
+      throw e;
+    }
+  },
+
   maps_achar_site: (j) => chamar('maps', { acao: 'achar_site', empresa_id: j.payload.empresa_id }),
   maps_buscar_segmento: (j) => chamar('maps', { acao: 'buscar_segmento', segmento: j.payload.segmento, cidade: j.payload.cidade }),
 
