@@ -247,7 +247,7 @@ async function sugerirIa(segmentoId: string, uf: string, gravar: boolean, manual
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'prospeccao_sugerir_ia', nivel: 'rotina', manual, maxTokens: 6000,
     instrucoes: `Você conhece a indústria brasileira e ajuda a prospecção da Corquímica. ${SOBRE_A_CORQUIMICA}\n` +
-      'Liste só empresas que você conhece de verdade. Se não lembrar o site, deixe vazio: o robô confere cada site depois. Responda só com JSON.',
+      'Liste as empresas que você lembra, mesmo sem certeza total: o robô abre o site de cada uma e descarta o que não confere, então não deixe a lista vazia por cautela. Se não lembrar o site, deixe vazio. Responda só com JSON.',
     contexto: `SEGMENTO: ${seg.nome}\nESTADO: ${uf}\nO QUE O SEGMENTO FAZ: ${seg.termos.join('; ')}\n` +
       `Liste até ${Number(conf.sugerir_por_vez ?? 30)} FABRICANTES deste segmento com fábrica no estado ${uf}. Fora: revendas, distribuidores, fornecedores de máquinas ou de tintas, e serviços só em metal (galvanização, zincagem, cromo duro em aço).\n` +
       'Devolva {"empresas":[{"nome":"","cidade":"","site":""}]}',
@@ -285,7 +285,7 @@ async function sugerirIa(segmentoId: string, uf: string, gravar: boolean, manual
       gravadas++;
     }
   }
-  return { segmento: seg.nome, uf, sugeridas: lista.length, confirmadas: conferidas.filter((x) => x.situacao === 'confirmada').length, gravadas, custo: r.custoUsd, lista: conferidas };
+  return { segmento: seg.nome, uf, sugeridas: lista.length, confirmadas: conferidas.filter((x) => x.situacao === 'confirmada').length, gravadas, custo: r.custoUsd, lista: conferidas, ...(lista.length ? {} : { resposta_ia: r.texto.slice(-600) }) };
 }
 
 // ---------- dados do CNPJ: CNAE, cidade, UF e porte (cadastro público da Receita, via BrasilAPI) ----------
