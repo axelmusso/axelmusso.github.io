@@ -128,6 +128,8 @@ Acrescente ao JSON "acabamento" e "acabamento_evidencia":
   let dominio = e.dominio;
   const candidato = dominioDe(e.site);
   if (!dominio && candidato && !(await banco(`/rest/v1/empresas?select=id&dominio=eq.${q(candidato)}&limit=1`)).length) dominio = candidato;
+  // WhatsApp ou celular publicado no site vai para o cadastro (o contato por e-mail segue igual); não troca o que já existe.
+  const comZap = paginas.find((p) => p.whatsapp?.length);
   await banco('/rest/v1/empresas?id=eq.' + q(id), {
     metodo: 'PATCH',
     corpo: {
@@ -140,6 +142,7 @@ Acrescente ao JSON "acabamento" e "acabamento_evidencia":
       // Perfil pelo site (o da base de clientes vale mais); o gatilho do segmento pode impor o dele (fita de borda → verniz).
       ...(e.origem === 'base_clientes' ? {} : { perfil_produto: ['verniz', 'metalizacao', 'resina3d'].includes(v.perfil ?? '') && v.perfil_evidencia?.trim() ? v.perfil : 'geral', perfil_fonte: v.perfil_evidencia?.trim() ? 'site: ' + v.perfil_evidencia.trim().slice(0, 300) : 'sem evidência no site' }),
       cidade: e.cidade || v.cidade || null, uf: e.uf || (/^[A-Z]{2}$/.test(uf) ? uf : null), dominio,
+      ...(!e.whatsapp && comZap ? { whatsapp: comZap.whatsapp[0], whatsapp_fonte: comZap.url } : {}),
     },
   });
   // E-mails profissionais publicados no site viram contatos (com fonte e data, base legal: legítimo interesse).

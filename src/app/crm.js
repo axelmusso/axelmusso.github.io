@@ -189,6 +189,9 @@
       '<p><a href="#empresas">← Empresas</a></p>' +
       '<div class="cab"><h1>' + esc(e.nome) + '</h1>' + (e.site ? '<a href="' + esc(/^https?:/.test(e.site) ? e.site : 'https://' + e.site) + '" target="_blank" rel="noopener noreferrer">' + esc(e.dominio || e.site) + '</a>' : '') + '</div>' +
       '<p class="mut">' + esc([e.setor, e.porte, [e.cidade, e.uf].filter(Boolean).join('/'), e.cnpj && 'CNPJ ' + e.cnpj, e.telefone, e.origem && 'origem: ' + e.origem].filter(Boolean).join(' · ')) + '</p>' +
+      // WhatsApp ou celular achado no site: abre a conversa direto (wa.me, com o 55 do Brasil).
+      (e.whatsapp ? '<p>WhatsApp: <a href="https://wa.me/55' + esc(e.whatsapp.replace(/\D/g, '')) + '" target="_blank" rel="noopener noreferrer">' + esc(e.whatsapp) + '</a>' +
+        (e.whatsapp_fonte ? ' <small class="mut">(achado em ' + esc(dominioDe(e.whatsapp_fonte) || e.whatsapp_fonte) + ')</small>' : '') + '</p>' : '') +
       // ICP: nota vem do segmento; o Áxel corrige o segmento e a IA não troca mais.
       '<p><b>ICP ' + esc(e.icp_score == null ? '—' : e.icp_score) + '</b>' + (e.icp_motivo ? ' · <span class="mut">' + esc(e.icp_motivo) + '</span>' : '') + '</p>' +
       (w ? '<p><label>Segmento <select id="segmento-icp"><option value="">— escolher —</option>' +

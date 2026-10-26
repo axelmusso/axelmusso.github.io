@@ -80,6 +80,9 @@ export async function buscarContatos(e: Record<string, any>) {
       for (const p of paginas) for (const m of p.emails) {
         if ((m.endsWith('@' + dom) || m.endsWith('.' + dom)) && (await gravar(e.id, m, 'site', p.url, 'Legítimo interesse (contato profissional publicado no site da empresa)'))) achados.push(m);
       }
+      // WhatsApp ou celular publicado no site, se a empresa ainda não tem (pedido do dono, 26/10/2026).
+      const comZap = paginas.find((p) => p.whatsapp?.length);
+      if (!e.whatsapp && comZap) await banco('/rest/v1/empresas?id=eq.' + e.id, { metodo: 'PATCH', corpo: { whatsapp: comZap.whatsapp[0], whatsapp_fonte: comZap.url } });
       // O site respondeu: guarda o endereço (o domínio só se nenhuma outra empresa já usa).
       if (!e.site || !e.dominio) {
         const livre = !(await banco(`/rest/v1/empresas?select=id&dominio=eq.${q(dom)}&id=neq.${e.id}&limit=1`)).length;
