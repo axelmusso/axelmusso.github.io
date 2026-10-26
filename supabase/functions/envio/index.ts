@@ -44,13 +44,14 @@ async function enviarAprovados(teste = false) {
   const lim = await limiteDeHoje();
   if (lim.restante <= 0) return { enviados: 0, respostas, problemas: problemasResp, aviso: `Limite de hoje atingido (${lim.enviados} de ${lim.limite}, aquecimento dia ${lim.dias_de_aquecimento + 1}).` };
   const c = await config(['email_remetente', 'email_assinatura', 'email_aquecimento', 'apresentacao_url']);
-  // Ordem: follow-ups, 1º contato com empresa nova (maior nota primeiro) e, por último, 1º contato com ex-cliente, até 15% do dia.
+  // Ordem: follow-ups, 1º contato com empresa nova e, por último, 1º contato com ex-cliente, até 15% do dia.
+  // Dentro de empresas novas e de ex-clientes, a maior nota ICP primeiro (ex-clientes por nota: pedido do dono, 26/10/2026).
   const inicioDia = new Date(`${agoraBrasilia().dia}T00:00:00-03:00`).toISOString();
   const exHoje = (await banco(`/rest/v1/emails?select=id,empresas!inner(relacao)&status=eq.enviado&passo=eq.1&enviado_em=gte.${q(inicioDia)}&empresas.relacao=eq.ex_cliente`)).length;
   let exVagas = Math.max(1, Math.floor(PARTE_EX_CLIENTES * lim.limite)) - exHoje;
   const ordem = (m: Record<string, any>) => (m.passo > 1 ? 0 : m.empresas.relacao === 'ex_cliente' ? 2 : 1);
   const aprovados = (await banco('/rest/v1/emails?select=*,empresas(*)&status=eq.aprovado&order=aprovado_em&limit=300'))
-    .sort((a: Record<string, any>, b: Record<string, any>) => ordem(a) - ordem(b) || (ordem(a) === 1 ? (b.empresas.icp_score ?? 0) - (a.empresas.icp_score ?? 0) : 0));
+    .sort((a: Record<string, any>, b: Record<string, any>) => ordem(a) - ordem(b) || (ordem(a) > 0 ? (b.empresas.icp_score ?? 0) - (a.empresas.icp_score ?? 0) : 0));
   const fila: Record<string, any>[] = [];
   for (const m of aprovados) {
     if (fila.length >= Math.min(lim.restante, POR_CHAMADA)) break;
