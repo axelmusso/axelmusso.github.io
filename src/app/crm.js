@@ -97,10 +97,16 @@
 
   // ---------- empresas ----------
   var filtro = { busca: '', status: '', setor: '', uf: '', icp: '' };
+  // Etapa no funil: o negócio aberto (ou o último fechado); sem negócio, a empresa ainda não recebeu e-mail.
+  function etapaDe(e) {
+    var ns = e.negocios || [];
+    var n = ns.find(function (x) { return x.etapa !== 'ganho' && x.etapa !== 'perdido'; }) || ns[ns.length - 1];
+    return n ? NOME_ETAPA[n.etapa] || n.etapa : 'Não contatado';
+  }
   function empresas() {
     // Com nota mínima de ICP, a lista vem da maior nota para a menor (pedido do dono, 26/10/2026).
     var icp = parseInt(filtro.icp, 10);
-    var url = '/rest/v1/empresas?select=id,nome,dominio,setor,cidade,uf,status,icp_score,segmento_icp,icp_manual&order=' + (icp >= 0 ? 'icp_score.desc,' : '') + 'atualizado_em.desc&limit=300';
+    var url = '/rest/v1/empresas?select=id,nome,dominio,setor,cidade,uf,status,icp_score,segmento_icp,icp_manual,negocios(etapa)&order=' + (icp >= 0 ? 'icp_score.desc,' : '') + 'atualizado_em.desc&limit=300';
     var b = filtro.busca.replace(/[,()*%\\]/g, ' ').trim();
     if (b) url += '&or=' + q('(nome.ilike.*' + b + '*,dominio.ilike.*' + b + '*,cidade.ilike.*' + b + '*,cnpj.ilike.*' + b + '*)');
     if (filtro.status) url += '&status=eq.' + q(filtro.status);
@@ -119,11 +125,17 @@
         '<input name="icp" type="number" min="0" max="100" placeholder="ICP mín." value="' + esc(filtro.icp) + '" aria-label="ICP mínimo" title="Só empresas com nota ICP igual ou acima deste valor" class="curto">' +
         '<button type="submit">Filtrar</button></form>' +
         '<p class="mut">' + lista.length + (lista.length === 300 ? '+ (mostrando as 300 mais recentes)' : '') + ' empresa(s)</p>' +
-        '<table class="tab"><thead><tr><th>Nome</th><th>Setor</th><th>Cidade</th><th>Status</th><th>Segmento</th><th class="num">ICP</th></tr></thead><tbody>' +
+        '<table class="tab"><thead><tr><th>Nome</th><th>Setor</th><th>Cidade</th><th>Status</th><th>Segmento</th><th class="num">ICP</th><th>Funil</th></tr></thead><tbody>' +
         (lista.map(function (e) {
-          return '<tr><td><a href="#empresa/' + esc(e.id) + '">' + esc(e.nome) + '</a>' + (e.dominio ? '<br><small class="mut">' + esc(e.dominio) + '</small>' : '') + '</td><td>' + esc(e.setor) + '</td><td>' + esc([e.cidade, e.uf].filter(Boolean).join('/')) + '</td><td>' + esc(e.status) + '</td><td>' + esc(nomeSeg[e.segmento_icp] || '') + (e.icp_manual ? ' <small class="mut">(você)</small>' : '') + '</td><td class="num">' + esc(e.icp_score) + '</td></tr>';
-        }).join('') || '<tr><td colspan="6" class="mut">Nenhuma empresa.</td></tr>') + '</tbody></table>';
-      document.getElementById('filtros').addEventListener('submit', function (ev) { ev.preventDefault(); filtro = dados(ev.target); rota(); });
+          return '<tr><td><a href="#empresa/' + esc(e.id) + '">' + esc(e.nome) + '</a>' + (e.dominio ? '<br><small class="mut">' + esc(e.dominio) + '</small>' : '') + '</td><td>' + esc(e.setor) + '</td><td>' + esc([e.cidade, e.uf].filter(Boolean).join('/')) + '</td><td>' + esc(e.status) + '</td><td>' + esc(nomeSeg[e.segmento_icp] || '') + (e.icp_manual ? ' <small class="mut">(você)</small>' : '') + '</td><td class="num">' + esc(e.icp_score) + '</td><td>' + esc(etapaDe(e)) + '</td></tr>';
+        }).join('') || '<tr><td colspan="7" class="mut">Nenhuma empresa.</td></tr>') + '</tbody></table>';
+      // dados() devolve null em campo vazio; o filtro guarda texto (com null, a busca quebrava e a tela ficava em "Carregando…").
+      document.getElementById('filtros').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var d = dados(ev.target);
+        filtro = Object.fromEntries(Object.keys(filtro).map(function (k) { return [k, d[k] == null ? '' : String(d[k])]; }));
+        rota();
+      });
       if (!podeEscrever()) return;
       var f = document.getElementById('form-empresa');
       document.getElementById('nova-empresa').addEventListener('click', function () { f.hidden = !f.hidden; if (!f.hidden) f.nome.focus(); });
