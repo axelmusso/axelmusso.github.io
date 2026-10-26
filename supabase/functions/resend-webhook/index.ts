@@ -68,7 +68,8 @@ async function respostaRecebida(d: Record<string, any>) {
     const enviados = orig ? await banco(`/rest/v1/emails?select=assunto,corpo&empresa_id=eq.${orig.empresa_id}&status=eq.enviado&order=enviado_em`) : [];
     const v = await classificarResposta({ texto, assunto: resp.assunto, de, empresa, enviados, manual: false });
     classe = v.classificacao; rascunho = v.rascunho;
-    telefone = v.telefone_decisor ? `${v.telefone_decisor.nome ?? 'Responsável'}${v.telefone_decisor.cargo ? ' (' + v.telefone_decisor.cargo + ')' : ''}: ${v.telefone_decisor.telefone}` : '';
+    const tel = v.telefone_decisor ?? (v.indicado?.telefone ? v.indicado : null); // o telefone da pessoa indicada também conta
+    telefone = tel ? `${tel.nome ?? 'Responsável'}${tel.cargo ? ' (' + tel.cargo + ')' : ''}: ${tel.telefone}` : '';
     await banco('/rest/v1/respostas?id=eq.' + resp.id, { metodo: 'PATCH', corpo: { classificacao: classe, rascunho: rascunho || null } });
     if (orig && classe !== 'automatica' && !v.caixa_sem_leitura) await pararCadencia(orig, classe);
     resultado = await aplicarClassificacao({ ...resp, de }, empresa, v, false);

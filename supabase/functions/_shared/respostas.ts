@@ -1,5 +1,5 @@
 // O que fazer com uma resposta já classificada. Usado pelo webhook (automático) e pelo botão "Classificar" (manual).
-//   telefone de quem decide → negócio em "Telefone obtido", tarefa para o Áxel ligar, cadência parada, nada mais automático
+//   telefone de quem decide (ou da pessoa indicada como responsável) → negócio em "Telefone obtido", tarefa para o Áxel ligar, cadência parada, nada mais automático
 //   pessoa indicada com e-mail → vira contato (com a fonte) e ganha um rascunho que cita a indicação, para aprovação
 //   "não" ou descadastro → lista de não contatar
 //   caixa que ninguém lê (só NF, não monitorada) → contato desligado e a cadência passa para outro e-mail da empresa
@@ -28,8 +28,11 @@ async function negocioAberto(empresa: Record<string, any>, etapa: string) {
 }
 
 // Sucesso da prospecção: temos o telefone de quem decide. Daí em diante a conversa é do Áxel.
+// A pessoa que a empresa indicou já pode ser contato (veio com o e-mail numa resposta anterior): ganha o telefone, sem duplicar.
 async function telefoneObtido(resp: Record<string, any>, empresa: Record<string, any>, p: Pessoa) {
-  await banco('/rest/v1/contatos', {
+  const ja = await banco(`/rest/v1/contatos?select=id&empresa_id=eq.${empresa.id}&${p.email ? 'email=ilike.' + q(p.email) : 'nome=ilike.' + q(p.nome ?? '-')}&limit=1`);
+  if (ja.length) await banco('/rest/v1/contatos?id=eq.' + ja[0].id, { metodo: 'PATCH', corpo: { telefone: p.telefone, ...(p.cargo ? { cargo: p.cargo } : {}) } });
+  else await banco('/rest/v1/contatos', {
     metodo: 'POST',
     corpo: {
       empresa_id: empresa.id, nome: p.nome ?? null, cargo: p.cargo ?? null, email: p.email ?? null, telefone: p.telefone,
@@ -93,6 +96,9 @@ export async function aplicarClassificacao(resp: Record<string, any>, empresa: R
   if (v.classificacao === 'nao' || v.classificacao === 'descadastro') { await suprimir(resp.de, 'descadastro'); return 'suprimido'; }
   if (!empresa) return null;
   if (v.telefone_decisor?.telefone) { await telefoneObtido(resp, empresa, v.telefone_decisor); return 'telefone'; }
+  // Telefone da pessoa que a própria empresa indicou como responsável também é sucesso (Nil Arte, 23/10/2026: a loja passou
+  // o celular da Fabiana e o negócio ficou parado em "respondeu").
+  if (v.indicado?.telefone) { await telefoneObtido(resp, empresa, v.indicado); return 'telefone'; }
   if (v.indicado?.email) { await indicacao(resp, empresa, v.indicado, manual); return 'indicado'; }
   if (v.caixa_sem_leitura) return (await caixaSemLeitura(resp, empresa)) ? 'trocou' : 'sem_outro';
   return null;
