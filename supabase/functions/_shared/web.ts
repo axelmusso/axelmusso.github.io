@@ -38,7 +38,25 @@ export async function permitido(url: URL): Promise<boolean> {
   return melhor ? melhor[0] : true;
 }
 
-export type Pagina = { url: string; titulo: string; texto: string; links: string[]; emails: string[] };
+export type Pagina = { url: string; titulo: string; texto: string; links: string[]; emails: string[]; whatsapp: string[] };
+
+// WhatsApp da empresa publicado no site (pedido do dono, 26/10/2026): primeiro os links wa.me / api.whatsapp.com
+// (valem até para fixo, é o WhatsApp Business), depois celular escrito perto da palavra "WhatsApp" e, por último,
+// qualquer celular do texto (DDD + 9 + 8 dígitos). Formato: (DD) 9XXXX-XXXX.
+function formatar(d: string) {
+  d = d.replace(/\D/g, '').replace(/^0+/, '');
+  if (d.length >= 12 && d.startsWith('55')) d = d.slice(2);
+  if (d.length === 11 && d[2] === '9') return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return null;
+}
+export function whatsappDe(html: string, texto: string) {
+  const link = [...html.matchAll(/(?:wa\.me\/|whatsapp\.com\/send\/?\?phone=)\+?(\d{10,13})/gi)].map((m) => formatar(m[1]));
+  const CEL = /\(?\b(\d{2})\)?[\s.-]?(9[\s.]?\d{4})[\s.-]?(\d{4})\b/g;
+  const perto = [...texto.matchAll(/whats\s?app[^\n]{0,40}/gi)].flatMap((m) => [...m[0].matchAll(CEL)].map((c) => formatar(c[1] + c[2] + c[3])));
+  const celulares = [...texto.matchAll(CEL)].map((c) => formatar(c[1] + c[2] + c[3]));
+  return [...new Set([...link, ...perto, ...celulares].filter((x): x is string => !!x))].slice(0, 3);
+}
 
 // Sites atrás do Cloudflare escondem o e-mail no HTML (data-cfemail="..." ou /cdn-cgi/l/email-protection#...):
 // o 1º byte em hexadecimal é a chave, e cada byte seguinte é um caractere com XOR dessa chave.
@@ -76,7 +94,7 @@ export async function lerPagina(endereco: string, limiteTexto = 30_000): Promise
   // Partes do e-mail com tamanho máximo: sem limite, um bloco longo de letras (imagem embutida em base64) deixa a busca
   // lenta demais (400 ms por página) e a função estoura o limite de CPU do Supabase (HTTP 546).
   const emails = [...new Set([...[...(html.matchAll(/[\w.+-]{1,64}@[\w-]{1,63}(\.[\w-]{1,63})+/g))].map((m) => m[0]), ...emailsCloudflare(html)].map((m) => m.toLowerCase().replace(/^(u00[0-9a-f]{2})+/, '')).filter((e) => !/\.(png|jpe?g|gif|webp|svg)$/.test(e) && !/sentry|wixpress|example\.|exemplo\./.test(e)))].slice(0, 20);
-  return { url: final.href, titulo, texto: texto.slice(0, limiteTexto), links, emails };
+  return { url: final.href, titulo, texto: texto.slice(0, limiteTexto), links, emails, whatsapp: whatsappDe(html, texto) };
 }
 
 export const dominioDe = (site: string | null | undefined) => {
