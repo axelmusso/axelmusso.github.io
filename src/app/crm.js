@@ -96,14 +96,17 @@
   }
 
   // ---------- empresas ----------
-  var filtro = { busca: '', status: '', setor: '', uf: '' };
+  var filtro = { busca: '', status: '', setor: '', uf: '', icp: '' };
   function empresas() {
-    var url = '/rest/v1/empresas?select=id,nome,dominio,setor,cidade,uf,status,icp_score,segmento_icp,icp_manual&order=atualizado_em.desc&limit=300';
+    // Com nota mínima de ICP, a lista vem da maior nota para a menor (pedido do dono, 26/10/2026).
+    var icp = parseInt(filtro.icp, 10);
+    var url = '/rest/v1/empresas?select=id,nome,dominio,setor,cidade,uf,status,icp_score,segmento_icp,icp_manual&order=' + (icp >= 0 ? 'icp_score.desc,' : '') + 'atualizado_em.desc&limit=300';
     var b = filtro.busca.replace(/[,()*%\\]/g, ' ').trim();
     if (b) url += '&or=' + q('(nome.ilike.*' + b + '*,dominio.ilike.*' + b + '*,cidade.ilike.*' + b + '*,cnpj.ilike.*' + b + '*)');
     if (filtro.status) url += '&status=eq.' + q(filtro.status);
     if (filtro.setor) url += '&setor=ilike.' + q('*' + filtro.setor.replace(/[*%,()]/g, '') + '*');
     if (filtro.uf) url += '&uf=eq.' + q(filtro.uf.toUpperCase());
+    if (icp >= 0) url += '&icp_score=gte.' + icp;
     return Promise.all([api(url), segmentos()]).then(function (r) {
       var lista = r[0], nomeSeg = Object.fromEntries(r[1].map(function (g) { return [g.id, g.nome]; }));
       tela.innerHTML = '<div class="cab"><h1>Empresas</h1>' + (podeEscrever() ? '<button type="button" class="prim" id="nova-empresa">Nova empresa</button>' : '') + '</div>' +
@@ -113,6 +116,7 @@
         '<select name="status" aria-label="Status"><option value="">Todos os status</option>' + opcoes([['prospect', 'Prospect'], ['cliente', 'Cliente'], ['descartada', 'Descartada']], filtro.status) + '</select>' +
         '<input name="setor" placeholder="Setor" value="' + esc(filtro.setor) + '" aria-label="Setor">' +
         '<input name="uf" placeholder="UF" maxlength="2" value="' + esc(filtro.uf) + '" aria-label="UF" class="curto">' +
+        '<input name="icp" type="number" min="0" max="100" placeholder="ICP mín." value="' + esc(filtro.icp) + '" aria-label="ICP mínimo" title="Só empresas com nota ICP igual ou acima deste valor" class="curto">' +
         '<button type="submit">Filtrar</button></form>' +
         '<p class="mut">' + lista.length + (lista.length === 300 ? '+ (mostrando as 300 mais recentes)' : '') + ' empresa(s)</p>' +
         '<table class="tab"><thead><tr><th>Nome</th><th>Setor</th><th>Cidade</th><th>Status</th><th>Segmento</th><th class="num">ICP</th></tr></thead><tbody>' +
