@@ -186,14 +186,14 @@ export function semCitacao(texto: string) {
 // Lê uma resposta recebida, classifica e rascunha a continuação (que espera aprovação).
 // Também extrai: o TELEFONE de quem decide (compras, produção, dono/diretoria) e a PESSOA INDICADA quando quem respondeu aponta outro contato.
 export type Pessoa = { nome?: string; cargo?: string; email?: string; telefone?: string };
-export async function classificarResposta(o: { texto: string; assunto: string; de?: string; empresa: Record<string, any> | null; enviados: { assunto: string; corpo: string }[]; manual: boolean }) {
+export async function classificarResposta(o: { texto: string; assunto: string; de?: string; copiados?: string[]; empresa: Record<string, any> | null; enviados: { assunto: string; corpo: string }[]; manual: boolean }) {
   const r = await chamarIA({
     provedor: 'anthropic', papel: 'classificador_respostas', nivel: 'rotina', manual: o.manual, maxTokens: 2000,
     instrucoes: `Você lê respostas a e-mails comerciais da Corquímica e prepara a continuação, assinada por Fernando Gutierrez. Responda só com JSON.\n${SOBRE_A_CORQUIMICA}\nO objetivo da Corquímica é conseguir o TELEFONE de quem decide a compra (compras, produção, dono ou diretoria): com ele, o Áxel assume a conversa por telefone.`,
     contexto: `EMPRESA: ${JSON.stringify(o.empresa ? { nome: o.empresa.nome, setor: o.empresa.setor, cidade: o.empresa.cidade, relacao: o.empresa.relacao } : null)}
 PERFIL DE PRODUTO: ${PERFIS[o.empresa?.perfil_produto] ?? PERFIS.geral}
 QUEM RESPONDEU: ${o.de ?? '(não informado)'}${o.de && emailGenerico(o.de) ? ' (caixa geral da empresa)' : ''}
-O QUE ENVIAMOS:\n${o.enviados.map((e) => e.assunto + '\n' + e.corpo).join('\n---\n') || '(não identificado)'}
+${o.copiados?.length ? 'COPIADOS NA RESPOSTA (a nossa resposta vai para todos eles): ' + o.copiados.join(', ') + '\n' : ''}O QUE ENVIAMOS:\n${o.enviados.map((e) => e.assunto + '\n' + e.corpo).join('\n---\n') || '(não identificado)'}
 
 RESPOSTA RECEBIDA (assunto: ${o.assunto}; só o texto novo, sem a parte citada do nosso e-mail):\n${semCitacao(o.texto).slice(0, 6000)}
 
@@ -206,7 +206,7 @@ Extraia também:
 - "caixa_sem_leitura": true se a resposta diz que este endereço não é lido, não é monitorado, não recebe mensagens ou serve só para nota fiscal/cobrança (ex.: "este e-mail é exclusivo para envio de NF", "caixa não monitorada", "não responda"); senão false. Aviso de férias ou ausência temporária NÃO conta.
 Não invente dados: só o que está escrito.
 
-Rascunho (escrito pelo Fernando, que é quem conversa com o cliente: nunca cite o Áxel nem outra pessoa da Corquímica; só para interessado, pergunta e nao_agora, e só se NÃO houver telefone_decisor — com o telefone em mãos, quem conversa é o Áxel): curto, confiante (sem insinuar problema), com acentuação correta, responde o que foi perguntado sem inventar dado técnico (se não souber, diga que confirma por telefone). Só peça o telefone se o último e-mail que enviamos ainda não pediu; sem insistir. Se quem respondeu é recepção/caixa geral, peça o contato de quem cuida de compras ou produção, não o celular de quem respondeu. Sem despedida nem assinatura (a assinatura completa é colocada depois). Para nao, descadastro e automatica, rascunho vazio.
+Rascunho (escrito pelo Fernando, que é quem conversa com o cliente: nunca cite o Áxel nem outra pessoa da Corquímica; só para interessado, pergunta e nao_agora, e só se NÃO houver telefone_decisor — com o telefone em mãos, quem conversa é o Áxel): curto, confiante (sem insinuar problema), com acentuação correta, responde o que foi perguntado sem inventar dado técnico (se não souber, diga que confirma por telefone). Só peça o telefone se o último e-mail que enviamos ainda não pediu; sem insistir. Se quem respondeu é recepção/caixa geral, peça o contato de quem cuida de compras ou produção, não o celular de quem respondeu. Se quem respondeu COPIOU outras pessoas (por exemplo, "estou copiando a equipe responsável"), a resposta vai para todos: agradeça em poucas palavras a quem encaminhou, fale com a equipe copiada e NÃO peça de novo o contato do responsável. Sem despedida nem assinatura (a assinatura completa é colocada depois). Para nao, descadastro e automatica, rascunho vazio.
 Devolva {"classificacao":"","rascunho":"","motivo":"uma frase","telefone_decisor":null,"indicado":null,"caixa_sem_leitura":false}`,
   });
   const v = jsonDe<{ classificacao: string; rascunho: string; motivo: string; telefone_decisor?: Pessoa | null; indicado?: Pessoa | null; caixa_sem_leitura?: boolean }>(r.texto);

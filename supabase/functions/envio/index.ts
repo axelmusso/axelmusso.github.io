@@ -4,8 +4,8 @@
 //   { acao: 'enviar_respostas' }            → só as respostas aprovadas (o worker chama a cada 5 minutos no horário comercial)
 //   { acao: 'enviar_aprovados', teste: true } → só o dono: o mesmo, fora do horário (para testar), sem iniciar o aquecimento
 //   { acao: 'preparar' }                    → escreve (como rascunho) o próximo e-mail das cadências vencidas
-//   { acao: 'classificar', resposta_id }    → classifica uma resposta recebida e rascunha a continuação
-//   { acao: 'responder', resposta_id, texto } → envia a resposta aprovada, na mesma conversa (fora do horário, fica aprovada e sai às 8h do próximo dia útil)
+//   { acao: 'classificar', resposta_id }    → classifica uma resposta recebida e rascunha a continuação (resposta antiga: lê antes no Resend quem foi copiado)
+//   { acao: 'responder', resposta_id, texto } → envia a resposta aprovada, na mesma conversa e com cópia para os copiados (fora do horário, fica aprovada e sai às 8h do próximo dia útil)
 // Respostas vêm sempre antes: saem primeiro, não contam no limite do aquecimento e não esperam o dia de prospecção.
 // Ordem do dono (22/10/2026): 1) respostas; 2) follow-ups da cadência; 3) 1º contato com empresas novas, da maior nota ICP
 // para a menor; 4) 1º contato com ex-clientes, no máximo 15% do limite do dia.
@@ -13,9 +13,9 @@
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { classificarResposta, redigirEmail, tipoEmail } from '../_shared/redacao.ts';
-import { aplicarClassificacao } from '../_shared/respostas.ts';
+import { aplicarClassificacao, copiadosDe, guardarCopiados } from '../_shared/respostas.ts';
 import { proximoContato } from '../_shared/contatos.ts';
-import { agoraBrasilia, config, diaDeIniciais, enviarResend, ErroEnvio, horarioComercial, limiteDeHoje, montar, proximoEm, suprimido } from '../_shared/envio.ts';
+import { agoraBrasilia, config, diaDeIniciais, enviarResend, ErroEnvio, horarioComercial, lerRecebido, limiteDeHoje, montar, proximoEm, suprimido } from '../_shared/envio.ts';
 
 const q = encodeURIComponent;
 const POR_CHAMADA = 10; // limite por clique, para caber no tempo da função
@@ -150,11 +150,23 @@ async function preparar(manual: boolean) {
   return { criados, avisos, trocas, vencidas: vencidas.length };
 }
 
+// Resposta que chegou antes de guardarmos os copiados (27/10/2026): lê no Resend quem mais recebeu (para e cópia).
+async function lerCopiados(r: Record<string, any>, empresa: Record<string, any> | null) {
+  if (r.copiados != null || !r.resend_id) return;
+  try {
+    const pessoas = await copiadosDe(await lerRecebido(r.resend_id), r.de);
+    r.copiados = pessoas.map((p) => p.email);
+    await banco('/rest/v1/respostas?id=eq.' + r.id, { metodo: 'PATCH', corpo: { copiados: r.copiados } });
+    if (empresa && pessoas.length) await guardarCopiados(empresa, r.de, pessoas);
+  } catch (e) { console.error('copiados', e); }
+}
+
 async function classificar(id: string, manual: boolean) {
   const [r] = await banco('/rest/v1/respostas?select=*,empresas(*)&id=eq.' + q(id));
   if (!r) throw new Error('Resposta não encontrada.');
   const enviados = r.empresa_id ? await banco(`/rest/v1/emails?select=assunto,corpo&empresa_id=eq.${r.empresa_id}&status=eq.enviado&order=enviado_em`) : [];
-  const v = await classificarResposta({ texto: r.texto, assunto: r.assunto ?? '', de: r.de, empresa: r.empresas, enviados, manual });
+  await lerCopiados(r, r.empresas);
+  const v = await classificarResposta({ texto: r.texto, assunto: r.assunto ?? '', de: r.de, copiados: r.copiados ?? [], empresa: r.empresas, enviados, manual });
   await banco('/rest/v1/respostas?id=eq.' + r.id, { metodo: 'PATCH', corpo: { classificacao: v.classificacao, rascunho: v.rascunho || null } });
   const resultado = await aplicarClassificacao(r, r.empresas, v, manual);
   return { ...v, resultado };
@@ -182,7 +194,11 @@ async function enviarResposta(r: Record<string, any>, texto: string) {
   const assunto = /^re:/i.test(r.assunto ?? '') ? r.assunto : 'Re: ' + (r.assunto ?? '');
   const cab: Record<string, string> = { 'List-Unsubscribe': `<${link}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' };
   if (r.message_id) { cab['In-Reply-To'] = r.message_id; cab['References'] = r.message_id; }
-  await enviarResend({ from: c.email_remetente, to: r.de, subject: assunto, text, html, headers: cab, chave: 'resposta-' + r.id });
+  await lerCopiados(r, r.empresa_id ? (await banco('/rest/v1/empresas?select=*&id=eq.' + r.empresa_id))[0] ?? null : null);
+  // Responder a todos: quem mais recebeu a mensagem do cliente vai em cópia (menos quem pediu para não receber).
+  const cc: string[] = [];
+  for (const e of r.copiados ?? []) if (!(await suprimido(e))) cc.push(e);
+  await enviarResend({ from: c.email_remetente, to: r.de, cc, subject: assunto, text, html, headers: cab, chave: 'resposta-' + r.id });
   await banco('/rest/v1/respostas?id=eq.' + r.id, { metodo: 'PATCH', corpo: { status: 'enviada', rascunho: texto } });
   if (r.empresa_id) await registrar(r.empresa_id, r.emails?.contato_id ?? null, assunto, texto, 'saida', 'fernando');
 }

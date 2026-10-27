@@ -4,7 +4,7 @@
 import { banco, ErroIA } from '../_shared/ia.ts';
 import { classificarResposta } from '../_shared/redacao.ts';
 import { config, enderecoDe, enviarResend, lerRecebido } from '../_shared/envio.ts';
-import { aplicarClassificacao, suprimir } from '../_shared/respostas.ts';
+import { aplicarClassificacao, copiadosDe, guardarCopiados, suprimir } from '../_shared/respostas.ts';
 import { seguirComOutro } from '../_shared/contatos.ts';
 
 const q = encodeURIComponent;
@@ -52,21 +52,23 @@ async function respostaRecebida(d: Record<string, any>) {
   // ignora, senão vira um loop de cópias.
   const c0 = await config(['email_copia_respostas']);
   if (de === String(c0.email_copia_respostas ?? '').toLowerCase() || /@comercial\.corquimica\.com\.br$/.test(de)) return;
+  const pessoas = await copiadosDe(cheio, de), copiados = pessoas.map((p) => p.email);
   const texto = (cheio.text || (cheio.html ?? '').replace(/<[^>]+>/g, ' ')).trim().slice(0, 20000) || '(sem texto)';
   // De qual e-mail nosso é a resposta: o último enviado para este endereço (ou para o mesmo domínio).
   let [orig] = await banco(`/rest/v1/emails?select=id,empresa_id,contato_id,cadencia_id,assunto&status=eq.enviado&para=ilike.${q(de)}&order=enviado_em.desc&limit=1`);
   if (!orig) [orig] = await banco(`/rest/v1/emails?select=id,empresa_id,contato_id,cadencia_id,assunto&status=eq.enviado&para=ilike.${q('%@' + de.split('@')[1])}&order=enviado_em.desc&limit=1`);
   const [resp] = await banco('/rest/v1/respostas', {
     metodo: 'POST',
-    corpo: { email_id: orig?.id ?? null, empresa_id: orig?.empresa_id ?? null, de, assunto: cheio.subject ?? d.subject ?? '', texto, resend_id: d.email_id, message_id: cheio.message_id ?? d.message_id ?? null },
+    corpo: { email_id: orig?.id ?? null, empresa_id: orig?.empresa_id ?? null, de, assunto: cheio.subject ?? d.subject ?? '', texto, resend_id: d.email_id, message_id: cheio.message_id ?? d.message_id ?? null, copiados },
   });
   // A empresa respondeu: a cadência para (exceto resposta automática). Telefone do decisor e indicação viram ações.
   const empresa = orig ? (await banco('/rest/v1/empresas?select=*&id=eq.' + orig.empresa_id))[0] : null;
+  if (empresa && pessoas.length) await guardarCopiados(empresa, de, pessoas);
   // Classifica e rascunha (respeita o botão de parada e o teto; se não puder, fica para o botão "Classificar" na tela).
   let classe: string | null = null, rascunho = '', resultado: string | null = null, telefone = '';
   try {
     const enviados = orig ? await banco(`/rest/v1/emails?select=assunto,corpo&empresa_id=eq.${orig.empresa_id}&status=eq.enviado&order=enviado_em`) : [];
-    const v = await classificarResposta({ texto, assunto: resp.assunto, de, empresa, enviados, manual: false });
+    const v = await classificarResposta({ texto, assunto: resp.assunto, de, copiados, empresa, enviados, manual: false });
     classe = v.classificacao; rascunho = v.rascunho;
     const tel = v.telefone_decisor ?? (v.indicado?.telefone ? v.indicado : null); // o telefone da pessoa indicada também conta
     telefone = tel ? `${tel.nome ?? 'Responsável'}${tel.cargo ? ' (' + tel.cargo + ')' : ''}: ${tel.telefone}` : '';
@@ -82,9 +84,10 @@ async function respostaRecebida(d: Record<string, any>) {
   const c = await config(['email_remetente', 'email_copia_respostas']);
   if (c.email_copia_respostas) {
     const destaque = resultado === 'telefone' ? `TELEFONE DO RESPONSÁVEL OBTIDO — ${telefone}\nA cadência parou; a tarefa de ligar está no CRM. Daqui em diante é com você.\n\n` : resultado === 'indicado' ? 'A empresa indicou outra pessoa: o contato foi criado e há um rascunho para ela esperando sua aprovação.\n\n'
+      : resultado === 'copiado' ? 'A pessoa indicada já está copiada na conversa: virou contato e a resposta vai com cópia para ela.\n\n'
       : resultado === 'trocou' ? 'Este endereço não é lido por ninguém: a cadência passou para outro e-mail da empresa.\n\n'
       : resultado === 'sem_outro' ? 'Este endereço não é lido por ninguém e não achei outro e-mail da empresa (site e CNPJ).\n\n' : '';
-    const aviso = `${destaque}Resposta recebida de ${de}${orig ? '' : ' (não ligada a nenhum envio)'}.\nClassificação: ${classe ?? 'pendente (sistema parado ou teto atingido)'}\n\n--- Mensagem ---\n${texto.slice(0, 8000)}\n\n--- Rascunho sugerido (aprove em https://corquimica.com.br/app/#prospeccao) ---\n${rascunho || '(sem rascunho)'}`;
+    const aviso = `${destaque}Resposta recebida de ${de}${orig ? '' : ' (não ligada a nenhum envio)'}.\n${copiados.length ? `Com cópia para: ${copiados.join(', ')} (a nossa resposta vai para todos).\n` : ''}Classificação: ${classe ?? 'pendente (sistema parado ou teto atingido)'}\n\n--- Mensagem ---\n${texto.slice(0, 8000)}\n\n--- Rascunho sugerido (aprove em https://corquimica.com.br/app/#prospeccao) ---\n${rascunho || '(sem rascunho)'}`;
     await enviarResend({ from: c.email_remetente, to: c.email_copia_respostas, subject: `${resultado === 'telefone' ? '[TELEFONE] ' : '[Resposta] '}${resp.assunto || de}`, text: aviso, html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${aviso.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`, chave: 'copia-' + resp.id }).catch((e) => console.error('cópia', e));
   }
 }

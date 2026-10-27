@@ -200,9 +200,11 @@
       var caixa = '<section class="caixa-respostas' + (resps.length ? ' tem' : '') + '"><h2>Respostas de clientes <small class="mut">' + resps.length + '</small></h2>' +
         (resps.length ? '<p class="mut">Responda primeiro. Aprovada de segunda a sexta, das 8h às 18h, a resposta sai na hora; fora disso, sai às 8h do próximo dia útil, antes de qualquer outro e-mail.</p>' : '') +
         (resps.map(function (x) {
-          return '<div class="item resposta"><small class="mut">' + esc(dataHoraBR(x.recebido_em)) + ' · de ' + esc(x.de) + (x.empresas ? ' · <a href="#empresa/' + esc(x.empresa_id) + '">' + esc(x.empresas.nome) + '</a>' : ' · não ligada a envio') +
+          // Copiados pelo cliente (para e cópia): a nossa resposta vai para todos.
+          var cc = (x.copiados || []).join(', ');
+          return '<div class="item resposta"><small class="mut">' + esc(dataHoraBR(x.recebido_em)) + ' · de ' + esc(x.de) + (cc ? ' · com cópia para ' + esc(cc) : '') + (x.empresas ? ' · <a href="#empresa/' + esc(x.empresa_id) + '">' + esc(x.empresas.nome) + '</a>' : ' · não ligada a envio') +
             ' · <b>' + esc(CLASSE[x.classificacao] || 'sem classificação') + '</b>' + (x.status === 'aprovada' ? ' · <b>aprovada, sai sozinha no próximo horário comercial (8h, dia útil)</b>' : '') + '</small><p><b>' + esc(x.assunto) + '</b></p><div class="texto">' + esc(x.texto.slice(0, 3000)) + '</div>' +
-            (w ? '<form class="grade" data-resposta="' + esc(x.id) + '"><label class="largo">Resposta sugerida (edite à vontade)<textarea name="texto" rows="5">' + esc(x.rascunho || '') + '</textarea></label>' +
+            (w ? '<form class="grade" data-resposta="' + esc(x.id) + '" data-para="' + esc(x.de + (cc ? ', com cópia para ' + cc : '')) + '"><label class="largo">Resposta sugerida, vai para ' + esc(x.de) + (cc ? ' com cópia para ' + esc(cc) : '') + ' (edite à vontade)<textarea name="texto" rows="5">' + esc(x.rascunho || '') + '</textarea></label>' +
               '<div class="largo linha"><button type="submit" name="acao" value="enviar" class="prim">Aprovar e enviar</button>' + (x.classificacao ? '' : '<button type="submit" name="acao" value="classificar">Classificar e rascunhar</button>') + '<button type="submit" name="acao" value="descartar">Descartar</button></div></form>' : '') + '</div>';
         }).join('') || '<p class="mut">Nenhuma resposta esperando.</p>') + '</section>';
       tela.innerHTML = '<h1>Prospecção</h1><p id="aviso-prosp" class="aviso" hidden></p>' + caixa +
@@ -396,7 +398,7 @@
         var acao = ev.submitter && ev.submitter.value, id = f.dataset.resposta, b = ev.submitter;
         var feito;
         if (acao === 'enviar') {
-          if (!confirm('Enviar esta resposta agora?')) return;
+          if (!confirm('Enviar esta resposta agora para ' + f.dataset.para + '?')) return;
           b.disabled = true; b.textContent = 'Enviando…';
           feito = envio({ acao: 'responder', resposta_id: id, texto: f.texto.value }).then(function (r) { aviso(r.aviso || 'Resposta enviada.'); });
         } else if (acao === 'classificar') {
@@ -404,6 +406,7 @@
           feito = envio({ acao: 'classificar', resposta_id: id }).then(function (r) {
             var t = r.telefone_decisor;
             aviso(r.resultado === 'telefone' ? 'Telefone do responsável obtido (' + (t.nome || 'responsável') + ': ' + t.telefone + '). A cadência parou e a tarefa de ligar está em Tarefas.'
+              : r.resultado === 'copiado' ? 'A pessoa indicada já está copiada na conversa: virou contato e a resposta vai com cópia para ela.'
               : r.resultado === 'indicado' ? 'A empresa indicou outra pessoa: o contato foi criado e há um rascunho para ela em "E-mails para aprovar".'
               : 'Classificada como ' + (CLASSE[r.classificacao] || r.classificacao) + '.');
           });
