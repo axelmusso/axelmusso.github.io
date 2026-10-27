@@ -106,7 +106,8 @@ Deno.serve(async (req) => {
         ids: mem.map((m) => m.id),
         itens: mem.map((m: Record<string, unknown>) => ({ id: idCurto(m.id as string), hipotese: m.hipotese, confianca: m.confianca, status: m.status, visto_vezes: m.visto_vezes, evidencia: m.evidencia })),
       };
-      const [s] = await banco('/rest/v1/conselho_sessoes', { metodo: 'POST', corpo: { tema: tema.slice(0, 2000), nivel, dossie, gatilho } });
+      // O banco aceita tema de até 1.000 caracteres (a revisão semanal de 27/10/2026 falhou com um tema maior).
+      const [s] = await banco('/rest/v1/conselho_sessoes', { metodo: 'POST', corpo: { tema: tema.slice(0, 1000), nivel, dossie, gatilho } });
       return json(req, 200, { sessao_id: s.id });
     }
 
