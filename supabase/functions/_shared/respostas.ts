@@ -4,11 +4,42 @@
 //   "não" ou descadastro → lista de não contatar
 //   caixa que ninguém lê (só NF, não monitorada) → contato desligado e a cadência passa para outro e-mail da empresa
 import { banco } from './ia.ts';
-import { seguirComOutro } from './contatos.ts';
-import { agoraBrasilia, suprimido } from './envio.ts';
-import { emailGenerico, redigirEmail, type Pessoa } from './redacao.ts';
+import { dominioEstranho, seguirComOutro } from './contatos.ts';
+import { agoraBrasilia, config, enderecoDe, suprimido } from './envio.ts';
+import { emailGenerico, redigirEmail, tipoEmail, type Pessoa } from './redacao.ts';
 
 const q = encodeURIComponent;
+
+// Quem mais recebeu a resposta (para e cópia), fora quem escreveu e a Corquímica. A nossa resposta vai com cópia para todos
+// (Proadec, 27/10/2026: a analista copiou a equipe responsável e o Fernando respondia só para ela).
+export async function copiadosDe(cheio: Record<string, any>, de: string) {
+  const c = await config(['email_remetente', 'email_copia_respostas']);
+  const nossos = [enderecoDe(c.email_remetente ?? ''), enderecoDe(c.email_copia_respostas ?? ''), de];
+  const pessoas = new Map<string, { email: string; nome?: string }>();
+  for (const x of [...(cheio.to ?? []), ...(cheio.cc ?? [])].map(String)) {
+    const email = enderecoDe(x);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || nossos.includes(email) || /@(comercial\.)?corquimica\.com\.br$/.test(email) || tipoEmail(email) === 'bloqueado') continue;
+    const nome = x.match(/^\s*"?([^"<]+?)"?\s*</)?.[1]?.trim(); // "Maria Souza <maria@...>"
+    if (!pessoas.has(email)) pessoas.set(email, { email, ...(nome && !nome.includes('@') ? { nome } : {}) });
+  }
+  return [...pessoas.values()];
+}
+
+// Copiados da própria empresa viram contatos (fonte: a resposta). Endereço de outra empresa só recebe a cópia.
+export async function guardarCopiados(empresa: Record<string, any>, de: string, pessoas: { email: string; nome?: string }[]) {
+  const novos: string[] = [];
+  for (const p of pessoas) {
+    if (dominioEstranho(p.email, empresa) || (await suprimido(p.email))) continue;
+    const [ja] = await banco(`/rest/v1/contatos?select=id,nome&empresa_id=eq.${empresa.id}&email=ilike.${q(p.email)}&limit=1`);
+    if (ja) { if (!ja.nome && p.nome) await banco('/rest/v1/contatos?id=eq.' + ja.id, { metodo: 'PATCH', corpo: { nome: p.nome } }); continue; }
+    await banco('/rest/v1/contatos', {
+      metodo: 'POST',
+      corpo: { empresa_id: empresa.id, nome: p.nome ?? null, email: p.email, origem: 'resposta', coletado_em: new Date().toISOString(), pode_contatar: true, base_legal: 'Copiado pela própria empresa na resposta de ' + de },
+    });
+    novos.push(p.nome ? `${p.nome} (${p.email})` : p.email);
+  }
+  if (novos.length) await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: empresa.id, tipo: 'nota', direcao: 'interna', assunto: 'Copiados na resposta', conteudo: `${de} copiou ${novos.join(', ')}. Viraram contatos; a nossa resposta vai com cópia para eles.`, agente_id: 'respostas' } });
+}
 
 export async function suprimir(email: string, motivo: 'bounce' | 'spam' | 'descadastro') {
   const ja = await banco(`/rest/v1/lista_supressao?select=id&email=ilike.${q(email)}&limit=1`);
@@ -57,7 +88,8 @@ async function telefoneObtido(resp: Record<string, any>, empresa: Record<string,
 }
 
 // A empresa indicou outra pessoa: vira contato e ganha um rascunho que cita a indicação (sai só com aprovação).
-async function indicacao(resp: Record<string, any>, empresa: Record<string, any>, p: Pessoa, manual: boolean) {
+// semRascunho: a pessoa indicada já está copiada na conversa, e a nossa resposta vai para ela também.
+async function indicacao(resp: Record<string, any>, empresa: Record<string, any>, p: Pessoa, manual: boolean, semRascunho = false) {
   if (!p.email || p.email === String(resp.de).toLowerCase() || (await suprimido(p.email))) return null;
   let [contato] = await banco(`/rest/v1/contatos?select=id,nome,cargo,email&empresa_id=eq.${empresa.id}&email=ilike.${q(p.email)}&limit=1`);
   if (!contato) {
@@ -70,7 +102,7 @@ async function indicacao(resp: Record<string, any>, empresa: Record<string, any>
       },
     });
   }
-  if ((await banco(`/rest/v1/emails?select=id&contato_id=eq.${contato.id}&status=in.(rascunho,aprovado)&limit=1`)).length) return contato;
+  if (semRascunho || (await banco(`/rest/v1/emails?select=id&contato_id=eq.${contato.id}&status=in.(rascunho,aprovado)&limit=1`)).length) return contato;
   // Quem indicou: caixa geral vira "a equipe de vocês"; e-mail de pessoa vira o primeiro nome (joao.silva@ → Joao).
   const local = String(resp.de).split('@')[0];
   const quem = emailGenerico(resp.de) ? 'a equipe de vocês' : local.split(/[._-]/)[0].replace(/^./, (c) => c.toUpperCase());
@@ -99,7 +131,11 @@ export async function aplicarClassificacao(resp: Record<string, any>, empresa: R
   // Telefone da pessoa que a própria empresa indicou como responsável também é sucesso (Nil Arte, 23/10/2026: a loja passou
   // o celular da Fabiana e o negócio ficou parado em "respondeu").
   if (v.indicado?.telefone) { await telefoneObtido(resp, empresa, v.indicado); return 'telefone'; }
-  if (v.indicado?.email) { await indicacao(resp, empresa, v.indicado, manual); return 'indicado'; }
+  if (v.indicado?.email) {
+    const copiado = (resp.copiados ?? []).includes(v.indicado.email);
+    await indicacao(resp, empresa, v.indicado, manual, copiado);
+    return copiado ? 'copiado' : 'indicado';
+  }
   if (v.caixa_sem_leitura) return (await caixaSemLeitura(resp, empresa)) ? 'trocou' : 'sem_outro';
   return null;
 }

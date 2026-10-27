@@ -71,13 +71,13 @@ export function montar(corpo: string, assinatura: string, token: string, apresen
 }
 
 // Chamada à API do Resend. A chave idempotente evita envio duplo se a chamada for repetida.
-export async function enviarResend(p: { from: string; to: string; subject: string; text: string; html: string; headers?: Record<string, string>; chave: string }) {
+export async function enviarResend(p: { from: string; to: string; cc?: string[]; subject: string; text: string; html: string; headers?: Record<string, string>; chave: string }) {
   const chave = Deno.env.get('RESEND_API_KEY');
   if (!chave) throw new ErroEnvio('Falta o segredo RESEND_API_KEY no Supabase.');
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + chave, 'Content-Type': 'application/json', 'Idempotency-Key': p.chave },
-    body: JSON.stringify({ from: p.from, to: [p.to], subject: p.subject, text: p.text, html: p.html, headers: p.headers ?? {} }),
+    body: JSON.stringify({ from: p.from, to: [p.to], ...(p.cc?.length ? { cc: p.cc } : {}), subject: p.subject, text: p.text, html: p.html, headers: p.headers ?? {} }),
     signal: AbortSignal.timeout(30_000),
   });
   const r = await res.json().catch(() => ({}));
