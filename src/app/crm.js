@@ -69,11 +69,50 @@
   }
 
   // ---------- dashboard ----------
+  // Nome, em português simples, de cada tipo de trabalho da fila dos robôs.
+  var TRABALHO = {
+    qualificar: 'Lendo o site e dando nota às empresas', primeiro_email: 'Escrevendo o 1º e-mail', refazer_email: 'Reescrevendo rascunhos que você mandou refazer',
+    reabastecer_rascunhos: 'Completando a fila de rascunhos para você aprovar', envio_preparar: 'Escrevendo os follow-ups de e-mail', envio_enviar: 'Enviando os e-mails aprovados',
+    envio_respostas: 'Enviando as respostas aprovadas', classificar_resposta: 'Lendo uma resposta recebida', cadencia: 'Conferindo quem está na vez de receber e-mail',
+    maps_achar_site: 'Procurando o site das empresas no Google Maps', maps_buscar_segmento: 'Buscando empresas novas no Google Maps', descoberta: 'Planejando a busca de empresas do dia',
+    enriquecimento: 'Planejando a qualificação da noite', concorrencia_coletar: 'Lendo os sites dos concorrentes', concorrencia_semanal: 'Planejando a leitura dos concorrentes',
+    relatorio: 'Montando o relatório do dia', medir_acoes: 'Medindo as ações do Conselho', revisao_semanal: 'Revisão semanal dos números', memoria_consolidar: 'Organizando a memória dos robôs',
+    analise_avancar: 'Conselho discutindo', analise_verificar: 'Conselho conferindo fontes', busca_ia: 'Busca de empresas com IA', busca_ia_executar: 'Busca de empresas com IA',
+  };
+  function painelAgora(p) {
+    var h = new Date(), e = p.esperando, f = p.hoje;
+    var item = function (n, texto, link, cls) { return n ? '<li class="' + (cls || '') + '"><a href="#' + link + '"><b>' + n + '</b> ' + esc(texto) + '</a></li>' : ''; };
+    var andamento = p.andamento.map(function (a) {
+      var quando = a.rodando ? 'agora' : new Date(a.proximo) > h ? 'às ' + new Date(a.proximo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'na próxima rodada (até 5 min)';
+      return '<li>' + esc(TRABALHO[a.tipo] || a.tipo) + (a.n > 1 ? ' <small class="mut">(' + a.n + ')</small>' : '') + ' · <small class="mut">' + esc(quando) + '</small>' +
+        (a.empresas && a.empresas.length ? '<br><small class="mut">' + esc(a.empresas.join(', ')) + (a.n > a.empresas.length ? '…' : '') + '</small>' : '') + '</li>';
+    }).join('');
+    var esperando = item(e.respostas, 'respostas de clientes para ler', 'prospeccao') + item(e.telefones, 'telefone(s) para você ligar', 'funil', 'bom') +
+      item(e.rascunhos, 'rascunhos de e-mail para aprovar', 'prospeccao') + item(e.tarefas_atrasadas, 'tarefas atrasadas', 'tarefas', 'ruim') +
+      item(e.tarefas_hoje, 'tarefas para hoje', 'tarefas') + item(e.followups_semana, 'follow-ups de WhatsApp nos próximos 7 dias', 'tarefas') +
+      item(e.acoes, 'ações do Conselho esperando sua decisão', 'conselho');
+    var feito = [
+      [f.enviados, 'e-mails enviados'], [f.respostas, 'respostas recebidas'], [f.telefones, 'telefones obtidos'], [f.rascunhos_escritos, 'rascunhos escritos'],
+      [f.qualificadas, 'empresas qualificadas' + (f.qualificadas ? ' (' + f.qualificadas_boas + ' com nota boa)' : '')], [f.sites_achados, 'sites encontrados no Maps'],
+    ].filter(function (x) { return x[0]; }).map(function (x) { return '<li><b>' + x[0] + '</b> ' + esc(x[1]) + '</li>'; }).join('');
+    var erros = f.erros.map(function (x) { return '<li class="ruim"><small>' + esc(TRABALHO[x.tipo] || x.tipo) + ': ' + esc(x.erro) + '</small></li>'; }).join('');
+    var medicoes = p.medicoes.map(function (m) {
+      return '<li>' + esc(m.titulo) + ' · <small class="mut">medir em ' + esc(data(m.medir_em)) + (m.tarefa_aberta ? ' · depende de uma tarefa sua ainda aberta' : '') + '</small></li>';
+    }).join('');
+    return '<h2>O que está acontecendo</h2><div class="agora">' +
+      '<section><h3>Esperando você</h3><ul>' + (esperando || '<li class="mut">Nada agora.</li>') + '</ul></section>' +
+      '<section><h3>Robôs trabalhando</h3><ul>' + (andamento || '<li class="mut">Nada na fila agora. A próxima rotina entra sozinha.</li>') + '</ul>' +
+        (e.aprovados_na_fila ? '<p class="mut"><small>' + e.aprovados_na_fila + ' e-mail(s) aprovado(s) esperando o horário e o limite do dia para sair.</small></p>' : '') + '</section>' +
+      '<section><h3>Feito hoje</h3><ul>' + (feito || '<li class="mut">Nada ainda hoje.</li>') + erros + '</ul></section>' +
+      '<section><h3>Próximas medições do Conselho</h3><ul>' + (medicoes || '<li class="mut">Nenhuma ação esperando medição.</li>') + '</ul></section>' +
+      '</div>';
+  }
   function dashboard() {
     return Promise.all([
       api('/rest/v1/negocios?select=etapa,valor_estimado'),
       api('/rest/v1/tarefas?select=id,vence_em&concluida=is.false'),
       api('/rest/v1/empresas?select=id'),
+      api('/rest/v1/rpc/painel_agora', { metodo: 'POST', corpo: {} }),
     ]).then(function (r) {
       var neg = r[0], tar = r[1], h = hoje();
       var porEtapa = {}; neg.forEach(function (n) { porEtapa[n.etapa] = (porEtapa[n.etapa] || 0) + 1; });
@@ -89,7 +128,7 @@
         '<a href="#funil"><b>' + (porEtapa.com_axel || 0) + '</b>com você</a>' +
         '<a href="#tarefas"><b>' + doDia + '</b>tarefas hoje</a>' +
         '<a href="#tarefas" class="' + (atrasadas ? 'ruim' : '') + '"><b>' + atrasadas + '</b>atrasadas</a>' +
-        '</div><h2>Funil</h2><table class="tab"><tbody>' +
+        '</div>' + painelAgora(r[3]) + '<h2>Funil</h2><table class="tab"><tbody>' +
         ETAPAS.map(function (e) { return '<tr><td>' + esc(e[1]) + '</td><td class="num">' + (porEtapa[e[0]] || 0) + '</td></tr>'; }).join('') +
         '</tbody></table>';
     });
@@ -335,9 +374,16 @@
       var grupo = function (titulo, itens) {
         return '<h2>' + titulo + ' <small class="mut">' + itens.length + '</small></h2>' + (itens.map(function (t) {
           var n = t.negocios;
+          var rodape = '<br><small class="mut">' + esc(data(t.vence_em) || 'sem data') +
+            (n ? ' · <a href="#empresa/' + esc(n.empresa_id) + '">' + esc(n.empresas && n.empresas.nome) + '</a> · ' + esc(n.titulo) : '') + '</small>';
+          // Tarefa do Conselho: concluir pede o resultado, que volta para a ação e para o próximo Conselho.
+          if (t.acao_id) {
+            return '<div class="item"><small class="mut">Do Conselho · <a href="#conselho">ver a ação</a></small><br><b>' + esc(t.titulo) + '</b>' + (t.descricao ? ' — ' + esc(t.descricao) : '') + rodape +
+              (w ? '<form class="linha" data-concluir="' + esc(t.id) + '"><input name="resultado" maxlength="1000" placeholder="O que foi feito ou o que você achou (uma linha)" aria-label="Resultado" style="flex:1 1 260px">' +
+                '<button type="submit" name="d" value="feita" class="prim">Concluir</button><button type="submit" name="d" value="nao">Não vou fazer</button></form>' : '') + '</div>';
+          }
           return '<label class="chk item"><input type="checkbox" data-tarefa="' + esc(t.id) + '"' + (w ? '' : ' disabled') + '> <span><b>' + esc(t.titulo) + '</b>' +
-            (t.descricao ? ' — ' + esc(t.descricao) : '') + '<br><small class="mut">' + esc(data(t.vence_em) || 'sem data') +
-            (n ? ' · <a href="#empresa/' + esc(n.empresa_id) + '">' + esc(n.empresas && n.empresas.nome) + '</a> · ' + esc(n.titulo) : '') + '</small></span></label>';
+            (t.descricao ? ' — ' + esc(t.descricao) : '') + rodape + '</span></label>';
         }).join('') || '<p class="mut">Nada.</p>');
       };
       tela.innerHTML = '<h1>Tarefas</h1>' +
@@ -351,6 +397,17 @@
       if (!w) return;
       tela.querySelectorAll('[data-tarefa]').forEach(function (c) {
         c.addEventListener('change', function () { alterar('tarefas', c.dataset.tarefa, { concluida: true }).then(rota).catch(erro); });
+      });
+      tela.querySelectorAll('form[data-concluir]').forEach(function (f) {
+        f.resultado.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') ev.preventDefault(); });
+        f.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          var feita = !(ev.submitter && ev.submitter.value === 'nao'), res = f.resultado.value.trim();
+          if (feita && res.length < 3) { aviso('Escreva em uma linha o que foi feito: o resultado volta para o Conselho.', true); f.resultado.focus(); return; }
+          api('/rest/v1/rpc/concluir_tarefa', { metodo: 'POST', corpo: { p_id: f.dataset.concluir, p_resultado: res || null, p_feita: feita } })
+            .then(function () { aviso(feita ? 'Concluída. O resultado foi para a ação do Conselho.' : 'Marcada como não feita. A ação não será medida como se tivesse acontecido.'); return rota(); })
+            .catch(erro);
+        });
       });
       enviar('form-tarefa', function (d) { d.responsavel = perfil.id; return inserir('tarefas', d); }, rota);
     });
@@ -369,7 +426,7 @@
   }
   // Ações que o Conselho propõe (ciclo autônomo): só valem com a aprovação do dono, e cada uma é medida depois.
   var TIPO_ACAO = { icp_nota_segmento: 'Nota de segmento', icp_nota_minima: 'Nota mínima', regra_qualificacao: 'Regra de qualificação', regra_redacao: 'Regra de redação', conteudo: 'Conteúdo', tarefa: 'Tarefa para você' };
-  var STATUS_ACAO = { proposta: 'esperando você', aplicada: 'aplicada, aguardando medição', recusada: 'recusada', medida: 'medida', erro: 'erro ao aplicar' };
+  var STATUS_ACAO = { proposta: 'esperando você', aplicada: 'aplicada, aguardando medição', recusada: 'recusada', medida: 'medida', erro: 'erro ao aplicar', nao_feita: 'tarefa não feita: não será medida' };
   function oQueMuda(a) {
     var p = a.parametros || {};
     if (a.tipo === 'icp_nota_segmento') return 'O segmento ' + p.segmento + ' passa a valer nota ' + p.nota + ' (as empresas dele são recalculadas).';
@@ -390,6 +447,7 @@
       (a.metrica ? '<small class="mut">Medida por: ' + esc(a.metrica) + (a.meta ? ' · meta: ' + esc(a.meta) : '') + (a.status === 'proposta' ? ' · medida ' + esc(a.medir_em_dias) + ' dias depois de aprovada' : '') + '</small>' : '<small class="mut">Sem métrica: não será medida.</small>') +
       (a.status === 'aplicada' ? '<br><small>Antes: ' + esc(indicador(a.metrica, a.valor_antes)) + ' (amostra ' + esc(a.amostra_antes) + ') · medir em ' + esc(a.medir_em) + '</small>' : '') +
       (a.status === 'medida' ? '<br><small><b>' + esc(a.resultado) + '</b>: ' + esc(indicador(a.metrica, a.valor_antes)) + ' → ' + esc(indicador(a.metrica, a.valor_depois)) + ' (amostra ' + esc(a.amostra_antes) + ' → ' + esc(a.amostra_depois) + ')</small>' : '') +
+      (a.tarefa_resultado ? '<br><small>Resultado da tarefa: ' + esc(a.tarefa_resultado) + '</small>' : '') +
       (a.status === 'recusada' ? '<br><small class="mut">Você recusou: ' + esc(a.motivo_recusa) + '</small>' : '') +
       (a.status === 'erro' ? '<br><small class="ruim">' + esc(a.erro) + '</small>' : '') +
       (a.status === 'proposta' && perfil.papel === 'dono' ? '<form class="linha" data-acao="' + esc(a.id) + '"><button type="submit" name="d" value="aprovar" class="prim">Aprovar e aplicar</button>' +

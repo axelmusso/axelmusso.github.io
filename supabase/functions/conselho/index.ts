@@ -45,7 +45,7 @@ Termine com um bloco \`\`\`json no formato {"acoes":[...]} com no máximo 3 aç�
 - "regra_qualificacao": parametros {"texto": regra objetiva para classificar empresas, até 300 caracteres}. Entra nas instruções do robô que qualifica.
 - "regra_redacao": parametros {"texto": regra objetiva para escrever os e-mails, até 300 caracteres}. Entra nas instruções do robô que escreve.
 - "conteudo": parametros {"titulo", "url_sugerida", "esboco": [seções]}. Vira proposta de página na tela Conteúdo.
-- "tarefa": parametros {"titulo", "descricao"}. Algo que só uma pessoa faz (fornecer um dado, ligar, decidir).
+- "tarefa": parametros {"titulo", "descricao"}. Só o que exige uma pessoa de fora do sistema: ligar, decidir preço ou rota, validar conteúdo técnico, fornecer um dado que não está no banco. A descrição diz exatamente o que fazer e qual resposta trazer (a pessoa escreve o resultado ao concluir). NUNCA proponha como tarefa conferir números, reconciliar indicadores, testar amostras ou analisar dados do banco: isso o dossiê ou um novo Conselho resolvem.
 Cada ação: {"tipo", "titulo" (curto), "parametros", "por_que" (com [fonte: ...]), "metrica" (uma chave de indicadores.atual que a ação deve mover), "meta" (ex.: "descarte_rascunhos abaixo de 15%"), "medir_em_dias" (14 a 90)}.
 Sem evidência suficiente, devolva {"acoes":[]}. Não repita uma ação que o dono recusou (acoes_recentes) sem evidência nova, e respeite o motivo da recusa.` },
 ];
@@ -106,7 +106,8 @@ Deno.serve(async (req) => {
         ids: mem.map((m) => m.id),
         itens: mem.map((m: Record<string, unknown>) => ({ id: idCurto(m.id as string), hipotese: m.hipotese, confianca: m.confianca, status: m.status, visto_vezes: m.visto_vezes, evidencia: m.evidencia })),
       };
-      const [s] = await banco('/rest/v1/conselho_sessoes', { metodo: 'POST', corpo: { tema: tema.slice(0, 2000), nivel, dossie, gatilho } });
+      // O banco aceita tema de até 1.000 caracteres (a revisão semanal de 27/10/2026 falhou com um tema maior).
+      const [s] = await banco('/rest/v1/conselho_sessoes', { metodo: 'POST', corpo: { tema: tema.slice(0, 1000), nivel, dossie, gatilho } });
       return json(req, 200, { sessao_id: s.id });
     }
 
