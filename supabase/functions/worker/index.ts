@@ -156,6 +156,8 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     catch (e) {
       const msg = (e as Error).message;
       if (e instanceof LimiteDeChamadas || /teto|parado/i.test(msg)) throw e;
+      // Fica registrado na empresa: sem isso, o 1º e-mail que não saiu passa despercebido.
+      await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: j.payload.empresa_id, tipo: 'nota', direcao: 'interna', assunto: '1º e-mail não escrito', conteudo: msg.slice(0, 500), agente_id: 'redator' } });
       return { pulou: msg };
     }
   },

@@ -324,7 +324,6 @@ async function redigir(id: string, quem: string) {
   if (!retomada) {
     if (e.icp_score == null) throw new Error('Qualifique a empresa antes de escrever.');
     if (e.icp_score < cfg.valor.nota_minima) throw new Error(`Nota ${e.icp_score} abaixo do mínimo (${cfg.valor.nota_minima}): não contata.`);
-    if (e.sem_gancho) throw new Error('Empresa marcada "sem gancho": não há nada específico e verdadeiro para dizer.');
   }
   const pend = await banco(`/rest/v1/emails?select=id&empresa_id=eq.${q(id)}&status=in.(rascunho,aprovado)&limit=1`);
   if (pend.length) throw new Error('Já existe um rascunho esperando aprovação para esta empresa.');
@@ -334,8 +333,13 @@ async function redigir(id: string, quem: string) {
   // Sem e-mail, ou só com caixa fiscal: procura outros no site e no CNPJ antes.
   const contato = await melhorContato(e);
   if (!contato) throw new Error('Nenhum e-mail liberado para esta empresa (procurei no site e no CNPJ; os que existem já foram tentados ou estão na lista de não contatar).');
+  // Contato cadastrado pelo dono numa empresa que já conversou com ele pelo WhatsApp ("Com Áxel"): foi a própria empresa
+  // que passou o responsável (pedido do dono, 27/10/2026). O e-mail cita a indicação e não depende de gancho.
+  const viaWhatsapp = contato.origem === 'manual' &&
+    (await banco(`/rest/v1/interacoes?select=id&empresa_id=eq.${q(id)}&conteudo=like.${q('%→ com_axel')}&limit=1`)).length > 0;
+  if (!retomada && e.sem_gancho && !viaWhatsapp) throw new Error('Empresa marcada "sem gancho": não há nada específico e verdadeiro para dizer.');
 
-  const r = await redigirEmail({ empresa: e, contato, passo: 1, tipo: retomada ? 'retomada' : 'prospeccao', manual: true });
+  const r = await redigirEmail({ empresa: e, contato, passo: 1, tipo: retomada ? 'retomada' : 'prospeccao', manual: true, indicadoPor: viaWhatsapp ? 'a equipe de vocês' : undefined });
   if (r.sem_gancho) {
     await banco('/rest/v1/empresas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { sem_gancho: true, icp_motivo: (e.icp_motivo ?? '') + ' | Sem gancho: ' + r.motivo } });
     return { sem_gancho: true, motivo: r.motivo, custo: r.custo };
