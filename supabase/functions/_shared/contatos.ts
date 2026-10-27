@@ -14,6 +14,7 @@ const ORDEM_TIPO: Record<string, number> = { decisor: 0, pessoa: 1, generico: 2,
 const ORDEM_ORIGEM: Record<string, number> = { manual: 0, indicado: 0, resposta: 0, base_clientes: 1, site: 2, receita_federal: 3 };
 // Origens em que uma pessoa confirmou o endereço: valem mesmo com domínio diferente do da empresa.
 const CONFIRMADO = ['manual', 'indicado', 'resposta'];
+export const pessoaConfirmada = (c: { origem?: string; nome?: string | null }) => CONFIRMADO.includes(c.origem ?? '') && !!c.nome?.trim();
 const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 // E-mail corporativo de OUTRA empresa (contador, holding, fornecedor): juridico@flamarpar para a Vitesse, vendas1@metalcornh
 // para a Ramarim. Com domínio conhecido, tem de ser o mesmo; sem domínio, o domínio do e-mail tem de lembrar o nome da empresa.
@@ -40,7 +41,7 @@ async function jaTentados(empresaId: string) {
 // dominio: o da empresa; com ele, e-mail gratuito (Gmail, Hotmail...) fica por último, pois costuma ser de terceiro.
 async function escolher(e: Record<string, any>, tentados: Set<string>, dominio?: string | null) {
   const empresaId = e.id;
-  const lista = await banco(`/rest/v1/contatos?select=id,nome,cargo,email,origem&empresa_id=eq.${empresaId}&pode_contatar=is.true&email=not.is.null`);
+  const lista = await banco(`/rest/v1/contatos?select=id,nome,cargo,email,origem&empresa_id=eq.${empresaId}&pode_contatar=is.true&email=not.is.null&order=coletado_em.desc.nullslast`);
   const livres = [];
   for (const c of lista) {
     const email = c.email.toLowerCase();
@@ -49,7 +50,10 @@ async function escolher(e: Record<string, any>, tentados: Set<string>, dominio?:
     livres.push(c);
   }
   const gratuitoComDominio = (email: string) => !!dominio && !GRATUITOS.includes(dominio) && GRATUITOS.includes(email.split('@')[1]?.toLowerCase());
-  const peso = (c: { email: string; origem: string }) => (gratuitoComDominio(c.email) ? 100 : 0) + ORDEM_TIPO[tipoEmail(c.email)] * 10 + (ORDEM_ORIGEM[c.origem] ?? 2);
+  // Pessoa com nome que o dono cadastrou, indicou ou que respondeu vem antes de qualquer caixa (pcp@, compras@):
+  // a Luceneia, CEO da Jador, lê o comercial@ (27/10/2026). Entre iguais, o cadastrado mais recentemente.
+  const peso = (c: { email: string; origem: string; nome?: string }) => pessoaConfirmada(c) ? -1 :
+    (gratuitoComDominio(c.email) ? 100 : 0) + ORDEM_TIPO[tipoEmail(c.email)] * 10 + (ORDEM_ORIGEM[c.origem] ?? 2);
   return livres.sort((a, b) => peso(a) - peso(b))[0] ?? null;
 }
 

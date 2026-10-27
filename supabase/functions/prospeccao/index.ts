@@ -313,6 +313,24 @@ async function dadosCnpj(id: string) {
   return { cnae, uf: e.uf || d.uf || null, situacao: d.descricao_situacao_cadastral ?? null };
 }
 
+// Contato cadastrado pelo dono numa empresa que já conversou com ele pelo WhatsApp ("Com Áxel"): foi a própria empresa
+// que passou o responsável (pedido do dono, 27/10/2026). O e-mail cita a indicação e não depende de gancho.
+async function indicacaoPeloWhatsapp(empresaId: string, contato: { origem?: string }) {
+  if (contato.origem !== 'manual') return undefined;
+  const conversou = await banco(`/rest/v1/interacoes?select=id&empresa_id=eq.${q(empresaId)}&conteudo=like.${q('%→ com_axel')}&limit=1`);
+  return conversou.length ? 'a equipe de vocês' : undefined;
+}
+
+// Contato que o dono apontou no motivo do descarte: pelo e-mail escrito ou pelo nome da pessoa (ex.: "usar o da Luceneia").
+// Sem isso, o robô escolhia pela própria ordem (pcp@ antes de comercial@) e ignorava o que o dono escreveu (27/10/2026).
+async function contatoDoMotivo(empresaId: string, motivo: string) {
+  const lista = await banco(`/rest/v1/contatos?select=id,nome,cargo,email,origem&empresa_id=eq.${q(empresaId)}&pode_contatar=is.true&email=not.is.null`);
+  const texto = motivo.toLowerCase();
+  const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return lista.find((c: { email: string }) => texto.includes(c.email.toLowerCase())) ??
+    lista.find((c: { nome?: string }) => c.nome && c.nome.trim().length >= 3 && semAcento(motivo).includes(semAcento(c.nome.trim().split(/\s+/)[0]))) ?? null;
+}
+
 // ---------- redigir: 1º e-mail (prospecção) ou 1º da retomada (ex-cliente), como rascunho ----------
 async function redigir(id: string, quem: string) {
   const [e] = await banco('/rest/v1/empresas?select=*&id=eq.' + q(id));
@@ -333,20 +351,17 @@ async function redigir(id: string, quem: string) {
   // Sem e-mail, ou só com caixa fiscal: procura outros no site e no CNPJ antes.
   const contato = await melhorContato(e);
   if (!contato) throw new Error('Nenhum e-mail liberado para esta empresa (procurei no site e no CNPJ; os que existem já foram tentados ou estão na lista de não contatar).');
-  // Contato cadastrado pelo dono numa empresa que já conversou com ele pelo WhatsApp ("Com Áxel"): foi a própria empresa
-  // que passou o responsável (pedido do dono, 27/10/2026). O e-mail cita a indicação e não depende de gancho.
-  const viaWhatsapp = contato.origem === 'manual' &&
-    (await banco(`/rest/v1/interacoes?select=id&empresa_id=eq.${q(id)}&conteudo=like.${q('%→ com_axel')}&limit=1`)).length > 0;
-  if (!retomada && e.sem_gancho && !viaWhatsapp) throw new Error('Empresa marcada "sem gancho": não há nada específico e verdadeiro para dizer.');
+  const indicadoPor = await indicacaoPeloWhatsapp(id, contato);
+  if (!retomada && e.sem_gancho && !indicadoPor) throw new Error('Empresa marcada "sem gancho": não há nada específico e verdadeiro para dizer.');
 
-  const r = await redigirEmail({ empresa: e, contato, passo: 1, tipo: retomada ? 'retomada' : 'prospeccao', manual: true, indicadoPor: viaWhatsapp ? 'a equipe de vocês' : undefined });
+  const r = await redigirEmail({ empresa: e, contato, passo: 1, tipo: retomada ? 'retomada' : 'prospeccao', manual: true, indicadoPor });
   if (r.sem_gancho) {
     await banco('/rest/v1/empresas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { sem_gancho: true, icp_motivo: (e.icp_motivo ?? '') + ' | Sem gancho: ' + r.motivo } });
     return { sem_gancho: true, motivo: r.motivo, custo: r.custo };
   }
   const [em] = await banco('/rest/v1/emails', {
     metodo: 'POST',
-    corpo: { empresa_id: id, contato_id: contato.id, para: contato.email, passo: 1, angulo: r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
+    corpo: { empresa_id: id, contato_id: contato.id, para: contato.email, passo: 1, angulo: indicadoPor ? 'indicacao' : r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
   });
   await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: id, contato_id: contato.id, tipo: 'email', direcao: 'interna', assunto: 'Rascunho criado: ' + r.assunto, conteudo: `Rascunho do ${retomada ? '1º e-mail de retomada' : '1º e-mail'} aguardando aprovação.`, agente_id: 'redator' } });
   return { email_id: em.id, assunto: r.assunto, revisar: r.revisar, custo: r.custo, pedido_por: quem };
@@ -394,21 +409,23 @@ async function refazer(emailId: string, manual: boolean) {
   if (e.status === 'descartada' || e.relacao === 'cliente_ativo') throw new Error('Empresa descartada ou cliente ativo: não reescrevo.');
   if ((await banco(`/rest/v1/emails?select=id&empresa_id=eq.${q(e.id)}&status=in.(rascunho,aprovado)&limit=1`)).length) throw new Error('Já existe outro rascunho esperando aprovação para esta empresa.');
   if (m.descarte_tipo === 'contato') {
-    // Endereço reprovado: outro e-mail da empresa (o informado pelo dono primeiro; senão site e CNPJ), e um 1º e-mail novo para ele.
-    const novo = await melhorContato(e);
+    // Endereço reprovado: o contato que o dono apontou no motivo; sem isso, outro e-mail da empresa (manual, site, CNPJ).
+    const novo = (await contatoDoMotivo(e.id, m.descarte_motivo ?? '')) ?? (await melhorContato(e));
     if (!novo) {
       await banco('/rest/v1/emails?id=eq.' + q(m.id), { metodo: 'PATCH', corpo: { erro: 'Não refeito: nenhum outro e-mail que combine com a empresa (procurei no site e no CNPJ).' } });
       return { sem_contato: true };
     }
     const tipoNovo = e.relacao === 'ex_cliente' ? 'retomada' : 'prospeccao';
-    const r = await redigirEmail({ empresa: e, contato: novo, passo: 1, tipo: tipoNovo, manual });
+    // O rascunho reprovado já era uma indicação, ou o novo contato veio da conversa no WhatsApp: segue como indicação.
+    const indicadoPor = (m.angulo === 'indicacao' || /indica[çc][ãa]o/i.test(String(m.corpo)) ? 'a equipe de vocês' : undefined) ?? (await indicacaoPeloWhatsapp(e.id, novo));
+    const r = await redigirEmail({ empresa: e, contato: novo, passo: 1, tipo: tipoNovo, manual, indicadoPor });
     if (r.sem_gancho) {
       await banco('/rest/v1/emails?id=eq.' + q(m.id), { metodo: 'PATCH', corpo: { erro: ('Não refeito: ' + r.motivo).slice(0, 500) } });
       return { sem_gancho: true, motivo: r.motivo, custo: r.custo };
     }
     const [n] = await banco('/rest/v1/emails', {
       metodo: 'POST',
-      corpo: { empresa_id: e.id, contato_id: novo.id, para: novo.email, passo: 1, angulo: r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, refeito_de: m.id, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
+      corpo: { empresa_id: e.id, contato_id: novo.id, para: novo.email, passo: 1, angulo: indicadoPor ? 'indicacao' : r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, refeito_de: m.id, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
     });
     await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: e.id, contato_id: novo.id, tipo: 'email', direcao: 'interna', assunto: 'Novo contato após endereço reprovado', conteudo: `${m.para} reprovado pelo dono; rascunho novo para ${novo.email} (fonte: ${novo.origem ?? 'sem fonte'}).`, agente_id: 'redator' } });
     return { email_id: n.id, para: novo.email, assunto: r.assunto, revisar: r.revisar, custo: r.custo };
@@ -418,7 +435,7 @@ async function refazer(emailId: string, manual: boolean) {
   // O motivo pode corrigir segmento e perfil de produto; a correção vale antes de reescrever.
   e = await corrigirClassificacao(e, m.descarte_motivo ?? '', manual);
   // Indicação: recupera quem indicou pelo texto reprovado ("por indicação de Fulano").
-  const indicadoPor = m.angulo === 'indicacao' ? (String(m.corpo).match(/indica[çc][ãa]o d[aeo]s?\s+([^.,;!?\n]{2,40})/i)?.[1]?.trim() ?? 'a equipe de vocês') : undefined;
+  const indicadoPor = m.angulo === 'indicacao' || /indica[çc][ãa]o/i.test(String(m.angulo)) ? (String(m.corpo).match(/indica[çc][ãa]o d[aeo]s?\s+([^.,;!?\n]{2,40})/i)?.[1]?.trim() ?? 'a equipe de vocês') : undefined;
   const tipo = m.cadencias?.tipo ?? (e.relacao === 'ex_cliente' ? 'retomada' : 'prospeccao');
   const r = await redigirEmail({ empresa: e, contato, passo: m.passo, tipo, manual, indicadoPor, ajuste: { assunto: m.assunto, corpo: m.corpo, motivo: m.descarte_motivo ?? '' } });
   if (r.sem_gancho) {
@@ -428,7 +445,7 @@ async function refazer(emailId: string, manual: boolean) {
   }
   const [novo] = await banco('/rest/v1/emails', {
     metodo: 'POST',
-    corpo: { cadencia_id: m.cadencia_id, empresa_id: e.id, contato_id: contato.id, para: contato.email, passo: m.passo, angulo: m.angulo === 'indicacao' ? 'indicacao' : r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, refeito_de: m.id, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
+    corpo: { cadencia_id: m.cadencia_id, empresa_id: e.id, contato_id: contato.id, para: contato.email, passo: m.passo, angulo: indicadoPor ? 'indicacao' : r.angulo, assunto: r.assunto, corpo: r.corpo, status: 'rascunho', memorias: r.memorias, refeito_de: m.id, erro: r.revisar.length ? 'Revisar: ' + r.revisar.join('; ') : null },
   });
   await banco('/rest/v1/interacoes', { metodo: 'POST', corpo: { empresa_id: e.id, contato_id: contato.id, tipo: 'email', direcao: 'interna', assunto: 'Rascunho refeito: ' + r.assunto, conteudo: 'Reescrito com o motivo do dono: ' + (m.descarte_motivo ?? ''), agente_id: 'redator' } });
   return { email_id: novo.id, assunto: r.assunto, revisar: r.revisar, custo: r.custo };

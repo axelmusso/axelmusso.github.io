@@ -143,7 +143,9 @@ export async function redigirEmail(o: { empresa: Record<string, any>; contato: R
   const { empresa: e, contato, passo, tipo, manual } = o;
   const retomada = tipo === 'retomada';
   const perfil = PERFIS[e.perfil_produto] ? e.perfil_produto : 'geral';
-  const final = o.indicadoPor ? 'telefone' : finalDoPasso(passo, emailGenerico(contato.email));
+  // Caixa geral (comercial@) de uma pessoa com nome cadastrada pelo dono ou indicada não é recepção: fala com ela.
+  const pessoa = ['manual', 'indicado', 'resposta'].includes(contato.origem) && !!contato.nome?.trim();
+  const final = o.indicadoPor ? 'telefone' : finalDoPasso(passo, emailGenerico(contato.email) && !pessoa);
   const anteriores = await banco(`/rest/v1/emails?select=passo,assunto,corpo&empresa_id=eq.${e.id}&status=eq.enviado&order=enviado_em`);
   const mem = await buscarMemoria(`e-mail de ${tipo}, passo ${passo}, para empresa de ${e.setor ?? 'indústria'}: assunto, ângulo e resposta`, 3, manual);
   const preferencias = await preferenciasDoDono();
@@ -159,7 +161,9 @@ CONTATO: ${JSON.stringify({ nome: contato.nome, cargo: contato.cargo })}
 ${anteriores.length ? 'E-MAILS JÁ ENVIADOS (não repita):\n' + anteriores.map((a: Record<string, unknown>) => `[passo ${a.passo}] ${a.assunto}\n${a.corpo}`).join('\n\n') + '\n' : ''}${mem.length ? 'APRENDIZADOS DA MEMÓRIA (use se ajudarem):\n' + mem.map((m: Record<string, unknown>) => `#${String(m.id).slice(0, 8)} ${m.hipotese}`).join('\n') + '\n' : ''}${preferencias}${o.ajuste ? `VERSÃO REPROVADA PELO DONO (não repita o que o dono apontou):\nAssunto: ${o.ajuste.assunto}\n${o.ajuste.corpo}\nMOTIVO DO DONO: ${o.ajuste.motivo}\nReescreva atendendo ao motivo.\n` : ''}
 ${pedidoDoPasso(passo, retomada, meses, final, o.indicadoPor)}
 ${REGRAS}`;
-  const instrucoes = 'Você escreve e-mails comerciais B2B curtos, honestos e específicos para a Corquímica, assinados por Fernando Gutierrez.';
+  const instrucoes = 'Você escreve e-mails comerciais B2B curtos, honestos e específicos para a Corquímica, assinados por Fernando Gutierrez.' +
+    // Pedido do dono (reescrever ou indicação) não pode voltar como "sem gancho": o dono já decidiu que o e-mail sai.
+    (o.ajuste || o.indicadoPor ? ' O dono pediu este e-mail: escreva-o sempre; nunca devolva sem_gancho.' : '');
   const memorias = mem.map((m) => m.id);
   let r = await chamarIA({ provedor: 'anthropic', papel: 'redator', nivel: 'rotina', manual, maxTokens: 2000, memorias, jobId: o.jobId, instrucoes, contexto });
   let t = jsonDe<Rascunho>(r.texto);
