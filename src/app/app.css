@@ -117,3 +117,11 @@ button.parar{background:#b3261e;color:#fff;border-color:#b3261e;font-weight:500}
 /* Descarte com motivo (rascunhos e propostas) */
 .descarte{display:grid;gap:6px;padding:10px 12px;border:1px dashed var(--line);border-radius:6px}
 .descarte[hidden]{display:none}
+/* Dashboard: o que está acontecendo */
+.agora{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:8px 0 16px}
+.agora section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.agora h3{margin:0 0 6px;font-size:14px}
+.agora ul{margin:0;padding-left:18px}
+.agora li{margin:4px 0}
+.agora li a{color:inherit}
+.agora li.bom b{color:var(--ok)}.agora li.ruim b{color:var(--err)}
