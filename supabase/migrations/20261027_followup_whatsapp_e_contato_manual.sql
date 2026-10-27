@@ -30,7 +30,7 @@ begin
   select * into c from public.contatos where empresa_id = e.id and telefone is not null and pode_contatar
     order by (origem in ('manual', 'resposta', 'indicado')) desc, coletado_em desc nulls last limit 1;
   fone := coalesce(c.telefone, e.whatsapp, 'sem número no cadastro');
-  quem := coalesce(c.nome || ' ', '') || '(' || fone || ')';
+  quem := coalesce(c.nome || ' (' || fone || ')', fone);
   if p_passo <= 3 then
     titulo := 'Follow-up ' || p_passo || '/3 WhatsApp: ' || e.nome || ' – ' || quem;
     o_que := case p_passo
@@ -122,6 +122,7 @@ begin
   if not exists (select 1 from public.negocios where id = new.negocio_id and etapa = 'com_axel') then return null; end if;
   if exists (select 1 from public.tarefas where negocio_id = new.negocio_id and tipo = 'followup_whatsapp' and not concluida) then return null; end if;
   prox := coalesce(new.vence_em, hoje) + case new.passo when 1 then 4 when 2 then 7 else 60 end;
+  prox := privado.somar_dias_uteis(prox - 1, 1); -- caiu no fim de semana: vai para segunda
   perform privado.tarefa_followup(new.negocio_id, new.passo + 1, greatest(prox, privado.somar_dias_uteis(hoje, 1)));
   return null;
 end $$;
