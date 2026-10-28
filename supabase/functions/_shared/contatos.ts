@@ -81,8 +81,17 @@ export async function buscarContatos(e: Record<string, any>) {
       const paginas = [home];
       const internas = home.links.filter((l) => dominioDe(l) === dominioDe(home.url) && /contato|fale|atendimento|sobre|empresa|quem-somos|institucional/i.test(l)).slice(0, 2);
       for (const l of internas) { try { paginas.push(await lerPagina(l, 8_000)); } catch { /* página interna opcional */ } }
+      // Gmail, Hotmail... publicado no site também vale se leva o nome da empresa: empresa pequena costuma usar só ele
+      // (sssolados@hotmail no site da SS Solados, apoiocomponentes@gmail no da Apoio, 28/10/2026). O de uma pessoa
+      // (representante, quem fez o site) continua de fora. Na hora de escolher, fica depois dos e-mails do domínio.
+      const rotulo = dom.split('.')[0].replace(/[^a-z0-9]/g, '');
+      const palavras = semAcento(e.nome ?? '').split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !/^(ltda|industria|comercio|produtos|plasticos|metais|servicos|grupo)$/.test(w));
+      const daEmpresa = (m: string) => {
+        const local = m.split('@')[0].replace(/[^a-z0-9]/g, '');
+        return GRATUITOS.includes(m.split('@')[1] ?? '') && local.length >= 4 && ((rotulo.length >= 4 && (local.includes(rotulo) || rotulo.includes(local))) || palavras.some((w) => local.includes(w)));
+      };
       for (const p of paginas) for (const m of p.emails) {
-        if ((m.endsWith('@' + dom) || m.endsWith('.' + dom)) && (await gravar(e.id, m, 'site', p.url, 'Legítimo interesse (contato profissional publicado no site da empresa)'))) achados.push(m);
+        if ((m.endsWith('@' + dom) || m.endsWith('.' + dom) || daEmpresa(m)) && (await gravar(e.id, m, 'site', p.url, 'Legítimo interesse (contato profissional publicado no site da empresa)'))) achados.push(m);
       }
       // WhatsApp ou celular publicado no site, se a empresa ainda não tem (pedido do dono, 26/10/2026).
       const comZap = paginas.find((p) => p.whatsapp?.length);
