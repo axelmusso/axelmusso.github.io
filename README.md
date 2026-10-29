@@ -99,7 +99,7 @@ Login com e-mail e senha ou link de acesso por e-mail, feito direto na API do Su
 - **Aprovação:** todo e-mail espera "Aprovar" na tela. A assinatura de Fernando Gutierrez e o link de descadastro entram no envio.
 
 **Parte B (envio):** pelo Resend, de `Fernando - Corquímica <fernando@comercial.corquimica.com.br>`. Só sai e-mail aprovado na tela, em dia útil das 8h às 18h (Brasília), dentro do aquecimento (10/dia, +20% ao dia, teto 50) e fora da lista de não contatar. Cadência: dia 0, +3 dias úteis, dia 7, dia 14 e até 3 retomadas a cada 60 dias; para quando a empresa responde.
-- Função `envio`: status, enviar aprovados (com botão de teste fora do horário, só para o dono, que não inicia o aquecimento), preparar próximos passos, classificar e responder.
+- Função `envio`: status, enviar aprovados (com botão de teste fora do horário, só para o dono, que não inicia o aquecimento), enviar um só agora (botão "Aprovar e enviar agora" do rascunho: horário e limite valem; terça a quinta e cota de ex-clientes, não), preparar próximos passos, classificar e responder.
 - Função `resend-webhook` (pública, assinada com `RESEND_WEBHOOK_SECRET`): entrega, bounce, spam e respostas recebidas. Resposta vira item na caixa de respostas e uma cópia vai para `email_copia_respostas`. Mensagens da própria caixa de cópias são ignoradas (evita loop).
 - Função `descadastro` (pública): link de cada e-mail e o botão "cancelar inscrição" do Gmail/Outlook; grava na hora.
 - Segredos no Supabase: `RESEND_API_KEY` (acesso completo, para ler as respostas recebidas) e `RESEND_WEBHOOK_SECRET`.
