@@ -227,10 +227,10 @@
         (rasc.filter(function (m) { return filtroRasc === 'todos' || (filtroRasc === 'aprovados') === (m.status === 'aprovado'); }).map(function (m) {
           return '<div class="item email-rasc"><p class="tipo-email">' + esc(tipoRascunho(m)) + (m.status === 'aprovado' ? ' · já aprovado, esperando o envio' : '') + '</p><small class="mut">' + esc(m.empresas && m.empresas.nome) + ' · ' + esc(NOME_REL[m.empresas && m.empresas.relacao] || '') + ' · <span title="' + esc(m.empresas && m.empresas.perfil_fonte) + '">' + esc(NOME_PERFIL[m.empresas && m.empresas.perfil_produto] || '') + '</span> · para ' + esc(m.para) + (m.contatos && ORIGEM[m.contatos.origem] ? ' (' + ORIGEM[m.contatos.origem] + ')' : '') + ' · ' + esc(m.angulo) + (m.memorias && m.memorias.length ? ' · usou memória ' + m.memorias.map(function (x) { return '#' + esc(x.slice(0, 8)); }).join(', ') : '') + '</small>' +
             (m.erro ? '<p class="ruim">' + esc(m.erro) + '</p>' : '') +
-            '<form class="grade" data-email="' + esc(m.id) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
+            '<form class="grade" data-email="' + esc(m.id) + '" data-para="' + esc(m.para) + '"><label class="largo">Assunto<input name="assunto" value="' + esc(m.assunto) + '" maxlength="120"' + (w ? '' : ' disabled') + '></label>' +
             '<label class="largo">Corpo<textarea name="corpo" rows="6"' + (w ? '' : ' disabled') + '>' + esc(m.corpo) + '</textarea></label>' +
             '<div class="largo assinatura"><pre>' + (m.passo === 1 && m.empresas && m.empresas.relacao === 'prospect' ? 'Apresentação da Corquímica (PDF): link\n\n' : '') + esc(cfg.email_assinatura || '') + '\n\nNão quer mais receber estes e-mails? Clique aqui.</pre></div>' +
-            (w ? '<div class="largo linha"><button type="submit" name="acao" value="aprovar" class="prim">' + (m.status === 'aprovado' ? 'Salvar (já aprovado)' : 'Aprovar') + '</button><button type="submit" name="acao" value="salvar">Salvar sem aprovar</button><button type="submit" name="acao" value="descartar">Descartar</button></div>' +
+            (w ? '<div class="largo linha"><button type="submit" name="acao" value="aprovar" class="prim">' + (m.status === 'aprovado' ? 'Salvar (já aprovado)' : 'Aprovar') + '</button><button type="submit" name="acao" value="enviar_um">' + (m.status === 'aprovado' ? 'Enviar agora' : 'Aprovar e enviar agora') + '</button><button type="submit" name="acao" value="salvar">Salvar sem aprovar</button><button type="submit" name="acao" value="descartar">Descartar</button></div>' +
               // Descarte com motivo: o robô aprende com ele (refazer o texto ou tirar a empresa das rotinas).
               '<div class="largo descarte" hidden><p><b>Por que descartar?</b> O motivo ensina os robôs.</p>' +
               '<label class="chk"><input type="radio" name="dtipo" value="refazer" checked> O texto não está bom: refazer com ajustes (mesmo endereço)</label>' +
@@ -332,11 +332,20 @@
         ev.preventDefault();
         var acao = ev.submitter && ev.submitter.value;
         var corpo = { assunto: f.assunto.value.trim(), corpo: f.corpo.value.trim() };
-        if (acao === 'aprovar') { corpo.status = 'aprovado'; corpo.aprovado_por = perfil.id; corpo.aprovado_em = new Date().toISOString(); }
+        if (acao === 'enviar_um' && !confirm('Enviar agora este e-mail para ' + f.dataset.para + '?')) return;
+        if (acao === 'aprovar' || acao === 'enviar_um') { corpo.status = 'aprovado'; corpo.aprovado_por = perfil.id; corpo.aprovado_em = new Date().toISOString(); }
         if (acao === 'descartar') { var d = f.querySelector('.descarte'); d.hidden = false; f.dmotivo.focus(); return; }
+        var b = ev.submitter;
+        if (acao === 'enviar_um') { b.disabled = true; b.textContent = 'Enviando…'; }
         api('/rest/v1/emails?id=eq.' + q(f.dataset.email), { metodo: 'PATCH', corpo: corpo, retorno: true })
-          .then(function () { aviso(acao === 'aprovar' ? 'Aprovado. Sai no próximo "Enviar aprovados", dentro do limite e do horário.' : acao === 'descartar' ? 'Rascunho descartado.' : 'Salvo.'); return render(); })
-          .catch(function (e) { aviso(e.message, true); });
+          .then(function () {
+            if (acao === 'enviar_um') return envio({ acao: 'enviar_um', email_id: f.dataset.email }).then(function (r) {
+              var ruim = !r.enviados;
+              aviso(r.enviados ? 'Enviado para ' + f.dataset.para + '.' : (r.aviso ? 'Aprovado, mas não saiu agora: ' + r.aviso : 'Não enviado: ' + ((r.problemas || []).join(' | ') || 'o e-mail não está mais aprovado.')), ruim);
+              return render();
+            });
+            aviso(acao === 'aprovar' ? 'Aprovado. Sai no próximo "Enviar aprovados", dentro do limite e do horário.' : acao === 'descartar' ? 'Rascunho descartado.' : 'Salvo.'); return render(); })
+          .catch(function (e) { aviso(e.message, true); if (acao === 'enviar_um') render(); });
       });
     });
     // Enter no motivo confirma o descarte (sem isso, o Enter enviaria o formulário pelo primeiro botão: "Aprovar").
