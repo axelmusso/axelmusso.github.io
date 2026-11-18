@@ -12,6 +12,20 @@ export async function config(chaves: string[]) {
   return Object.fromEntries(linhas.map((l: { chave: string; valor: unknown }) => [l.chave, l.valor])) as Record<string, any>;
 }
 
+// O domínio recebe e-mail? Consulta MX (ou, na falta, A) pelo DNS público da Cloudflare. Na dúvida (DNS fora do ar), deixa passar.
+// 3 dos 22 bounces de out-nov/2026 eram de domínios sem servidor de e-mail; mandar para eles só piora a reputação do remetente.
+export async function dominioRecebeEmail(email: string) {
+  const dom = email.split('@')[1]?.toLowerCase();
+  if (!dom) return false;
+  const tem = async (tipo: string) => {
+    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${q(dom)}&type=${tipo}`, { headers: { accept: 'application/dns-json' }, signal: AbortSignal.timeout(5000) });
+    const j = await r.json();
+    if (j.Status === 3) return false;                       // NXDOMAIN: o domínio não existe
+    return (j.Answer ?? []).some((a: { type: number }) => a.type === (tipo === 'MX' ? 15 : 1));
+  };
+  try { return (await tem('MX')) || (await tem('A')); } catch { return true; }
+}
+
 export async function suprimido(email: string) {
   const dom = email.split('@')[1]?.toLowerCase() ?? '';
   const r = await banco(`/rest/v1/lista_supressao?select=id&or=(email.ilike.${q(email)},and(email.is.null,dominio.ilike.${q(dom)}))&limit=1`);

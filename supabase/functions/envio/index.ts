@@ -16,8 +16,8 @@ import { banco, ErroIA } from '../_shared/ia.ts';
 import { cors, json, usuario } from '../_shared/http.ts';
 import { classificarResposta, redigirEmail, tipoEmail } from '../_shared/redacao.ts';
 import { aplicarClassificacao, copiadosDe, guardarCopiados } from '../_shared/respostas.ts';
-import { proximoContato } from '../_shared/contatos.ts';
-import { agoraBrasilia, config, diaDeIniciais, enviarResend, ErroEnvio, horarioComercial, lerRecebido, limiteDeHoje, montar, proximoEm, suprimido } from '../_shared/envio.ts';
+import { proximoContato, seguirComOutro } from '../_shared/contatos.ts';
+import { agoraBrasilia, config, diaDeIniciais, enviarResend, ErroEnvio, horarioComercial, lerRecebido, dominioRecebeEmail, limiteDeHoje, montar, proximoEm, suprimido } from '../_shared/envio.ts';
 
 const q = encodeURIComponent;
 const POR_CHAMADA = 10; // limite por clique, para caber no tempo da função
@@ -68,6 +68,12 @@ async function enviarAprovados(teste = false, soId = '') {
     if (e.relacao === 'cliente_ativo' || (await suprimido(m.para))) {
       await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'Na lista de não contatar ou cliente ativo: não enviado.' } });
       problemas.push(`${e.nome}: na lista de não contatar`); continue;
+    }
+    if (!(await dominioRecebeEmail(m.para))) {
+      await banco('/rest/v1/emails?id=eq.' + m.id, { metodo: 'PATCH', corpo: { status: 'descartado', erro: 'O domínio não tem servidor de e-mail (MX): não enviado, para não voltar.' } });
+      await banco('/rest/v1/lista_supressao', { metodo: 'POST', corpo: { email: m.para.toLowerCase(), motivo: 'bounce' } }).catch(() => {});
+      await seguirComOutro(e.id, `${m.para} não tem servidor de e-mail`).catch(() => {});
+      problemas.push(`${e.nome}: domínio de ${m.para} não recebe e-mail`); continue;
     }
     // 1º e-mail para empresa nova leva o link da apresentação em PDF (ex-cliente já conhece a Corquímica).
     const pdf = m.passo === 1 && e.relacao === 'prospect' ? c.apresentacao_url : undefined;
