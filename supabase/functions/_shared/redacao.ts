@@ -91,7 +91,7 @@ const FIM = {
   leve: 'NÃO peça telefone nem WhatsApp neste e-mail. Termine com UMA pergunta curta e leve sobre o interesse (ex.: "Faz sentido conversarmos sobre isso?").',
   responsavel: 'Este endereço é uma caixa geral da empresa (quem lê pode ser recepção ou atendimento): NÃO peça o celular de quem lê. Peça, com gentileza, que encaminhem a mensagem para quem cuida de compras ou da produção, e termine com UMA pergunta pedindo o contato (nome e telefone ou e-mail) dessa pessoa.',
 };
-function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null, final: 'telefone' | 'leve' | 'responsavel', indicadoPor?: string) {
+function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null, final: 'telefone' | 'leve' | 'responsavel', indicadoPor?: string, geral = false) {
   const fim = FIM[final];
   const quem = retomada
     ? 'Apresente-se em uma frase curta: Fernando Gutierrez, executivo comercial da Corquímica. NÃO apresente a Corquímica (ele já foi cliente).'
@@ -105,6 +105,8 @@ function pedidoDoPasso(passo: number, retomada: boolean, meses: number | null, f
     `Terceiro e-mail para o ex-cliente: ofereça uma conversa rápida ou um teste prático (amostra) do que fizer sentido para o perfil, dizendo em uma frase como funciona. ${lembrete} Sem inventar casos. ${fim}`,
     `Último e-mail curto (até 60 palavras) da sequência para o ex-cliente. ${lembrete} Diga que vai parar de escrever por enquanto e deixe a porta aberta. ${fim}`,
   ][passo - 1];
+  // Sem gancho (pedido do dono, 18/11/2026): em vez de pular a empresa, o 1º e-mail apresenta a Corquímica de forma geral.
+  if (geral && passo === 1) return `Escreva o PRIMEIRO e-mail de prospecção, de APRESENTAÇÃO GERAL: não há fato específico desta empresa para citar, e você não deve inventar nenhum (nada de "vi que vocês...", nada sobre produtos, clientes ou momento dela). ${quem} Em uma ou duas frases, diga o que a Corquímica propõe para quem faz acabamento de peças no segmento do cliente: acabamento consistente (aderência, brilho, cura), suporte técnico próximo e homologação ágil como fornecedor, dentro do que o perfil permite. ${fim}`;
   return [
     `Escreva o PRIMEIRO e-mail de prospecção. ${quem} Use o gancho (fato verdadeiro e específico desta empresa) em uma frase e ligue a uma situação em que a Corquímica pode ajudar, dentro do que o perfil permite. ${fim} Se o gancho não permitir um e-mail honesto e específico, devolva {"sem_gancho": true, "motivo": "..."}.`,
     `Segundo e-mail, 3 dias úteis depois, com OUTRO ângulo (não é reenvio), dentro do que o perfil permite. ${lembrete} ${fim}`,
@@ -150,6 +152,8 @@ export async function redigirEmail(o: { empresa: Record<string, any>; contato: R
   const mem = await buscarMemoria(`e-mail de ${tipo}, passo ${passo}, para empresa de ${e.setor ?? 'indústria'}: assunto, ângulo e resposta`, 3, manual);
   const preferencias = await preferenciasDoDono();
   const segmento = await nomeDoSegmento(e.segmento_icp);
+  // Prospecção sem gancho: 1º e-mail de apresentação geral (antes a empresa era pulada como "sem gancho").
+  let geral = !retomada && passo === 1 && !o.indicadoPor && !e.gancho?.trim();
   const meses = e.ultima_compra ? Math.max(1, Math.round((Date.now() - new Date(e.ultima_compra).getTime()) / (30.4 * 864e5))) : null;
   const contexto = `${SOBRE_A_CORQUIMICA}
 HOJE: ${new Date().toISOString().slice(0, 10)}
@@ -159,21 +163,30 @@ SEGMENTO DO CLIENTE: ${segmento ?? e.setor ?? 'indústria de peças'}
 PERFIL DE PRODUTO (${perfil}): ${PERFIS[perfil]}
 CONTATO: ${JSON.stringify({ nome: contato.nome, cargo: contato.cargo })}
 ${anteriores.length ? 'E-MAILS JÁ ENVIADOS (não repita):\n' + anteriores.map((a: Record<string, unknown>) => `[passo ${a.passo}] ${a.assunto}\n${a.corpo}`).join('\n\n') + '\n' : ''}${mem.length ? 'APRENDIZADOS DA MEMÓRIA (use se ajudarem):\n' + mem.map((m: Record<string, unknown>) => `#${String(m.id).slice(0, 8)} ${m.hipotese}`).join('\n') + '\n' : ''}${preferencias}${o.ajuste ? `VERSÃO REPROVADA PELO DONO (não repita o que o dono apontou):\nAssunto: ${o.ajuste.assunto}\n${o.ajuste.corpo}\nMOTIVO DO DONO: ${o.ajuste.motivo}\nReescreva atendendo ao motivo.\n` : ''}
-${pedidoDoPasso(passo, retomada, meses, final, o.indicadoPor)}
+__PEDIDO__
 ${REGRAS}`;
-  const instrucoes = 'Você escreve e-mails comerciais B2B curtos, honestos e específicos para a Corquímica, assinados por Fernando Gutierrez.' +
-    // Pedido do dono (reescrever ou indicação) não pode voltar como "sem gancho": o dono já decidiu que o e-mail sai.
-    (o.ajuste || o.indicadoPor ? ' O dono pediu este e-mail: escreva-o sempre; nunca devolva sem_gancho.' : '');
+  const montarContexto = () => contexto.replace('__PEDIDO__', pedidoDoPasso(passo, retomada, meses, final, o.indicadoPor, geral));
+  const montarInstrucoes = () => 'Você escreve e-mails comerciais B2B curtos, honestos e específicos para a Corquímica, assinados por Fernando Gutierrez.' +
+    // Pedido do dono (reescrever ou indicação) não pode voltar como "sem gancho": o dono já decidiu que o e-mail sai. O e-mail geral também sai sempre.
+    (o.ajuste || o.indicadoPor || geral ? ' Escreva-o sempre; nunca devolva sem_gancho.' : '');
   const memorias = mem.map((m) => m.id);
-  let r = await chamarIA({ provedor: 'anthropic', papel: 'redator', nivel: 'rotina', manual, maxTokens: 2000, memorias, jobId: o.jobId, instrucoes, contexto });
+  let r = await chamarIA({ provedor: 'anthropic', papel: 'redator', nivel: 'rotina', manual, maxTokens: 2000, memorias, jobId: o.jobId, instrucoes: montarInstrucoes(), contexto: montarContexto() });
   let t = jsonDe<Rascunho>(r.texto);
   let custo = r.custoUsd;
-  if (t.sem_gancho) return { sem_gancho: true as const, motivo: t.motivo ?? '', custo, memorias };
-  if (problemas(t, perfil, final).length) { // uma revisão com o que falhou
-    r = await chamarIA({ provedor: 'anthropic', papel: 'redator', nivel: 'rotina', manual, maxTokens: 2000, memorias, jobId: o.jobId, instrucoes, contexto: contexto + `\n\nSua versão anterior:\n${JSON.stringify(t)}\nCorrija: ${problemas(t, perfil, final).join('; ')}.` });
+  // O gancho existia mas não sustentou um e-mail honesto: no 1º e-mail de prospecção, cai para a apresentação geral.
+  if (t.sem_gancho && !retomada && passo === 1 && !geral) {
+    geral = true;
+    r = await chamarIA({ provedor: 'anthropic', papel: 'redator', nivel: 'rotina', manual, maxTokens: 2000, memorias, jobId: o.jobId, instrucoes: montarInstrucoes(), contexto: montarContexto() });
     t = jsonDe<Rascunho>(r.texto); custo += r.custoUsd;
   }
-  return { sem_gancho: false as const, assunto: t.assunto.trim(), corpo: t.corpo.trim(), angulo: t.angulo || `${tipo}-${passo}`, revisar: problemas(t, perfil, final), custo, memorias };
+  if (t.sem_gancho) return { sem_gancho: true as const, motivo: t.motivo ?? '', custo, memorias };
+  const instrucoes = montarInstrucoes();
+  const contextoFinal = montarContexto();
+  if (problemas(t, perfil, final).length) { // uma revisão com o que falhou
+    r = await chamarIA({ provedor: 'anthropic', papel: 'redator', nivel: 'rotina', manual, maxTokens: 2000, memorias, jobId: o.jobId, instrucoes, contexto: contextoFinal + `\n\nSua versão anterior:\n${JSON.stringify(t)}\nCorrija: ${problemas(t, perfil, final).join('; ')}.` });
+    t = jsonDe<Rascunho>(r.texto); custo += r.custoUsd;
+  }
+  return { sem_gancho: false as const, assunto: t.assunto.trim(), corpo: t.corpo.trim(), angulo: geral ? 'apresentacao-geral' : (t.angulo || `${tipo}-${passo}`), revisar: problemas(t, perfil, final), custo, memorias };
 }
 
 // Tira do texto a parte citada do e-mail anterior ("> ..." e o que vem depois de "Em ..., escreveu:" / "On ... wrote:").

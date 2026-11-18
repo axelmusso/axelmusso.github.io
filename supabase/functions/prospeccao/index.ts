@@ -352,7 +352,7 @@ async function redigir(id: string, quem: string) {
   const contato = await melhorContato(e);
   if (!contato) throw new Error('Nenhum e-mail liberado para esta empresa (procurei no site e no CNPJ; os que existem já foram tentados ou estão na lista de não contatar).');
   const indicadoPor = await indicacaoPeloWhatsapp(id, contato);
-  if (!retomada && e.sem_gancho && !indicadoPor) throw new Error('Empresa marcada "sem gancho": não há nada específico e verdadeiro para dizer.');
+  // Sem gancho não bloqueia mais (pedido do dono, 18/11/2026): o redator escreve um 1º e-mail de apresentação geral.
 
   const r = await redigirEmail({ empresa: e, contato, passo: 1, tipo: retomada ? 'retomada' : 'prospeccao', manual: true, indicadoPor });
   if (r.sem_gancho) {
