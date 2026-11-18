@@ -22,6 +22,7 @@ const QUALIFICAR_POR_NOITE = 400;   // ~US$ 0,001 cada; com 120, uma importaçã
 const ACHAR_SITE_POR_DIA = 100;
 const BUSCAS_SEGMENTO_POR_DIA = 30;   // o que sobra do Maps depois do achar site, até este número
 const REPETIR_BUSCA_DIAS = 90;        // a mesma busca (segmento e cidade) só volta depois disso
+const FOLGA_SESSAO_USD = 0.5;          // custo de uma sessão do Conselho com folga (as de outubro ficaram entre US$ 0,30 e 0,40)
 const PRIORIDADE_RESPOSTA = 10;        // acima de todas as rotinas
 const RESERVA_RESPOSTAS = 0.85;        // rascunhos novos só até 85% do teto do dia
 // Jobs que escrevem rascunhos novos: esperam enquanto houver resposta de cliente sem rascunho.
@@ -170,7 +171,9 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     const livre = Math.max(0, Number(st.limite_dia) - Number(st.usadas_hoje) - 10);
     const n = Math.min(livre, ACHAR_SITE_POR_DIA);
     if (!livre) return { aviso: 'Sem consultas do Maps sobrando hoje.' };
-    const lista = n ? await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&order=icp_score.desc.nullslast,criado_em.desc&limit=${n}`) : [];
+    // Só quem nunca foi procurado (ou foi há mais de REPETIR_BUSCA_DIAS): quem o Maps não achou não volta no dia seguinte.
+    const antes = new Date(Date.now() - REPETIR_BUSCA_DIAS * 864e5).toISOString();
+    const lista = n ? await banco(`/rest/v1/empresas?select=id&origem=eq.receita:cnae&site=is.null&google_place_id=is.null&status=neq.descartada&or=(site_buscado_em.is.null,site_buscado_em.lt.${q(antes)})&order=icp_score.desc.nullslast,criado_em.desc&limit=${n}`) : [];
     for (const e of lista) await enfileirar('maps_achar_site', { empresa_id: e.id }, 4, 'achar_site:' + e.id);
     const buscas = await proximasBuscas(Math.min(livre - lista.length, BUSCAS_SEGMENTO_POR_DIA));
     for (const b of buscas) await enfileirar('maps_buscar_segmento', b, 4, `buscar:${b.segmento} em ${b.cidade}`);
@@ -231,8 +234,6 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
     const cons = await banco('/rest/v1/concorrentes?select=id&ativo=is.true');
     for (const c of cons) await enfileirar('concorrencia_coletar', { concorrente_id: c.id }, 2, 'coletar:' + c.id);
     await enfileirar('analise_verificar', {}, 2, 'analise_verificar', new Date(Date.now() + 30 * 60_000));
-    // Três horas depois (coleta e análise já terminaram): a revisão semanal.
-    await enfileirar('revisao_semanal', {}, 2, 'revisao_semanal', new Date(Date.now() + 3 * 3600_000));
     return { concorrentes: cons.length };
   },
   // Site que bloqueia robôs (WEG, Lechler): não é falha nossa nem melhora tentando de novo; fica como aviso.
@@ -262,7 +263,7 @@ const TRABALHOS: Record<string, (j: Job) => Promise<unknown>> = {
   },
 
   memoria_consolidar: () => chamar('memoria', { acao: 'consolidar' }),
-  revisao_semanal: () => revisaoSemanal(),
+  revisao_semanal: (j) => revisaoSemanal(j),
   // O Conselho fala um passo por vez (cada um é uma chamada de IA); a sessão continua no job seguinte.
   async conselho_avancar(j) {
     const r = await chamar('conselho', { acao: 'avancar', sessao_id: j.payload.sessao_id });
@@ -369,7 +370,9 @@ async function podeRefletir(): Promise<string | null> {
   const [c] = await banco('/rest/v1/config?select=valor&chave=eq.teto_reflexao_mensal_usd');
   const teto = Number(c?.valor ?? 6);
   const usado = Number(await banco('/rest/v1/rpc/gasto_reflexao_mes', { metodo: 'POST', corpo: {} }));
-  if (Number(g.hoje_usd) >= 0.5 * Number(g.teto_diario_usd)) return 'o gasto de hoje já passou da metade do teto diário (a rotina vem primeiro)';
+  // A reflexão tem orçamento mensal próprio; do teto do dia só precisa da folga de uma sessão do Conselho.
+  // (Antes: "metade do teto diário", e como a revisão rodava logo depois da análise de concorrência, pulou 02, 09 e 16/11/2026.)
+  if (Number(g.hoje_usd) + FOLGA_SESSAO_USD > Number(g.teto_diario_usd)) return `o gasto de hoje (US$ ${Number(g.hoje_usd).toFixed(2)}) não deixa folga de US$ ${FOLGA_SESSAO_USD.toFixed(2)} para uma sessão do Conselho`;
   if (usado >= teto) return `a reflexão já usou US$ ${usado.toFixed(2)} de US$ ${teto.toFixed(2)} no mês`;
   return null;
 }
@@ -450,11 +453,14 @@ async function padroesNumericos() {
   return { itens, marcar: true };
 }
 
-async function revisaoSemanal() {
+async function revisaoSemanal(j?: { payload?: { tentativa?: number } }) {
   const semFolga = await podeRefletir();
   if (semFolga) {
-    await banco('/rest/v1/revisoes', { metodo: 'POST', corpo: { pulou_motivo: 'Sem orçamento: ' + semFolga } });
-    return { pulou: semFolga };
+    // Não fica a semana sem Conselho: tenta de novo amanhã cedo, até 3 vezes (e o alerta avisa o dono se ainda assim não rodar).
+    const tentativa = Number(j?.payload?.tentativa ?? 1);
+    if (tentativa < 3) await enfileirar('revisao_semanal', { tentativa: tentativa + 1 }, 2, `revisao_semanal:${tentativa + 1}:${new Date().toISOString().slice(0, 10)}`, new Date(Date.now() + 24 * 3600_000));
+    await banco('/rest/v1/revisoes', { metodo: 'POST', corpo: { pulou_motivo: `Sem orçamento (tentativa ${tentativa} de 3): ` + semFolga } });
+    return { pulou: semFolga, tentativa };
   }
   const [ult] = await banco('/rest/v1/revisoes?select=criado_em&order=criado_em.desc&limit=1');
   const desde = ult?.criado_em ?? new Date(Date.now() - 7 * 864e5).toISOString();
@@ -471,19 +477,25 @@ async function revisaoSemanal() {
   const medidas = await banco(`/rest/v1/acoes_propostas?select=titulo,metrica,valor_antes,valor_depois,resultado&status=eq.medida&medida_em=gte.${q(desde)}`);
   for (const m of medidas) lista.push(`ação medida: "${m.titulo}" ${m.resultado} (${m.metrica}: ${fmt(m.metrica, m.valor_antes)} → ${fmt(m.metrica, m.valor_depois)})`);
 
+  // O funil entra sempre na pauta: em novembro de 2026 a entrada de empresas parou e o Conselho não viu (nenhum sinal = sem sessão).
+  const semana = new Date(Date.now() - 7 * 864e5).toISOString();
+  const cand: string[] = await banco('/rest/v1/rpc/candidatas_primeiro_email', { metodo: 'POST', corpo: { p_limite: 500 } });
+  const funil = `funil na semana: ${(await banco(`/rest/v1/empresas?select=id&criado_em=gte.${q(semana)}`)).length} empresas novas, ` +
+    `${(await banco(`/rest/v1/empresas?select=id&qualificado_em=gte.${q(semana)}`)).length} qualificadas, ` +
+    `${(await banco(`/rest/v1/emails?select=id&enviado_em=gte.${q(semana)}`)).length} e-mails enviados, ` +
+    `${(await banco(`/rest/v1/respostas?select=id&recebido_em=gte.${q(semana)}`)).length} respostas; ${cand.length} empresas prontas para o 1º e-mail`;
+  lista.unshift(funil);
+
+  // O Conselho se reúne toda semana (pedido do dono, 18/11/2026). Com ações ainda sem decisão, ele revisa essas em vez de propor outras.
   const pendentes = (await banco('/rest/v1/acoes_propostas?select=id&status=eq.proposta')).length;
-  let pulou: string | null = null, sessao: string | null = null;
-  if (!lista.length) pulou = 'Nenhum sinal com amostra suficiente nesta semana.';
-  else if (pendentes >= 3) pulou = `${pendentes} ações ainda esperam a decisão do dono: o Conselho não abre outra sessão antes disso.`;
-  else {
-    const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-    const tema = `Revisão semanal automática (${hoje}). Sinais desta semana (números no bloco indicadores do dossiê):\n- ${lista.join('\n- ')}\n\n` +
-      'Perguntas: (1) o que explica cada sinal, com fonte no dossiê? (2) a qualidade das empresas que estão entrando (entrada_empresas, descartes_do_dono, segmentos e regras em regras_atuais) está boa, ou a rota de prospecção precisa mudar? (3) os e-mails, o site e o conteúdo estão bem posicionados contra a concorrência? ' +
-      'Proponha no máximo 3 ações, cada uma com a métrica que deve mover. Não repita ações recusadas sem evidência nova.';
-    const r = await chamar('conselho', { acao: 'abrir', gatilho: 'revisao_semanal', tema });
-    sessao = r.sessao_id;
-    await enfileirar('conselho_avancar', { sessao_id: sessao }, 4, 'conselho:' + sessao);
-  }
+  const pulou: string | null = null;
+  const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const tema = `Revisão semanal (${hoje}). ` +
+    (pendentes >= 3 ? `Há ${pendentes} ações esperando o dono: reavalie-as e não proponha novas. ` : 'Proponha no máximo 3 ações, cada uma com a métrica que deve mover; não repita ações recusadas sem evidência nova. ') +
+    'Responda com fonte no dossiê: (1) critique os e-mails da semana (taxa de resposta, bounce, descartes do dono) e diga o que mudar na abordagem; (2) o funil está entrando empresas boas em volume suficiente? Que fontes, segmentos ou cidades novas buscar? (3) o que explica cada sinal abaixo.\nSinais:\n- ' + lista.join('\n- ');
+  const r = await chamar('conselho', { acao: 'abrir', gatilho: 'revisao_semanal', tema });
+  const sessao: string | null = r.sessao_id;
+  await enfileirar('conselho_avancar', { sessao_id: sessao }, 4, 'conselho:' + sessao);
   await banco('/rest/v1/revisoes', { metodo: 'POST', corpo: { sinais: lista, sessao_id: sessao, pulou_motivo: pulou, aprendizados, padroes_gravados: padroes } });
   return { sinais: lista.length, sessao_id: sessao, pulou, aprendizados: aprendizados.length };
 }

@@ -114,6 +114,8 @@ async function acharSite(id: string) {
   if (!e) throw new ErroMaps('Empresa não encontrada.');
   if (e.site) return { ja_tinha: true };
   const r = await consultar(`${e.nome} ${e.cidade ?? ''} ${e.uf ?? ''}`.trim());
+  // Marca a procura, ache ou não: sem isso a rotina da manhã repetia as mesmas 100 empresas todo dia (02-18/11/2026).
+  await banco('/rest/v1/empresas?id=eq.' + q(id), { metodo: 'PATCH', corpo: { site_buscado_em: new Date().toISOString() } });
   const chaves = palavras(e.nome);
   const cidade = nomeChave(e.cidade ?? '');
   const p = (r.places ?? []).find((x) => {
